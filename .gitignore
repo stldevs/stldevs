@@ -1,0 +1,6 @@
+*.csv
+aggregator/*.json
+aggregator/*.csv
+*.idea
+bower_components
+*.iml

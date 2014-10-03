@@ -1,6 +1,10 @@
-<html>
-<body>
-<a href="/users">Users</a>
-<p>This would be a good place for angular-seed.</p>
+<html ng-app="MyApp">
+<head>
+    <link rel="stylesheet" href="/static/bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <script src="/static/bower_components/angular/angular.js"></script>
+</head>
+<body ng-controller="Main">
+    <pre>{{users|json}}</pre>
+<script src="/static/app.js"></script>
 </body>
 </html>

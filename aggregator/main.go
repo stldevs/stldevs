@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -21,16 +22,39 @@ func main() {
 	}
 
 	client := github.NewClient(t.Client())
-	opts := &github.SearchOptions{Sort: "repositories", Order: "desc", ListOptions: github.ListOptions{Page: 1, PerPage: 100}}
+	opts := &github.SearchOptions{Sort: "followers", Order: "desc", ListOptions: github.ListOptions{Page: 1, PerPage: 100}}
 	result, resultResp, err := client.Search.Users(searchString, opts)
 	check(err)
 	checkRespAndWait(resultResp)
-	fmt.Println(resultResp.Remaining, "searches remaining")
 	// resp.NextPage
 	fmt.Printf("Total found: %v\n", *result.Total)
-	f, err := os.Create("out.csv")
-	defer f.Close()
+
+	records := [][]string{}
+	for _, user := range result.Users {
+		user, userResp, err := client.Users.Get(*user.Login)
+		check(err)
+		checkRespAndWait(userResp)
+
+		record := []string{
+			get(user.Login),
+			get(user.Email),
+			get(user.Blog),
+			get(user.Company),
+			getI(user.PublicRepos),
+			getI(user.Followers),
+			user.CreatedAt.String(),
+		}
+		records = append(records, record)
+	}
+
+	f2, err := os.Create("out.json")
 	check(err)
+	defer f2.Close()
+	json.NewEncoder(f2).Encode(records)
+
+	f, err := os.Create("out.csv")
+	check(err)
+	defer f.Close()
 	writer := csv.NewWriter(f)
 	writer.Write([]string{
 		"login",
@@ -38,24 +62,12 @@ func main() {
 		"blog",
 		"company",
 		"public_repos",
+		"followers",
 		"created_at",
 	})
 
-	for _, user := range result.Users {
-		user, userResp, err := client.Users.Get(*user.Login)
-		check(err)
-		checkRespAndWait(userResp)
-		fmt.Println(userResp.Remaining, "user gets remaining")
-		writer.Write([]string{
-			get(user.Login),
-			get(user.Email),
-			get(user.Blog),
-			get(user.Company),
-			getI(user.PublicRepos),
-			user.CreatedAt.String(),
-		})
-		writer.Flush()
-	}
+	writer.WriteAll(records)
+	writer.Flush()
 }
 
 func checkRespAndWait(r *github.Response) {
@@ -63,6 +75,8 @@ func checkRespAndWait(r *github.Response) {
 		duration := time.Now().Sub(r.Rate.Reset.Time)
 		fmt.Println("I ran out of requests, waiting", duration)
 		time.Sleep(duration)
+	} else {
+		fmt.Println(r.Remaining, "calls remaining until", r.Rate.Reset.String())
 	}
 }
 

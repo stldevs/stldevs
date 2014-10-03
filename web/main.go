@@ -24,6 +24,10 @@ type appHandler struct {
 
 func (t appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	code, data := t.handler(t.context, w, r)
+	if data == nil {
+		log.Println(r.URL, "-", r.Method, "-", code, r.RemoteAddr)
+		return
+	}
 	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
@@ -63,8 +67,8 @@ type Error struct {
 }
 
 func List(c *context, w http.ResponseWriter, r *http.Request) (int, interface{}) {
-
-	return http.StatusOK, []map[string]string{}
+	http.ServeFile(w, r, "../aggregator/out.json")
+	return http.StatusOK, nil
 }
 
 // TODO: Only call on errors that are unrecoverable as the server goes down

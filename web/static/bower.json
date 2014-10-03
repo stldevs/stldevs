@@ -1,0 +1,19 @@
+{
+  "name": "stlstats",
+  "version": "0.0.0",
+  "authors": [
+    "jake <jake@jakecoffman.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.2.0",
+    "angular": "~1.2.26"
+  }
+}
