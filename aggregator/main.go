@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -18,7 +17,7 @@ func main() {
 	searchString := `location:"St. Louis"  location:"STL" location:"St Louis" location:"Saint Louis"`
 
 	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: "731fc12b627c1739c6d610f453a13a9cf9aebe2e"},
+		Token: &oauth.Token{AccessToken: os.Getenv("GITHUB_API_KEY")},
 	}
 
 	client := github.NewClient(t.Client())
@@ -29,20 +28,20 @@ func main() {
 	// resp.NextPage
 	fmt.Printf("Total found: %v\n", *result.Total)
 
-	records := [][]string{}
+	records := []map[string]string{}
 	for _, user := range result.Users {
 		user, userResp, err := client.Users.Get(*user.Login)
 		check(err)
 		checkRespAndWait(userResp)
 
-		record := []string{
-			get(user.Login),
-			get(user.Email),
-			get(user.Blog),
-			get(user.Company),
-			getI(user.PublicRepos),
-			getI(user.Followers),
-			user.CreatedAt.String(),
+		record := map[string]string{
+			"login":        get(user.Login),
+			"email":        get(user.Email),
+			"blog":         get(user.Blog),
+			"company":      get(user.Company),
+			"public_repos": getI(user.PublicRepos),
+			"followers":    getI(user.Followers),
+			"created_at":   user.CreatedAt.String(),
 		}
 		records = append(records, record)
 	}
@@ -52,22 +51,22 @@ func main() {
 	defer f2.Close()
 	json.NewEncoder(f2).Encode(records)
 
-	f, err := os.Create("out.csv")
-	check(err)
-	defer f.Close()
-	writer := csv.NewWriter(f)
-	writer.Write([]string{
-		"login",
-		"email",
-		"blog",
-		"company",
-		"public_repos",
-		"followers",
-		"created_at",
-	})
+	// f, err := os.Create("out.csv")
+	// check(err)
+	// defer f.Close()
+	// writer := csv.NewWriter(f)
+	// writer.Write([]string{
+	// 	"login",
+	// 	"email",
+	// 	"blog",
+	// 	"company",
+	// 	"public_repos",
+	// 	"followers",
+	// 	"created_at",
+	// })
 
-	writer.WriteAll(records)
-	writer.Flush()
+	// writer.WriteAll(records)
+	// writer.Flush()
 }
 
 func checkRespAndWait(r *github.Response) {
