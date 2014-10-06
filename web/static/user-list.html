@@ -1,0 +1,24 @@
+<table class="table table-striped table-compact">
+	<thead>
+		<tr>
+			<th>Login</th>
+			<th>Name</th>
+			<th>Blog</th>
+			<th>Repos</th>
+			<th>Gists</th>
+			<th>Followers</th>
+			<th>Joined</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr ng-repeat="u in users">
+			<td>{{u.login}}</td>
+			<td>{{u.name}}</td>
+			<td><a href="{{u.blog}}">{{u.blog}}</a></td>
+			<td><a href="#/users/{{u.login}}">{{u.public_repos}}</a></td>
+			<td>{{u.public_gists}}</td>
+			<td>{{u.followers}}</td>
+			<td>{{u.created_at|date}}</td>
+		</tr>
+	</tbody>
+</table>	

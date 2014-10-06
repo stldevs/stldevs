@@ -1,0 +1,18 @@
+<table class="table table-stroped table-condensed">
+	<thead>
+		<tr>
+			<th>Repo</th>
+			<th>Fork</th>
+			<th>Language</th>
+			<th>Size</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr ng-repeat="r in user">
+			<td>{{r.name}}</td>
+			<td>{{r.fork}}</td>
+			<td>{{r.language}}</td>
+			<td>{{r.size}}</td>
+		</tr>
+	</tbody>
+</table>

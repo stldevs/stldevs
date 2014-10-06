@@ -19,19 +19,43 @@ func main() {
 
 	client := github.NewClient(t.Client())
 	users := getUsers(client)
+	details := getUserDetails(client, users)
+	getRepos(client, details)
+}
 
-	details := []*github.User{}
+func getRepos(client *github.Client, users []github.User) {
+	for _, u := range users {
+		result, resp, err := client.Repositories.List(*u.Login, nil)
+		check(err)
+		checkRespAndWait(resp)
+		f, err := os.Create(*u.Login + ".json")
+		check(err)
+		json.NewEncoder(f).Encode(result)
+		f.Close()
+	}
+}
+
+func getUserDetails(client *github.Client, users []github.User) []github.User {
+	infile, err := os.Open("users.json")
+	details := make([]github.User, 0)
+	// TODO: check each user against the cache to see if they need to update
+	if err == nil {
+		json.NewDecoder(infile).Decode(&details)
+		return details
+	}
+	fmt.Println("Unable to read from users cache:", err)
 
 	for _, u := range users {
 		user, userResp, err := client.Users.Get(*u.Login)
 		check(err)
 		checkRespAndWait(userResp)
-		details = append(details, user)
+		details = append(details, *user)
 	}
 
 	f, err := os.Create("users.json")
 	check(err)
 	json.NewEncoder(f).Encode(details)
+	return details
 }
 
 func getUsers(client *github.Client) []github.User {
@@ -54,29 +78,6 @@ func checkRespAndWait(r *github.Response) {
 		fmt.Println(r.Remaining, "calls remaining until", r.Rate.Reset.String())
 	}
 }
-
-// safely dereference for output
-// func get(s interface{}) string {
-// 	switch t := s.(type) {
-// 	case *string:
-// 		v := s.(*string)
-// 		if v == nil {
-// 			return ""
-// 		}
-// 		return *v
-// 	case *int:
-// 		v := s.(*int)
-// 		if v == nil {
-// 			return ""
-// 		}
-// 		return strconv.Itoa(*v)
-// 	default:
-// 		fmt.Println("Unexpected type:", t)
-// 		debug.PrintStack()
-// 		os.Exit(1)
-// 		return ""
-// 	}
-// }
 
 func check(err error) {
 	if err != nil {

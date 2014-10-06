@@ -39,9 +39,8 @@ func (t appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func router(appCtx *context) *mux.Router {
 	r := mux.NewRouter()
-	// There are actually 2 options here: 1 - have 2 functions that handle both cases and
-	// internally switch on the method or 2 - have a function for each method
-	r.Handle("/users", appHandler{appCtx, List}).Methods("GET")
+	r.Handle("/users", appHandler{appCtx, List})
+	r.Handle("/users/{id}", appHandler{appCtx, User})
 	return r
 }
 
@@ -67,7 +66,16 @@ type Error struct {
 }
 
 func List(c *context, w http.ResponseWriter, r *http.Request) (int, interface{}) {
+	log.Println("HERE")
+
 	http.ServeFile(w, r, "../aggregator/users.json")
+	return http.StatusOK, nil
+}
+
+func User(c *context, w http.ResponseWriter, r *http.Request) (int, interface{}) {
+	vars := mux.Vars(r)
+	log.Println("Trying to serve", vars["id"])
+	http.ServeFile(w, r, "../aggregator/"+vars["id"]+".json") // bad, obviously
 	return http.StatusOK, nil
 }
 
