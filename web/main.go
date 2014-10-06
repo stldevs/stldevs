@@ -67,7 +67,7 @@ type Error struct {
 }
 
 func List(c *context, w http.ResponseWriter, r *http.Request) (int, interface{}) {
-	http.ServeFile(w, r, "../aggregator/out.json")
+	http.ServeFile(w, r, "../aggregator/users.json")
 	return http.StatusOK, nil
 }
 

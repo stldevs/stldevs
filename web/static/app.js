@@ -1,5 +1,9 @@
-var app = angular.module('MyApp', []);
+var app = angular.module('MyApp', ['ngResource']);
 
-app.controller('Main', ['$scope', '$http', function($scope, $http){
-    $scope.users = $http.get('/users');
+app.factory('User', ['$resource', function($resource){
+	return $resource('/users/:id', {id: '@id'});
+}]);
+
+app.controller('Main', ['$scope', 'User', function($scope, User){
+    $scope.users = User.query();
 }]);
