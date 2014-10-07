@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 
 	"github.com/gorilla/mux"
+	"github.com/jakecoffman/stl-dev-stats/aggregator"
 )
 
 func init() {
@@ -15,6 +16,7 @@ func init() {
 }
 
 type context struct {
+	aggregator *aggregator.Aggregator
 }
 
 type appHandler struct {
@@ -48,7 +50,7 @@ func main() {
 	// handle all requests by serving a file of the same name
 	fileHandler := http.FileServer(http.Dir("static/"))
 
-	r := router(&context{})
+	r := router(&context{aggregator.NewAggregator()})
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "static/index.html")
 	})
@@ -66,17 +68,13 @@ type Error struct {
 }
 
 func List(c *context, w http.ResponseWriter, r *http.Request) (int, interface{}) {
-	log.Println("HERE")
-
-	http.ServeFile(w, r, "../aggregator/users.json")
-	return http.StatusOK, nil
+	return http.StatusOK, c.aggregator.Users
 }
 
 func User(c *context, w http.ResponseWriter, r *http.Request) (int, interface{}) {
 	vars := mux.Vars(r)
-	log.Println("Trying to serve", vars["id"])
-	http.ServeFile(w, r, "../aggregator/"+vars["id"]+".json") // bad, obviously
-	return http.StatusOK, nil
+	repos := c.aggregator.GetRepos(vars["id"])
+	return http.StatusOK, repos
 }
 
 // TODO: Only call on errors that are unrecoverable as the server goes down

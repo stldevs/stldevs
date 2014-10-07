@@ -1,6 +1,5 @@
 *.csv
-aggregator/*.json
-aggregator/*.csv
+*.json
 *.idea
 bower_components
 *.iml
