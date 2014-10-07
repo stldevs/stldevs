@@ -23,5 +23,6 @@ app.controller('UserList', ['$scope', 'User', function ($scope, User){
 }]);
 
 app.controller('User', ['$scope', '$routeParams', 'User', function ($scope, $routeParams, User) {
-	$scope.user = User.get({id: $routeParams.id});
+	$scope.routeParams = $routeParams;
+    $scope.repos = User.get({id: $routeParams.id});
 }]);

@@ -1,3 +1,7 @@
+<div class="jumbotron">
+    <h1>User {{routeParams.id}}</h1>
+</div>
+
 <table class="table table-stroped table-condensed">
 	<thead>
 		<tr>
@@ -8,7 +12,7 @@
 		</tr>
 	</thead>
 	<tbody>
-		<tr ng-repeat="r in user">
+		<tr ng-repeat="r in repos">
 			<td>{{r.name}}</td>
 			<td>{{r.fork}}</td>
 			<td>{{r.language}}</td>

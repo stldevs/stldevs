@@ -25,7 +25,8 @@ func main() {
 
 func getRepos(client *github.Client, users []github.User) {
 	for _, u := range users {
-		result, resp, err := client.Repositories.List(*u.Login, nil)
+		opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{Page: 1, PerPage: 100}}
+		result, resp, err := client.Repositories.List(*u.Login, opts)
 		check(err)
 		checkRespAndWait(resp)
 		f, err := os.Create(*u.Login + ".json")
