@@ -18,7 +18,11 @@
 		<tr ng-repeat="u in users">
 			<td>{{u.login}}</td>
 			<td>{{u.name}}</td>
-			<td><a href="{{u.blog}}">{{u.blog}}</a></td>
+			<td>
+				<a ng-if="u.blog" href="{{u.blog}}" target="_blank">
+					{{u.blog}} <i class="fa fa-external-link"></i>
+				</a>
+			</td>
 			<td><a href="#/users/{{u.login}}">{{u.public_repos}}</a></td>
 			<td>{{u.public_gists}}</td>
 			<td>{{u.followers}}</td>

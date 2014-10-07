@@ -17,5 +17,6 @@
     "angular": "~1.2.26",
     "angular-resource": "~1.2.26",
     "angular-route": "~1.2.26",
+    "font-awesome": "~4.2.0"
   }
 }
