@@ -82,6 +82,6 @@ func check(err error) {
 	if err != nil {
 		log.Println(err)
 		debug.PrintStack()
-		log.Fatal()
+		log.Fatal("")
 	}
 }
