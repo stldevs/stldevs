@@ -24,25 +24,40 @@ func NewAggregator(db *sql.DB) *Aggregator {
 		CREATE TABLE IF NOT EXISTS user (
 			login VARCHAR(255) NOT NULL PRIMARY KEY,
 			email TEXT,
+			name TEXT,
+			location TEXT,
+			hireable BOOL,
 			blog TEXT,
+			bio TEXT,
 			followers INTEGER,
+			following INTEGER,
 			public_repos INTEGER,
 			public_gists INTEGER,
+			avatar_url TEXT,
+			disk_usage INTEGER,
 			created_at DATETIME,
 			updated_at DATETIME
 		);`)
 	check(err)
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS repo (
-			login VARCHAR(255),
+			owner VARCHAR(255),
 			name TEXT,
 			description TEXT,
 			language TEXT,
 			homepage TEXT,
 			forks_count INT,
+			network_count INT,
+			open_issues_count INT,
 			stargazers_count INT,
+			subscribers_count INT,
 			watchers_count INT,
+			size INT,
+			fork BOOL,
+			default_branch TEXT,
+			master_branch TEXT,
 			created_at DATETIME,
+			pushed_at DATETIME,
 			updated_at DATETIME
 		);`)
 	check(err)
@@ -65,9 +80,31 @@ func (a *Aggregator) GatherRepos(user string) {
 		check(err)
 		checkRespAndWait(resp)
 		for _, repo := range result {
-			stmt, err := a.db.Prepare(`REPLACE INTO repo VALUES (?,?,?,?,?,?,?,?,?,?)`)
+			stmt, err := a.db.Prepare(`REPLACE INTO repo VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
 			check(err)
-			_, err = stmt.Exec(repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage, repo.ForksCount, repo.StargazersCount, repo.WatchersCount, repo.CreatedAt.Time, repo.UpdatedAt.Time)
+			var pushedAt *time.Time
+			if repo.PushedAt != nil {
+				pushedAt = &repo.PushedAt.Time
+			}
+			_, err = stmt.Exec(
+				repo.Owner.Login,
+				repo.Name,
+				repo.Description,
+				repo.Language,
+				repo.Homepage,
+				repo.ForksCount,
+				repo.NetworkCount,
+				repo.OpenIssuesCount,
+				repo.StargazersCount,
+				repo.SubscribersCount,
+				repo.WatchersCount,
+				repo.Size,
+				repo.Fork,
+				repo.DefaultBranch,
+				repo.MasterBranch,
+				repo.CreatedAt.Time,
+				pushedAt,
+				repo.UpdatedAt.Time)
 			check(err)
 		}
 		if resp.NextPage == 0 {
@@ -100,9 +137,24 @@ func (a *Aggregator) GatherUserDetails(user string) {
 	u, resp, err := a.client.Users.Get(user)
 	check(err)
 	checkRespAndWait(resp)
-	stmt, err := a.db.Prepare(`REPLACE INTO user VALUES (?,?,?,?,?,?,?,?)`)
+	stmt, err := a.db.Prepare(`REPLACE INTO user VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
 	check(err)
-	_, err = stmt.Exec(u.Login, u.Email, u.Blog, u.Followers, u.PublicRepos, u.PublicGists, u.CreatedAt.Time, u.UpdatedAt.Time)
+	_, err = stmt.Exec(
+		u.Login,
+		u.Email,
+		u.Name,
+		u.Location,
+		u.Hireable,
+		u.Blog,
+		u.Bio,
+		u.Followers,
+		u.Following,
+		u.PublicRepos,
+		u.PublicGists,
+		u.AvatarURL,
+		u.DiskUsage,
+		u.CreatedAt.Time,
+		u.UpdatedAt.Time)
 	check(err)
 	stmt.Close()
 }

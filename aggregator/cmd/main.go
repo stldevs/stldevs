@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -15,23 +14,39 @@ func main() {
 	defer db.Close()
 	agg := aggregator.NewAggregator(db)
 
+	// step1(agg)
 	step2(db, agg)
 }
 
 func step1(agg *aggregator.Aggregator) {
 	users := agg.SearchUsers()
 
-	for _, user := range users {
-		fmt.Println("Getting user", *user.Login)
-		agg.GatherUserDetails(*user.Login)
+	c := make(chan string)
+	wg := sync.WaitGroup{}
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(c chan string, wg *sync.WaitGroup) {
+			defer wg.Done()
+			for user := range c {
+				agg.GatherUserDetails(user)
+			}
+		}(c, &wg)
 	}
+
+	for _, user := range users {
+		c <- *user.Login
+	}
+
+	close(c)
+	wg.Wait()
 }
 
 func step2(db *sql.DB, agg *aggregator.Aggregator) {
 	c := make(chan string)
 	wg := sync.WaitGroup{}
-	// spin up 100 workers
-	for i := 0; i < 100; i++ {
+
+	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(c chan string, wg *sync.WaitGroup) {
 			defer wg.Done()
