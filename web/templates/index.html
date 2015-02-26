@@ -4,6 +4,10 @@
     <link rel="stylesheet" href="/static/bower_components/font-awesome/css/font-awesome.css">
 </head>
 <body>
-Hello
+<h1>Hello</h1>
+<a href="{{.github}}">Login with Github</a>
+{{if .user}}
+Welcome, {{.user}}
+{{end}}
 </body>
 </html>
