@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jakecoffman/stl-dev-stats/aggregator"
+	"github.com/jakecoffman/stldevs/aggregator"
 )
 
 func main() {
