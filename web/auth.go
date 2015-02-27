@@ -36,18 +36,15 @@ func oauth2Handler(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	}
 
 	client := github.NewClient(conf.Client(oauth2.NoContext, token))
-	emails, _, err := client.Users.ListEmails(nil)
+
+	user, _, err := client.Users.Get("")
 	if err != nil {
 		panic(err)
 	}
-	var primary string
-	for _, email := range emails {
-		if email.Primary != nil && *email.Primary == true {
-			primary = *email.Email
-		}
-	}
 
-	if err = set_session(w, r, "user", primary); err != nil {
+	log.Println("Got user", *user.Login)
+
+	if err = set_session(w, r, "user", user); err != nil {
 		panic(err)
 	}
 
@@ -55,7 +52,13 @@ func oauth2Handler(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 }
 
 func logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if err := set_session(w, r, "user", ""); err != nil {
+	session, err := store.Get(r, "session")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	delete(session.Values, "user")
+	if err := session.Save(r, w); err != nil {
 		log.Println(err)
 	}
 	http.Redirect(w, r, "/", 302)

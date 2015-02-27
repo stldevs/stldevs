@@ -9,6 +9,9 @@ import (
 
 	"database/sql"
 
+	"encoding/gob"
+
+	"github.com/google/go-github/github"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"github.com/jakecoffman/stldevs/aggregator"
@@ -33,6 +36,8 @@ func Run() {
 	if time.Since(agg.LastRun()) > 12*time.Hour {
 		agg.Run()
 	}
+
+	gob.Register(github.User{})
 
 	fileHandler := http.FileServer(http.Dir(base + "/static/"))
 
@@ -60,9 +65,16 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, base+"/static/404.html")
 }
 
-func panicHandler(w http.ResponseWriter, r *http.Request, _ interface{}) {
-	w.WriteHeader(500)
-	http.ServeFile(w, r, base+"/static/500.html")
+func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {
+	template, err := template.ParseGlob(base + "/templates/*.html")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	if err = template.ExecuteTemplate(w, "500", d); err != nil {
+		log.Println(err)
+	}
 }
 
 func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -72,11 +84,12 @@ func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	data := map[string]string{}
+	data := map[string]interface{}{}
 	user, _ := get_session(r, "user")
-	if user != "" {
+	if user != nil {
 		data["user"] = user
 	} else {
+		log.Println("Not logged in")
 		set_session(w, r, "githubState", randSeq(10))
 		data["github"] = conf.AuthCodeURL("statey", oauth2.AccessTypeOffline)
 	}
@@ -97,7 +110,7 @@ func topLangs(agg *aggregator.Aggregator) httprouter.Handle {
 
 		data := map[string]interface{}{}
 		user, _ := get_session(r, "user")
-		if user != "" {
+		if user != nil {
 			data["user"] = user
 		} else {
 			set_session(w, r, "githubState", randSeq(10))
