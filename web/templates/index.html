@@ -4,11 +4,54 @@
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 </head>
 <body>
-<h1>Hello</h1>
-{{if .user}}
-Welcome, {{.user}} <a href="/logout">Logout</a>
-{{else}}
-<a href="{{.github}}">Login with Github</a>
-{{end}}
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">stldevs</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li><a href="/top">Top</a></li>
+                <li><a href="/search">Search</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>{{if .user}}
+                    <a href="/logout">Logout</a>
+                    {{else}}
+                    <a href="{{.github}}"><i class="fa fa-github"></i> Login</a>
+                    {{end}}
+                </li>
+            </ul>
+        </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+</nav>
+<div class="container-fluid">
+    <h1>Hello, world!</h1>
+
+    {{if .user}}<p>Welcome, {{.user}}</p>{{end}}
+
+    <p>
+        This site is for St Louis based developers to maintain a profile for whatever purpose
+        they see fit. The main objective is to allow for companies to find skilled workers that
+        might be interested in working for them. Rather than relying on recruiters who send
+        blanket emails, companies and developers can interact in a more direct manor.
+    </p>
+    <p>
+        This site harvests public information from Github. If you do not wish to have a profile
+        on this site, just log in with your Github account, go to your settings, and select
+        "remove me."
+    </p>
+</div>
+<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
 </body>
 </html>
