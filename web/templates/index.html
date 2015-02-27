@@ -1,13 +1,14 @@
 <html>
 <head>
-    <link rel="stylesheet" href="/static/bower_components/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/bower_components/font-awesome/css/font-awesome.css">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 </head>
 <body>
 <h1>Hello</h1>
-<a href="{{.github}}">Login with Github</a>
 {{if .user}}
-Welcome, {{.user}}
+Welcome, {{.user}} <a href="/logout">Logout</a>
+{{else}}
+<a href="{{.github}}">Login with Github</a>
 {{end}}
 </body>
 </html>

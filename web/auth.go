@@ -3,7 +3,6 @@ package web
 import (
 	"log"
 	"net/http"
-	"text/template"
 
 	"github.com/google/go-github/github"
 	"github.com/julienschmidt/httprouter"
@@ -33,14 +32,13 @@ func oauth2Handler(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 
 	token, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		log.Println(err)
-		return
+		panic(err)
 	}
 
 	client := github.NewClient(conf.Client(oauth2.NoContext, token))
 	emails, _, err := client.Users.ListEmails(nil)
 	if err != nil {
-		log.Println(err)
+		panic(err)
 	}
 	var primary string
 	for _, email := range emails {
@@ -49,18 +47,16 @@ func oauth2Handler(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 		}
 	}
 
-	template, err := template.New("index.html").ParseFiles("templates/index.html")
-	if err != nil {
-		log.Println(err)
-		return
+	if err = set_session(w, r, "user", primary); err != nil {
+		panic(err)
 	}
 
-	data := map[string]string{
-		"github": conf.AuthCodeURL("state", oauth2.AccessTypeOffline),
-		"user":   primary,
-	}
-	if err = template.Execute(w, data); err != nil {
+	http.Redirect(w, r, "/", 302)
+}
+
+func logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	if err := set_session(w, r, "user", ""); err != nil {
 		log.Println(err)
-		return
 	}
+	http.Redirect(w, r, "/", 302)
 }
