@@ -81,7 +81,7 @@ func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		data["github"] = conf.AuthCodeURL("statey", oauth2.AccessTypeOffline)
 	}
 
-	if err = template.ExecuteTemplate(w, "index.html", data); err != nil {
+	if err = template.ExecuteTemplate(w, "index", data); err != nil {
 		log.Println(err)
 		return
 	}
@@ -106,7 +106,7 @@ func topLangs(agg *aggregator.Aggregator) httprouter.Handle {
 		data["langs"] = agg.PopularLanguages()
 		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
 
-		if err = template.ExecuteTemplate(w, "toplangs.html", data); err != nil {
+		if err = template.ExecuteTemplate(w, "toplangs", data); err != nil {
 			log.Println(err)
 			return
 		}
