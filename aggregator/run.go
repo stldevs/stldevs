@@ -1,86 +1,77 @@
 package aggregator
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 	"runtime/debug"
+	"sync"
 	"time"
-
-	"code.google.com/p/goauth2/oauth"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 )
 
-type Aggregator struct {
-	client *github.Client
-	db     *sql.DB
-}
+func step1(agg *Aggregator) {
+	users := agg.searchUsers()
 
-func NewAggregator(db *sql.DB) *Aggregator {
-	// init db
-	_, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS user (
-			login VARCHAR(255) NOT NULL PRIMARY KEY,
-			email TEXT,
-			name TEXT,
-			location TEXT,
-			hireable BOOL,
-			blog TEXT,
-			bio TEXT,
-			followers INTEGER,
-			following INTEGER,
-			public_repos INTEGER,
-			public_gists INTEGER,
-			avatar_url TEXT,
-			disk_usage INTEGER,
-			created_at DATETIME,
-			updated_at DATETIME
-		);`)
-	check(err)
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS repo (
-			owner VARCHAR(255),
-			name TEXT,
-			description TEXT,
-			language TEXT,
-			homepage TEXT,
-			forks_count INT,
-			network_count INT,
-			open_issues_count INT,
-			stargazers_count INT,
-			subscribers_count INT,
-			watchers_count INT,
-			size INT,
-			fork BOOL,
-			default_branch TEXT,
-			master_branch TEXT,
-			created_at DATETIME,
-			pushed_at DATETIME,
-			updated_at DATETIME
-		);`)
-	check(err)
+	c := make(chan string)
+	wg := sync.WaitGroup{}
 
-	// init client
-	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: os.Getenv("GITHUB_API_KEY")},
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(c chan string, wg *sync.WaitGroup) {
+			defer wg.Done()
+			for user := range c {
+				agg.gatherUserDetails(user)
+			}
+		}(c, &wg)
 	}
 
-	var agg Aggregator
-	agg.db = db
-	agg.client = github.NewClient(t.Client())
-	return &agg
+	for _, user := range users {
+		c <- *user.Login
+	}
+
+	close(c)
+	wg.Wait()
 }
 
-func (a *Aggregator) GatherRepos(user string) {
+func step2(agg *Aggregator) {
+	c := make(chan string)
+	wg := sync.WaitGroup{}
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(c chan string, wg *sync.WaitGroup) {
+			defer wg.Done()
+			for user := range c {
+				agg.gatherRepos(user)
+			}
+		}(c, &wg)
+	}
+
+	// pump the users through the channel
+	rows, err := agg.db.Query("select login from agg_user")
+	check(err)
+	defer rows.Close()
+	for rows.Next() {
+		var user string
+		rows.Scan(&user)
+		c <- user
+	}
+
+	// wait for them to finish
+	close(c)
+	wg.Wait()
+}
+
+func (a *Aggregator) gatherRepos(user string) {
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
 	for {
 		result, resp, err := a.client.Repositories.List(user, opts)
 		check(err)
 		checkRespAndWait(resp)
 		for _, repo := range result {
-			stmt, err := a.db.Prepare(`REPLACE INTO repo VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+			stmt, err := a.db.Prepare(`REPLACE INTO agg_repo VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
 			check(err)
 			var pushedAt *time.Time
 			if repo.PushedAt != nil {
@@ -114,7 +105,7 @@ func (a *Aggregator) GatherRepos(user string) {
 	}
 }
 
-func (a *Aggregator) SearchUsers() []github.User {
+func (a *Aggregator) searchUsers() []github.User {
 	searchString := `location:"St. Louis"  location:"STL" location:"St Louis" location:"Saint Louis"`
 	opts := &github.SearchOptions{Sort: "followers", Order: "desc", ListOptions: github.ListOptions{Page: 1, PerPage: 100}}
 	users := []github.User{}
@@ -133,11 +124,11 @@ func (a *Aggregator) SearchUsers() []github.User {
 	return users
 }
 
-func (a *Aggregator) GatherUserDetails(user string) {
+func (a *Aggregator) gatherUserDetails(user string) {
 	u, resp, err := a.client.Users.Get(user)
 	check(err)
 	checkRespAndWait(resp)
-	stmt, err := a.db.Prepare(`REPLACE INTO user VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+	stmt, err := a.db.Prepare(`REPLACE INTO agg_user VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
 	check(err)
 	_, err = stmt.Exec(
 		u.Login,
@@ -157,6 +148,14 @@ func (a *Aggregator) GatherUserDetails(user string) {
 		u.UpdatedAt.Time)
 	check(err)
 	stmt.Close()
+}
+
+func (a *Aggregator) insertRunLog() {
+	stmt, err := a.db.Prepare(`INSERT INTO agg_meta VALUES (?)`)
+	check(err)
+
+	_, err = stmt.Exec(time.Now())
+	check(err)
 }
 
 func checkRespAndWait(r *github.Response) {
