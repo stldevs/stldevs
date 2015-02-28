@@ -7,7 +7,9 @@
             {{.Owner.Login}}
         </div>
         <div class="col-sm-9">
-            <ul>{{.Name}} - {{.Description}} - {{.StargazersCount}}</ul>
+            <ul>{{range .Repos}}
+                <li>{{.Name}} - {{.Description}} - {{.StargazersCount}}</li>
+            {{end}}</ul>
         </div>
     </div>
     {{end}}

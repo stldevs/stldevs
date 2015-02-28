@@ -132,9 +132,15 @@ func (a *Aggregator) PopularLanguages() []LanguageCount {
 	return langs
 }
 
-func (a *Aggregator) Language(name string) []github.Repository {
+type LanguageResult struct {
+	Owner *github.User
+	Repos []github.Repository
+	Count int
+}
+
+func (a *Aggregator) Language(name string) []*LanguageResult {
 	rows, err := a.db.Query(`
-SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count
+SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, cnt
 FROM agg_repo r1
 JOIN (
 	select owner, count(*) as cnt
@@ -148,12 +154,20 @@ order by r2.cnt desc, stargazers_count desc;
 	check(err)
 	defer rows.Close()
 
-	data := []github.Repository{}
+	data := []*LanguageResult{}
+	var cur *LanguageResult
 	for rows.Next() {
 		repo := github.Repository{}
 		repo.Owner = &github.User{}
-		rows.Scan(&repo.Owner.Login, &repo.Name, &repo.Description, &repo.ForksCount, &repo.StargazersCount, &repo.WatchersCount)
-		data = append(data, repo)
+		var count int
+		rows.Scan(&repo.Owner.Login, &repo.Name, &repo.Description, &repo.ForksCount,
+			&repo.StargazersCount, &repo.WatchersCount, count)
+		if cur == nil || *cur.Owner.Login != *repo.Owner.Login {
+			cur = &LanguageResult{repo.Owner, []github.Repository{repo}, count}
+			data = append(data, cur)
+		} else {
+			cur.Repos = append(cur.Repos, repo)
+		}
 	}
 
 	return data
