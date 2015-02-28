@@ -26,13 +26,15 @@ const (
 
 var conf *oauth2.Config
 var store *sessions.FilesystemStore
+var trackingCode string
 
 type Config struct {
-	GithubKey, MysqlPw, GithubClientID, GithubClientSecret, SessionSecret string
+	GithubKey, MysqlPw, GithubClientID, GithubClientSecret, SessionSecret, TrackingCode string
 }
 
 func Run(config Config) {
 	store = sessions.NewFilesystemStore("", []byte(config.SessionSecret))
+	trackingCode = config.TrackingCode
 
 	conf = &oauth2.Config{
 		ClientID:     config.GithubClientID,
@@ -138,6 +140,7 @@ func parseAndExecute(w http.ResponseWriter, templateName string, data interface{
 
 func commonSessionData(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 	data := map[string]interface{}{}
+	data["trackingCode"] = trackingCode
 	user, _ := get_session(r, "user")
 	if user != nil {
 		data["user"] = user
