@@ -173,22 +173,50 @@ order by r2.cnt desc, r2.owner, stargazers_count desc;
 	return data
 }
 
-func (a *Aggregator) Profile(name string) *github.User {
+type ProfileData struct {
+	User  *github.User
+	Repos map[string][]string
+}
+
+func (a *Aggregator) Profile(name string) ProfileData {
 	rows, err := a.db.Query(`select login,email,name,blog,followers,public_repos,public_gists,avatar_url
 from agg_user where login=?`, name)
 	check(err)
 	defer rows.Close()
 
-	user := &github.User{}
+	profile := ProfileData{&github.User{}, map[string][]string{}}
 	if !rows.Next() {
 		log.Println("No rows found for Profile", name)
-		return user
+		return profile
 	}
 
+	user := profile.User
 	err = rows.Scan(&user.Login, &user.Email, &user.Name, &user.Blog, &user.Followers, &user.PublicRepos,
 		&user.PublicGists, &user.AvatarURL)
 	check(err)
 
-	rows.Next()
-	return user
+	rows.Close()
+
+	rows, err = a.db.Query(`select name,language from agg_repo where owner=? order by language`, user.Login)
+	check(err)
+
+	for rows.Next() {
+		var name string
+		langStr := sql.NullString{}
+		err = rows.Scan(&name, &langStr)
+		check(err)
+
+		if !langStr.Valid {
+			continue
+		}
+		lang := langStr.String
+
+		if _, ok := profile.Repos[lang]; ok {
+			profile.Repos[lang] = append(profile.Repos[lang], name)
+		} else {
+			profile.Repos[lang] = []string{name}
+		}
+	}
+
+	return profile
 }
