@@ -7,7 +7,7 @@
 
     <ul>
     {{range .langs}}
-    <li>{{.Language}} - {{.Count}}</li>
+    <li><a href="/lang/{{.Language}}">{{.Language}}</a> - {{.Count}}</li>
     {{end}}
     </ul>
 </div>

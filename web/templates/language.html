@@ -1,0 +1,16 @@
+{{define "language"}}
+{{template "top" .}}
+<div class="container-fluid">
+    {{range .language}}
+    <div class="row">
+        <div class="col-sm-3">
+            {{.Owner.Login}}
+        </div>
+        <div class="col-sm-9">
+            <ul>{{.Name}} - {{.Description}} - {{.StargazersCount}}</ul>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{template "bot"}}
+{{end}}

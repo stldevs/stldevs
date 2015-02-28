@@ -49,8 +49,8 @@ func New(db *sql.DB) *Aggregator {
 	check(err)
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS agg_repo (
-			owner VARCHAR(255),
-			name TEXT,
+			owner VARCHAR(255) NOT NULL,
+			name VARCHAR(255) NOT NULL PRIMARY KEY,
 			description TEXT,
 			language TEXT,
 			homepage TEXT,
@@ -115,8 +115,7 @@ func (a *Aggregator) PopularLanguages() []LanguageCount {
 		from agg_repo
 		where language is not null
 		group by language
-		order by count desc
-		limit 10;
+		order by count desc;
 	`)
 	check(err)
 	defer rows.Close()
@@ -131,4 +130,31 @@ func (a *Aggregator) PopularLanguages() []LanguageCount {
 		langs = append(langs, LanguageCount{lang, count})
 	}
 	return langs
+}
+
+func (a *Aggregator) Language(name string) []github.Repository {
+	rows, err := a.db.Query(`
+SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count
+FROM agg_repo r1
+JOIN (
+	select owner, count(*) as cnt
+	from stldevs.agg_repo
+	where language=?
+	group by owner
+) r2 ON ( r2.owner = r1.owner )
+where language=?
+order by r2.cnt desc, stargazers_count desc;
+`, name, name)
+	check(err)
+	defer rows.Close()
+
+	data := []github.Repository{}
+	for rows.Next() {
+		repo := github.Repository{}
+		repo.Owner = &github.User{}
+		rows.Scan(&repo.Owner.Login, &repo.Name, &repo.Description, &repo.ForksCount, &repo.StargazersCount, &repo.WatchersCount)
+		data = append(data, repo)
+	}
+
+	return data
 }
