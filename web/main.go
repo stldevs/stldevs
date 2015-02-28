@@ -28,14 +28,14 @@ var conf *oauth2.Config
 var store *sessions.FilesystemStore
 
 type Config struct {
-	GithubKey, MysqlPw, GithubClientSecret, SessionSecret string
+	GithubKey, MysqlPw, GithubClientID, GithubClientSecret, SessionSecret string
 }
 
 func Run(config Config) {
 	store = sessions.NewFilesystemStore("", []byte(config.SessionSecret))
 
 	conf = &oauth2.Config{
-		ClientID:     "cfa23414a111bbac97c8",
+		ClientID:     config.GithubClientID,
 		ClientSecret: config.GithubClientSecret,
 		Scopes:       []string{"public_repo"},
 		Endpoint:     oa2gh.Endpoint,

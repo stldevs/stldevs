@@ -20,10 +20,5 @@ func main() {
 
 	json.NewDecoder(f).Decode(&config)
 
-	if config.MysqlPw == "" || config.GithubKey == "" {
-		log.Println("Config file missing important things")
-		return
-	}
-
 	web.Run(config)
 }
