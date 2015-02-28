@@ -17,22 +17,37 @@ import (
 	"github.com/jakecoffman/stldevs/aggregator"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/oauth2"
+	oa2gh "golang.org/x/oauth2/github"
 )
 
 const (
 	base = "web"
 )
 
-var store = sessions.NewFilesystemStore("", []byte("secret")) // TODO
+var conf *oauth2.Config
+var store *sessions.FilesystemStore
 
-func Run() {
-	db, err := sql.Open("mysql", "root:bird@/stldevs")
+type Config struct {
+	GithubKey, MysqlPw, GithubClientSecret, SessionSecret string
+}
+
+func Run(config Config) {
+	store = sessions.NewFilesystemStore("", []byte(config.SessionSecret))
+
+	conf = &oauth2.Config{
+		ClientID:     "cfa23414a111bbac97c8",
+		ClientSecret: config.GithubClientSecret,
+		Scopes:       []string{"public_repo"},
+		Endpoint:     oa2gh.Endpoint,
+	}
+
+	db, err := sql.Open("mysql", "root:"+config.MysqlPw+"@/stldevs")
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	defer db.Close()
-	agg := aggregator.New(db)
+	agg := aggregator.New(db, config.GithubKey)
 	if time.Since(agg.LastRun()) > 12*time.Hour {
 		agg.Run()
 	}

@@ -3,17 +3,27 @@ package main
 import (
 	"os"
 
-	"fmt"
+	"encoding/json"
+
+	"log"
 
 	"github.com/jakecoffman/stldevs/web"
 )
 
 func main() {
-	// check prereqs
-	if os.Getenv("GITHUB_API_KEY") == "" {
-		fmt.Println("please set GITHUB_API_KEY")
+	config := web.Config{}
+	f, err := os.Open("config.json")
+	if err != nil {
+		log.Println("Couldn't find dev_config.json")
 		return
 	}
 
-	web.Run()
+	json.NewDecoder(f).Decode(&config)
+
+	if config.MysqlPw == "" || config.GithubKey == "" {
+		log.Println("Config file missing important things")
+		return
+	}
+
+	web.Run(config)
 }

@@ -7,19 +7,7 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/oauth2"
-	oa2gh "golang.org/x/oauth2/github"
 )
-
-var conf *oauth2.Config
-
-func init() {
-	conf = &oauth2.Config{
-		ClientID:     "cfa23414a111bbac97c8",
-		ClientSecret: "10cb393e043fb569b8428779ebf70285a331915d", // TODO: hide after testing
-		Scopes:       []string{"user:email", "public_repo"},
-		Endpoint:     oa2gh.Endpoint,
-	}
-}
 
 func oauth2Handler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	code := r.URL.Query().Get("code")

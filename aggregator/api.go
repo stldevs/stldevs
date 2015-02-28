@@ -3,7 +3,6 @@ package aggregator
 import (
 	"database/sql"
 	"log"
-	"os"
 
 	"code.google.com/p/goauth2/oauth"
 
@@ -20,7 +19,7 @@ type Aggregator struct {
 	running bool
 }
 
-func New(db *sql.DB) *Aggregator {
+func New(db *sql.DB, githubKey string) *Aggregator {
 	// TODO add more metadata like number of users found etc
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS agg_meta (
@@ -72,7 +71,7 @@ func New(db *sql.DB) *Aggregator {
 
 	// init client
 	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: os.Getenv("GITHUB_API_KEY")},
+		Token: &oauth.Token{AccessToken: githubKey},
 	}
 
 	var agg Aggregator
