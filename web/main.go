@@ -103,7 +103,8 @@ func profile(agg *aggregator.Aggregator) httprouter.Handle {
 func language(agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		data := commonSessionData(w, r)
-		data["language"] = agg.Language(p.ByName("lang"))
+		data["languages"] = agg.Language(p.ByName("lang"))
+		data["language"] = p.ByName("lang")
 		parseAndExecute(w, "language", data)
 	}
 }

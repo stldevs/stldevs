@@ -1,21 +1,29 @@
 {{define "index"}}
 {{template "top" .}}
 <div class="container-fluid">
-    <h1>Hello, world!</h1>
+    <div class="row">
+        <div class="col-sm-offset-3 col-sm-6">
+            <h1>Hello, world</h1>
 
-    {{if .user}}<p>Welcome, {{.user.Login}}</p>{{end}}
+            {{if .user}}<p>Welcome, {{.user.Login}}!</p>{{end}}
 
-    <p>
-        This site is for St Louis based developers to maintain a profile for whatever purpose
-        they see fit. The main objective is to allow for companies to find skilled workers that
-        might be interested in working for them. Rather than relying on recruiters who send
-        blanket emails, companies and developers can interact in a more direct manor.
-    </p>
-    <p>
-        This site harvests public information from Github. If you do not wish to have a profile
-        on this site, just log in with your Github account, go to your settings, and select
-        "remove me."
-    </p>
+            <p>
+                This site is for St Louis based developers to maintain a profile based on their
+                contributions to open source. The main objective is to allow for developers who are
+                interested in certain technologies to find eachother. Also potentially companies can use
+                this site to find developers. Rather than relying on recruiters who send blanket
+                emails, companies and developers can interact in a more direct manor.
+            </p>
+            <p>
+                This site harvests public information from Github. Eventually there will be an option
+                to opt out, but that isn't implemented yet.
+            </p>
+            <p>
+                If you would like to help development, <a href="http://github.com/jakecoffman/stldevs">
+                fork on Github!</a>
+            </p>
+        </div>
+    </div>
 </div>
 {{template "bot"}}
 {{end}}
