@@ -47,7 +47,7 @@ func Run() {
 	router.GET("/logout", logout)
 	router.GET("/", index)
 	router.GET("/toplangs", topLangs(agg))
-	router.GET("/profile", profile(agg))
+	router.GET("/profile/:profile", profile(agg))
 	router.GET("/lang/:lang", language(agg))
 	router.NotFound = http.HandlerFunc(notFound)
 	router.PanicHandler = panicHandler
@@ -94,8 +94,9 @@ func topLangs(agg *aggregator.Aggregator) httprouter.Handle {
 }
 
 func profile(agg *aggregator.Aggregator) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		data := commonSessionData(w, r)
+		data["profile"] = agg.Profile(p.ByName("profile"))
 		parseAndExecute(w, "profile", data)
 	}
 }

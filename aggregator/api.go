@@ -172,3 +172,23 @@ order by r2.cnt desc, stargazers_count desc;
 
 	return data
 }
+
+func (a *Aggregator) Profile(name string) *github.User {
+	rows, err := a.db.Query(`select login,email,name,blog,followers,public_repos,public_gists,avatar_url
+from agg_user where login=?`, name)
+	check(err)
+	defer rows.Close()
+
+	user := &github.User{}
+	if !rows.Next() {
+		log.Println("No rows found for Profile", name)
+		return user
+	}
+
+	err = rows.Scan(&user.Login, &user.Email, &user.Name, &user.Blog, &user.Followers, &user.PublicRepos,
+		&user.PublicGists, &user.AvatarURL)
+	check(err)
+
+	rows.Next()
+	return user
+}

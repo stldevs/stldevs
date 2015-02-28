@@ -2,16 +2,14 @@
 {{template "top" .}}
 <div class="container-fluid">
     <div class="row">
+        {{with .profile}}
         <div class="col-sm-3">
-            <img src="{{.user.AvatarURL}}" height="230" width="230">
-            {{with .user}}
+            <img src="{{.AvatarURL}}" height="230" width="230">
             <p>{{.Name}}</p>
             <p>{{.Login}}</p>
             <p>{{.Blog}}</p>
-            {{end}}
         </div>
         <div class="col-sm-9">
-            {{with .user}}
             <dl class="dl-horizontal">
                 <dt>Followers</dt>
                 <dd>{{.Followers}}</dd>
@@ -20,8 +18,8 @@
                 <dt>Gists</dt>
                 <dd>{{.PublicGists}}</dd>
             </dl>
-            {{end}}
         </div>
+        {{end}}
     </div>
 </div>
 {{template "bot"}}
