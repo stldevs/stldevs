@@ -47,6 +47,7 @@ func Run() {
 	router.GET("/logout", logout)
 	router.GET("/", index)
 	router.GET("/toplangs", topLangs(agg))
+	router.GET("/profile", profile(agg))
 	router.NotFound = http.HandlerFunc(notFound)
 	router.PanicHandler = panicHandler
 
@@ -72,7 +73,7 @@ func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {
 		return
 	}
 
-	if err = template.ExecuteTemplate(w, "500", d); err != nil {
+	if err = template.ExecuteTemplate(w, "error", d); err != nil {
 		log.Println(err)
 	}
 }
@@ -88,6 +89,13 @@ func topLangs(agg *aggregator.Aggregator) httprouter.Handle {
 		data["langs"] = agg.PopularLanguages()
 		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
 		parseAndExecute(w, "toplangs", data)
+	}
+}
+
+func profile(agg *aggregator.Aggregator) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		data := commonSessionData(w, r)
+		parseAndExecute(w, "profile", data)
 	}
 }
 

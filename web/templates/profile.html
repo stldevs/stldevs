@@ -1,0 +1,28 @@
+{{define "profile"}}
+{{template "top" .}}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-3">
+            <img src="{{.user.AvatarURL}}" height="230" width="230">
+            {{with .user}}
+            <p>{{.Name}}</p>
+            <p>{{.Login}}</p>
+            <p>{{.Blog}}</p>
+            {{end}}
+        </div>
+        <div class="col-sm-9">
+            {{with .user}}
+            <dl class="dl-horizontal">
+                <dt>Followers</dt>
+                <dd>{{.Followers}}</dd>
+                <dt>Repos</dt>
+                <dd>{{.PublicRepos}}</dd>
+                <dt>Gists</dt>
+                <dd>{{.PublicGists}}</dd>
+            </dl>
+            {{end}}
+        </div>
+    </div>
+</div>
+{{template "bot"}}
+{{end}}

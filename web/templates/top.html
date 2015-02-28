@@ -25,12 +25,21 @@
                 <li><a href="/search">Search</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
-                <li>{{if .user}}
-                    <a href="/logout">Logout</a>
-                    {{else}}
-                    <a href="{{.github}}"><i class="fa fa-github"></i> Login</a>
-                    {{end}}
+                {{if .user}}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                        {{.user.Login}} <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="/profile">Profile</a></li>
+                        <li><a href="/logout">Logout</a></li>
+                    </ul>
                 </li>
+                {{else}}
+                <li>
+                    <a href="{{.github}}"><i class="fa fa-github"></i> Login</a>
+                </li>
+                {{end}}
             </ul>
         </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
