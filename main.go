@@ -1,11 +1,9 @@
 package main
 
 import (
-	"os"
-
 	"encoding/json"
-
 	"log"
+	"os"
 
 	"github.com/jakecoffman/stldevs/web"
 )

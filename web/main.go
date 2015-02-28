@@ -67,8 +67,8 @@ func Run(config Config) {
 	router.NotFound = http.HandlerFunc(notFound)
 	router.PanicHandler = panicHandler
 
-	log.Println("Serving on", "localhost:80")
-	log.Println(http.ListenAndServe("localhost:80", context.ClearHandler(router)))
+	log.Println("Serving on port 80")
+	log.Println(http.ListenAndServe("0.0.0.0:80", context.ClearHandler(router)))
 }
 
 func handleFiles(fileServer http.Handler) httprouter.Handle {
