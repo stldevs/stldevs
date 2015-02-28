@@ -149,7 +149,7 @@ JOIN (
 	group by owner
 ) r2 ON ( r2.owner = r1.owner )
 where language=?
-order by r2.cnt desc, stargazers_count desc;
+order by r2.cnt desc, r2.owner, stargazers_count desc;
 `, name, name)
 	check(err)
 	defer rows.Close()
