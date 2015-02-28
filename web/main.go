@@ -78,50 +78,43 @@ func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {
 }
 
 func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	template, err := template.ParseGlob(base + "/templates/*.html")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	data := map[string]interface{}{}
-	user, _ := get_session(r, "user")
-	if user != nil {
-		data["user"] = user
-	} else {
-		log.Println("Not logged in")
-		set_session(w, r, "githubState", randSeq(10))
-		data["github"] = conf.AuthCodeURL("statey", oauth2.AccessTypeOffline)
-	}
-
-	if err = template.ExecuteTemplate(w, "index", data); err != nil {
-		log.Println(err)
-		return
-	}
+	data := commonSessionData(w, r)
+	parseAndExecute(w, "index", data)
 }
 
 func topLangs(agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		template, err := template.ParseGlob(base + "/templates/*.html")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		data := map[string]interface{}{}
-		user, _ := get_session(r, "user")
-		if user != nil {
-			data["user"] = user
-		} else {
-			set_session(w, r, "githubState", randSeq(10))
-			data["github"] = conf.AuthCodeURL("statey", oauth2.AccessTypeOffline)
-		}
+		data := commonSessionData(w, r)
 		data["langs"] = agg.PopularLanguages()
 		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
-
-		if err = template.ExecuteTemplate(w, "toplangs", data); err != nil {
-			log.Println(err)
-			return
-		}
+		parseAndExecute(w, "toplangs", data)
 	}
+}
+
+// TODO in production we want to just parse once
+func parseAndExecute(w http.ResponseWriter, templateName string, data interface{}) {
+	template, err := template.ParseGlob(base + "/templates/*.html")
+	if err != nil {
+		panic(err)
+	}
+	if err = template.ExecuteTemplate(w, templateName, data); err != nil {
+		panic(err)
+	}
+}
+
+func commonSessionData(w http.ResponseWriter, r *http.Request) map[string]interface{} {
+	data := map[string]interface{}{}
+	user, _ := get_session(r, "user")
+	if user != nil {
+		data["user"] = user
+		// TODO extract an admin list
+		if *user.(github.User).Login == "jakecoffman" {
+			data["admin"] = true
+		}
+	} else {
+		state := randSeq(10)
+		set_session(w, r, "state", state)
+		data["github"] = conf.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	}
+	return data
 }

@@ -22,11 +22,16 @@ func init() {
 }
 
 func oauth2Handler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	//	client_secret := p.ByName("client_secret") // TODO: Verify matches
-	//	state := p.ByName("state") // TODO: verify this was the state sent earlier
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		log.Println("code is blank")
+		return
+	}
+
+	state := r.URL.Query().Get("state")
+	sessState, _ := get_session(r, "state")
+	if sessState == nil || state != sessState.(string) {
+		parseAndExecute(w, "error", "state is incorrect")
 		return
 	}
 
@@ -41,8 +46,6 @@ func oauth2Handler(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	if err != nil {
 		panic(err)
 	}
-
-	log.Println("Got user", *user.Login)
 
 	if err = set_session(w, r, "user", user); err != nil {
 		panic(err)
