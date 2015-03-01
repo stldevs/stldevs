@@ -2,15 +2,11 @@
 {{template "top" .}}
 <div class="container-fluid">
     <h1>Admin page</h1>
+    {{if .running}}<p>Currently running</p>{{end}}
     <p>Last scan was at {{.lastRun}}</p>
-    <div class="row">
-        <div class="col-sm-6">
-
-        </div>
-        <div class="col-sm-6">
-
-        </div>
-    </div>
+    <form method="post" action="/admin" onsubmit="return confirm('Perform a full scan?');">
+        <input class="btn btn-primary {{if .running}}disabled{{end}}" name="run" type="submit" value="Run full scan">
+    </form>
 </div>
 {{template "bot" .}}
 {{end}}

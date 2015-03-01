@@ -133,6 +133,7 @@ func admin(agg *aggregator.Aggregator) httprouter.Handle {
 			return
 		}
 		data["lastRun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
+		data["running"] = agg.Running()
 		parseAndExecute(w, "admin", data)
 	}
 }
@@ -144,7 +145,9 @@ func adminCmd(agg *aggregator.Aggregator) httprouter.Handle {
 			parseAndExecute(w, "403", data)
 			return
 		}
-		// Do admin action
+		if r.FormValue("run") != "" {
+			go agg.Run()
+		}
 		http.Redirect(w, r, "/admin", 302)
 	}
 }

@@ -81,11 +81,18 @@ func New(db *sql.DB, githubKey string) *Aggregator {
 }
 
 func (a *Aggregator) Run() {
+	if a.running {
+		return
+	}
 	a.running = true
 	defer func() { a.running = false }()
 	a.insertRunLog()
 	step1(a)
 	step2(a)
+}
+
+func (a *Aggregator) Running() bool {
+	return a.running
 }
 
 func (a *Aggregator) LastRun() time.Time {
