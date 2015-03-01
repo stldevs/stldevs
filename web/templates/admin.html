@@ -1,0 +1,16 @@
+{{define "admin"}}
+{{template "top" .}}
+<div class="container-fluid">
+    <h1>Admin page</h1>
+    <p>Last scan was at {{.lastRun}}</p>
+    <div class="row">
+        <div class="col-sm-6">
+
+        </div>
+        <div class="col-sm-6">
+
+        </div>
+    </div>
+</div>
+{{template "bot" .}}
+{{end}}

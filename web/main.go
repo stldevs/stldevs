@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"text/template"
-	"time"
 
 	"database/sql"
 
@@ -50,9 +49,6 @@ func Run(config Config) {
 	}
 	defer db.Close()
 	agg := aggregator.New(db, config.GithubKey)
-	if time.Since(agg.LastRun()) > 12*time.Hour {
-		agg.Run()
-	}
 
 	gob.Register(github.User{})
 
@@ -63,6 +59,8 @@ func Run(config Config) {
 	router.GET("/oauth2", oauth2Handler)
 	router.GET("/logout", logout)
 	router.GET("/", index)
+	router.GET("/admin", admin(agg))
+	router.POST("/admin", adminCmd(agg))
 	router.GET("/toplangs", topLangs(agg))
 	router.GET("/profile/:profile", profile(agg))
 	router.GET("/lang/:lang", language(agg))
@@ -124,6 +122,30 @@ func language(agg *aggregator.Aggregator) httprouter.Handle {
 		data["languages"] = agg.Language(p.ByName("lang"))
 		data["language"] = p.ByName("lang")
 		parseAndExecute(w, "language", data)
+	}
+}
+
+func admin(agg *aggregator.Aggregator) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		data := commonSessionData(w, r)
+		if isAdmin, ok := data["admin"]; !ok || !isAdmin.(bool) {
+			parseAndExecute(w, "403", data)
+			return
+		}
+		data["lastRun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
+		parseAndExecute(w, "admin", data)
+	}
+}
+
+func adminCmd(agg *aggregator.Aggregator) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		data := commonSessionData(w, r)
+		if isAdmin, ok := data["admin"]; !ok || !isAdmin.(bool) {
+			parseAndExecute(w, "403", data)
+			return
+		}
+		// Do admin action
+		http.Redirect(w, r, "/admin", 302)
 	}
 }
 

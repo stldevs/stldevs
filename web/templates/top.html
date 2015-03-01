@@ -31,6 +31,7 @@
                         {{.user.Login}} <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu" role="menu">
+                        {{if .admin}}<li><a href="/admin">Admin</a></li>{{end}}
                         <li><a href="/profile/{{.user.Login}}">Profile</a></li>
                         <li><a href="/logout">Logout</a></li>
                     </ul>
