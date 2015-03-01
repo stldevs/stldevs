@@ -5,11 +5,24 @@
 
     <p>In St. Louis as of {{.lastrun}}</p>
 
-    <ul>
-    {{range .langs}}
-    <li><a href="/lang/{{.Language}}">{{.Language}}</a> - {{.Count}}</li>
-    {{end}}
-    </ul>
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <th>Language</th>
+            <th>Amount of Repositories</th>
+            <th>Amount of Users</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .langs}}
+        <tr>
+            <td><a href="/lang/{{.Language}}">{{.Language}}</a></td>
+            <td>{{.Count}}</td>
+            <td>todo</td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
 </div>
 {{template "bot" .}}
 {{end}}

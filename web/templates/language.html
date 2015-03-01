@@ -1,7 +1,7 @@
 {{define "language"}}
 {{template "top" .}}
 <div class="container-fluid">
-    <h1>Users that write {{.language}}</h1>
+    <h1>Users that write {{.language}} in St. Louis</h1>
     {{range .languages}}
     <div class="row">
         <div class="col-sm-3">
@@ -14,11 +14,10 @@
             <ul>{{range $index, $repo := .Repos}}
                 {{if lt $index 3}}
                 <li>
-                    <b>{{.Name}}</b> -
-                    {{.Description}}
+                    <b><a href="http://github.com/{{.Owner.Login}}/{{.Name}}" target="_blank">{{.Name}}</a></b> -
                     <i class="fa fa-star"></i>{{.StargazersCount}}
                     <i class="fa fa-code-fork"></i>{{.ForksCount}}
-                    <!--<i class="fa fa-eye"></i>{{.WatchersCount}} TODO not sure why this == stargazers-->
+                    {{.Description}}
                 </li>
                 {{end}}
             {{end}}</ul>

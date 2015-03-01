@@ -146,7 +146,7 @@ type LanguageResult struct {
 
 func (a *Aggregator) Language(name string) []*LanguageResult {
 	rows, err := a.db.Query(`
-SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, cnt
+SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, r1.fork, cnt
 FROM agg_repo r1
 JOIN (
 	select owner, count(*) as cnt
@@ -167,7 +167,7 @@ order by r2.cnt desc, r2.owner, stargazers_count desc;
 		repo.Owner = &github.User{}
 		var count int
 		rows.Scan(&repo.Owner.Login, &repo.Name, &repo.Description, &repo.ForksCount,
-			&repo.StargazersCount, &repo.WatchersCount, &count)
+			&repo.StargazersCount, &repo.WatchersCount, &repo.Fork, &count)
 		if cur == nil || *cur.Owner.Login != *repo.Owner.Login {
 			cur = &LanguageResult{repo.Owner, []github.Repository{repo}, count}
 			data = append(data, cur)
