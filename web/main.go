@@ -61,6 +61,7 @@ func Run(config Config) {
 	router.GET("/", index)
 	router.GET("/admin", admin(agg))
 	router.POST("/admin", adminCmd(agg))
+	router.GET("/search", search(agg))
 	router.GET("/toplangs", topLangs(agg))
 	router.GET("/profile/:profile", profile(agg))
 	router.GET("/lang/:lang", language(agg))
@@ -149,6 +150,18 @@ func adminCmd(agg *aggregator.Aggregator) httprouter.Handle {
 			go agg.Run()
 		}
 		http.Redirect(w, r, "/admin", 302)
+	}
+}
+
+func search(agg *aggregator.Aggregator) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		data := commonSessionData(w, r)
+		q := r.URL.Query().Get("q")
+		data["q"] = q
+		if q != "" {
+			data["results"] = agg.Search(q)
+		}
+		parseAndExecute(w, "search", data)
 	}
 }
 

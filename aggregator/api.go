@@ -226,3 +226,22 @@ from agg_user where login=?`, name)
 
 	return profile
 }
+
+func (a *Aggregator) Search(query string) []github.User {
+	percentified := "%" + query + "%"
+	rows, err := a.db.Query(`select login,email,name,blog,followers,public_repos,public_gists,avatar_url
+from agg_user where login like ? or name like ?`, percentified, percentified)
+	check(err)
+	defer rows.Close()
+
+	users := []github.User{}
+	for rows.Next() {
+		user := github.User{}
+		err = rows.Scan(&user.Login, &user.Email, &user.Name, &user.Blog, &user.Followers, &user.PublicRepos,
+			&user.PublicGists, &user.AvatarURL)
+		check(err)
+		users = append(users, user)
+	}
+
+	return users
+}

@@ -22,7 +22,7 @@
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
                 <li><a href="/toplangs">Top Languages</a></li>
-                <!--<li><a href="/search">Search</a></li>-->
+                <!--<li><a href="/topdevs">Top Developers</a></li>-->
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {{if .user}}
@@ -42,6 +42,14 @@
                 </li>
                 {{end}}
             </ul>
+            <form class="navbar-form navbar-right" role="search" action="/search" method="get">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="q" placeholder="Search users">
+                    <span class="input-group-btn">
+                        <button type="submit" class="btn btn-default">Search</button>
+                    </span>
+                </div>
+            </form>
         </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
 </nav>
