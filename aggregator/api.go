@@ -113,15 +113,16 @@ func (a *Aggregator) LastRun() time.Time {
 type LanguageCount struct {
 	Language string
 	Count    int
+	Users    int
 }
 
 func (a *Aggregator) PopularLanguages() []LanguageCount {
 	rows, err := a.db.Query(`
-		select language, count(*) as count
+		select language, count(*) as cnt, count(distinct(owner))
 		from agg_repo
 		where language is not null
 		group by language
-		order by count desc;
+		order by cnt desc;
 	`)
 	check(err)
 	defer rows.Close()
@@ -130,10 +131,12 @@ func (a *Aggregator) PopularLanguages() []LanguageCount {
 	for rows.Next() {
 		var lang string
 		var count int
-		if err = rows.Scan(&lang, &count); err != nil {
+		var owners int
+		if err = rows.Scan(&lang, &count, &owners); err != nil {
 			log.Println(err)
+		} else {
+			langs = append(langs, LanguageCount{lang, count, owners})
 		}
-		langs = append(langs, LanguageCount{lang, count})
 	}
 	return langs
 }
