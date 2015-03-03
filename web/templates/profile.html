@@ -25,7 +25,10 @@
                 {{range $lang, $names := .profile.Repos}}
                 <dt><a href="/lang/{{$lang}}">{{$lang}}</a> - {{$names | len}}</dt>
                 {{range $names}}
-                <dd>{{.}}</dd>
+                <dd>
+                    <a href="http://github.com/{{$.profile.User.Login}}/{{.Name}}" target="_blank">{{.Name}}</a>
+                    <i class="fa fa-star"></i>{{.StargazersCount}}
+                    <i class="fa fa-code-fork"></i>{{.ForksCount}}</dd>
                 {{end}}
                 {{end}}
             </dl>

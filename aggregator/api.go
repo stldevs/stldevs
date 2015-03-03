@@ -184,7 +184,7 @@ order by r2.cnt desc, r2.owner, stargazers_count desc;
 
 type ProfileData struct {
 	User  *github.User
-	Repos map[string][]string
+	Repos map[string][]github.Repository
 }
 
 func (a *Aggregator) Profile(name string) ProfileData {
@@ -193,7 +193,7 @@ from agg_user where login=?`, name)
 	check(err)
 	defer rows.Close()
 
-	profile := ProfileData{&github.User{}, map[string][]string{}}
+	profile := ProfileData{&github.User{}, map[string][]github.Repository{}}
 	if !rows.Next() {
 		log.Println("No rows found for Profile", name)
 		return profile
@@ -206,24 +206,22 @@ from agg_user where login=?`, name)
 
 	rows.Close()
 
-	rows, err = a.db.Query(`select name,language from agg_repo where owner=? order by language`, user.Login)
+	rows, err = a.db.Query(`
+	select name,language,forks_count,stargazers_count
+	from agg_repo
+	where owner=? and language is not null
+	order by language, stargazers_count desc, name`, user.Login)
 	check(err)
 
 	for rows.Next() {
-		var name string
-		langStr := sql.NullString{}
-		err = rows.Scan(&name, &langStr)
+		var repo github.Repository
+		err = rows.Scan(&repo.Name, &repo.Language, &repo.ForksCount, &repo.StargazersCount)
 		check(err)
 
-		if !langStr.Valid {
-			continue
-		}
-		lang := langStr.String
-
-		if _, ok := profile.Repos[lang]; ok {
-			profile.Repos[lang] = append(profile.Repos[lang], name)
+		if _, ok := profile.Repos[*repo.Language]; ok {
+			profile.Repos[*repo.Language] = append(profile.Repos[*repo.Language], repo)
 		} else {
-			profile.Repos[lang] = []string{name}
+			profile.Repos[*repo.Language] = []github.Repository{repo}
 		}
 	}
 
@@ -232,8 +230,10 @@ from agg_user where login=?`, name)
 
 func (a *Aggregator) Search(query string) []github.User {
 	percentified := "%" + query + "%"
-	rows, err := a.db.Query(`select login,email,name,blog,followers,public_repos,public_gists,avatar_url
-from agg_user where login like ? or name like ?`, percentified, percentified)
+	rows, err := a.db.Query(`
+	select login,email,name,blog,followers,public_repos,public_gists,avatar_url
+	from agg_user
+	where login like ? or name like ?`, percentified, percentified)
 	check(err)
 	defer rows.Close()
 
