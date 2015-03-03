@@ -155,7 +155,7 @@ func (a *Aggregator) PopularDevs() []DevCount {
 			from stldevs.agg_repo
 			group by owner
 		) repo ON (repo.owner=user.login)
-		where name is not null
+		where name is not null and cnt > 100
 		order by cnt desc;`)
 	check(err)
 	defer rows.Close()
