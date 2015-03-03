@@ -8,6 +8,8 @@ import (
 
 	"time"
 
+	"strings"
+
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
@@ -234,6 +236,10 @@ from agg_user where login=?`, name)
 	err = rows.Scan(&user.Login, &user.Email, &user.Name, &user.Blog, &user.Followers, &user.PublicRepos,
 		&user.PublicGists, &user.AvatarURL)
 	check(err)
+
+	if user.Blog != nil && *user.Blog != "" && !strings.HasPrefix(*user.Blog, "http://") {
+		*user.Blog = "http://" + *user.Blog
+	}
 
 	rows.Close()
 
