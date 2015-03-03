@@ -146,14 +146,15 @@ func (a *Aggregator) PopularLanguages() []LanguageCount {
 type DevCount struct {
 	Login, Name, AvatarUrl string
 	Stars                  int
+	Forks                  int
 }
 
 func (a *Aggregator) PopularDevs() []DevCount {
 	rows, err := a.db.Query(`
-		select login,name,avatar_url,cnt
+		select login,name,avatar_url,cnt,frks
 		from stldevs.agg_user user
 		join(
-			select owner,sum(stargazers_count) as cnt
+			select owner,sum(stargazers_count) as cnt,sum(forks_count) as frks
 			from stldevs.agg_repo
 			group by owner
 		) repo ON (repo.owner=user.login)
@@ -165,7 +166,7 @@ func (a *Aggregator) PopularDevs() []DevCount {
 	devs := []DevCount{}
 	for rows.Next() {
 		dev := DevCount{}
-		if err = rows.Scan(&dev.Login, &dev.Name, &dev.AvatarUrl, &dev.Stars); err != nil {
+		if err = rows.Scan(&dev.Login, &dev.Name, &dev.AvatarUrl, &dev.Stars, &dev.Forks); err != nil {
 			log.Println(err)
 		} else {
 			devs = append(devs, dev)
@@ -182,17 +183,16 @@ type LanguageResult struct {
 
 func (a *Aggregator) Language(name string) []*LanguageResult {
 	rows, err := a.db.Query(`
-SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, r1.fork, cnt
-FROM agg_repo r1
-JOIN (
-	select owner, count(*) as cnt
-	from stldevs.agg_repo
-	where language=?
-	group by owner
-) r2 ON ( r2.owner = r1.owner )
-where language=?
-order by r2.cnt desc, r2.owner, stargazers_count desc;
-`, name, name)
+		SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, r1.fork, cnt
+		FROM agg_repo r1
+		JOIN (
+			select owner, count(*) as cnt
+			from stldevs.agg_repo
+			where language=?
+			group by owner
+		) r2 ON ( r2.owner = r1.owner )
+		where language=?
+		order by r2.cnt desc, r2.owner, stargazers_count desc;`, name, name)
 	check(err)
 	defer rows.Close()
 
@@ -221,8 +221,10 @@ type ProfileData struct {
 }
 
 func (a *Aggregator) Profile(name string) ProfileData {
-	rows, err := a.db.Query(`select login,email,name,blog,followers,public_repos,public_gists,avatar_url
-from agg_user where login=?`, name)
+	rows, err := a.db.Query(`
+	select login,email,name,blog,followers,public_repos,public_gists,avatar_url
+	from agg_user
+	where login=?`, name)
 	check(err)
 	defer rows.Close()
 

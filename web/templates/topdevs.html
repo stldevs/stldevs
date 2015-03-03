@@ -11,7 +11,8 @@
                 <thead>
                 <tr>
                     <th>Developer</th>
-                    <th>Amount of Stars</th>
+                    <th>Total <i class="fa fa-star"></i></th>
+                    <th>Total <i class="fa fa-code-fork"></i></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -19,6 +20,7 @@
                 <tr>
                     <td><a href="/profile/{{.Login}}">{{if .Name}}{{.Name}}{{else}}{{.Login}}{{end}}</a></td>
                     <td>{{.Stars}}</td>
+                    <td>{{.Forks}}</td>
                 </tr>
                 {{end}}
                 </tbody>
