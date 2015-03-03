@@ -63,6 +63,7 @@ func Run(config Config) {
 	router.POST("/admin", adminCmd(agg))
 	router.GET("/search", search(agg))
 	router.GET("/toplangs", topLangs(agg))
+	router.GET("/topdevs", topDevs(agg))
 	router.GET("/profile/:profile", profile(agg))
 	router.GET("/lang/:lang", language(agg))
 	router.NotFound = http.HandlerFunc(notFound)
@@ -106,6 +107,15 @@ func topLangs(agg *aggregator.Aggregator) httprouter.Handle {
 		data["langs"] = agg.PopularLanguages()
 		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
 		parseAndExecute(w, "toplangs", data)
+	}
+}
+
+func topDevs(agg *aggregator.Aggregator) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		data := commonSessionData(w, r)
+		data["devs"] = agg.PopularDevs()
+		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
+		parseAndExecute(w, "topdevs", data)
 	}
 }
 

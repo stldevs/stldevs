@@ -141,6 +141,37 @@ func (a *Aggregator) PopularLanguages() []LanguageCount {
 	return langs
 }
 
+type DevCount struct {
+	Login, Name, AvatarUrl string
+	Stars                  int
+}
+
+func (a *Aggregator) PopularDevs() []DevCount {
+	rows, err := a.db.Query(`
+		select login,name,avatar_url,cnt
+		from stldevs.agg_user user
+		join(
+			select owner,sum(stargazers_count) as cnt
+			from stldevs.agg_repo
+			group by owner
+		) repo ON (repo.owner=user.login)
+		where name is not null
+		order by cnt desc;`)
+	check(err)
+	defer rows.Close()
+
+	devs := []DevCount{}
+	for rows.Next() {
+		dev := DevCount{}
+		if err = rows.Scan(&dev.Login, &dev.Name, &dev.AvatarUrl, &dev.Stars); err != nil {
+			log.Println(err)
+		} else {
+			devs = append(devs, dev)
+		}
+	}
+	return devs
+}
+
 type LanguageResult struct {
 	Owner *github.User
 	Repos []github.Repository
