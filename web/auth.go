@@ -19,7 +19,7 @@ func oauth2Handler(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	state := r.URL.Query().Get("state")
 	sessState, _ := get_session(r, "state")
 	if sessState == nil || state != sessState.(string) {
-		parseAndExecute(w, "error", "state is incorrect")
+		parseAndExecute(w, "error", map[string]interface{}{"error": "state is incorrect"})
 		return
 	}
 

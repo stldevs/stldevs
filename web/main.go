@@ -97,11 +97,12 @@ func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {
 }
 
 // TODO in production we want to just parse once
-func parseAndExecute(w http.ResponseWriter, templateName string, data interface{}) {
+func parseAndExecute(w http.ResponseWriter, templateName string, data map[string]interface{}) {
 	template, err := template.ParseGlob(base + "/templates/*.html")
 	if err != nil {
 		panic(err)
 	}
+	data["page"] = templateName
 	if err = template.ExecuteTemplate(w, templateName, data); err != nil {
 		panic(err)
 	}

@@ -144,14 +144,14 @@ func (a *Aggregator) PopularLanguages() []LanguageCount {
 }
 
 type DevCount struct {
-	Login, Name, AvatarUrl string
+	Login, Name, AvatarUrl, Followers string
 	Stars                  int
 	Forks                  int
 }
 
 func (a *Aggregator) PopularDevs() []DevCount {
 	rows, err := a.db.Query(`
-		select login,name,avatar_url,cnt,frks
+		select login,name,avatar_url,followers,cnt,frks
 		from stldevs.agg_user user
 		join(
 			select owner,sum(stargazers_count) as cnt,sum(forks_count) as frks
@@ -166,7 +166,7 @@ func (a *Aggregator) PopularDevs() []DevCount {
 	devs := []DevCount{}
 	for rows.Next() {
 		dev := DevCount{}
-		if err = rows.Scan(&dev.Login, &dev.Name, &dev.AvatarUrl, &dev.Stars, &dev.Forks); err != nil {
+		if err = rows.Scan(&dev.Login, &dev.Name, &dev.AvatarUrl, &dev.Followers, &dev.Stars, &dev.Forks); err != nil {
 			log.Println(err)
 		} else {
 			devs = append(devs, dev)

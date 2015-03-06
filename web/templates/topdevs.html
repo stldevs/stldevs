@@ -1,18 +1,19 @@
 {{define "topdevs"}}
 {{template "top" .}}
 <div class="container-fluid">
-    <h1>Top Developers</h1>
-
-    <p>In St. Louis as of {{.lastrun}}</p>
-
     <div class="row">
-        <div class="col-sm-offset-3 col-sm-6">
+        <div class="col-sm-offset-2 col-sm-8">
+            <h1>Top Developers</h1>
+
+            <p>In St. Louis as of {{.lastrun}}</p>
+
             <table class="table table-striped table-hover">
                 <thead>
                 <tr>
                     <th>Developer</th>
                     <th>Total <i class="fa fa-star"></i></th>
                     <th>Total <i class="fa fa-code-fork"></i></th>
+                    <th>Followers</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -21,6 +22,7 @@
                     <td><a href="/profile/{{.Login}}">{{if .Name}}{{.Name}}{{else}}{{.Login}}{{end}}</a></td>
                     <td>{{.Stars}}</td>
                     <td>{{.Forks}}</td>
+                    <td>{{.Followers}}</td>
                 </tr>
                 {{end}}
                 </tbody>

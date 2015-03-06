@@ -24,19 +24,20 @@
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
-                <li><a href="/toplangs">Top Languages</a></li>
-                <li><a href="/topdevs">Top Developers</a></li>
+                <li class='{{if eq .page "toplangs"}}active{{end}}'><a href="/toplangs">Top Languages</a></li>
+                <li class='{{if eq .page "topdevs"}}active{{end}}'><a href="/topdevs">Top Developers</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {{if .user}}
                 <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                    <a href="#" class='dropdown-toggle' data-toggle="dropdown" role="button" aria-expanded="false">
                         {{.user.Login}} <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu" role="menu">
-                        {{if .admin}}<li><a href="/admin">Admin</a></li>{{end}}
-                        <li><a href="/profile/{{.user.Login}}">Profile</a></li>
-                        <li><a href="/logout">Logout</a></li>
+                        {{if .admin}}<li><a href="/admin"><i class="fa fa-cogs"></i> Admin</a></li>{{end}}
+                        <li><a href="/profile/{{.user.Login}}"><i class="fa fa-user"></i> Profile</a></li>
+                        <li><a href="/settings"><i class="fa fa-gear"></i> Settings</a></li>
+                        <li><a href="/logout"><i class="fa fa-sign-out"></i> Logout</a></li>
                     </ul>
                 </li>
                 {{else}}
