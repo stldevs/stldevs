@@ -31,6 +31,13 @@ type Config struct {
 	GithubKey, MysqlPw, GithubClientID, GithubClientSecret, SessionSecret, TrackingCode string
 }
 
+type Context interface {
+	// gets common session data, like user
+	SessionData(http.ResponseWriter, *http.Request) map[string]interface{}
+	// parses and executes template
+	ParseAndExecute(http.ResponseWriter, string, map[string]interface{})
+}
+
 func Run(config Config) {
 	store = sessions.NewFilesystemStore("", []byte(config.SessionSecret))
 	trackingCode = config.TrackingCode
@@ -50,23 +57,25 @@ func Run(config Config) {
 	defer db.Close()
 	agg := aggregator.New(db, config.GithubKey)
 
+	ctx := &contextImpl{}
+
 	gob.Register(github.User{})
 
 	fileHandler := http.FileServer(http.Dir(base + "/static/"))
 
 	router := httprouter.New()
 	router.GET("/static/*filepath", handleFiles(fileHandler))
-	router.GET("/oauth2", oauth2Handler)
+	router.GET("/oauth2", oauth2Handler(ctx))
 	router.GET("/logout", logout)
-	router.GET("/", index)
-	router.GET("/admin", admin(agg))
-	router.POST("/admin", adminCmd(agg))
-	router.GET("/search", search(agg))
-	router.GET("/toplangs", topLangs(agg))
-	router.GET("/topdevs", topDevs(agg))
-	router.GET("/profile/:profile", profile(agg))
-	router.POST("/add", add(agg))
-	router.GET("/lang/:lang", language(agg))
+	router.GET("/", index(ctx))
+	router.GET("/admin", admin(ctx, agg))
+	router.POST("/admin", adminCmd(ctx, agg))
+	router.GET("/search", search(ctx, agg))
+	router.GET("/toplangs", topLangs(ctx, agg))
+	router.GET("/topdevs", topDevs(ctx, agg))
+	router.GET("/profile/:profile", profile(ctx, agg))
+	router.POST("/add", add(ctx, agg))
+	router.GET("/lang/:lang", language(ctx, agg))
 	router.NotFound = http.HandlerFunc(notFound)
 	router.PanicHandler = panicHandler
 
@@ -97,8 +106,10 @@ func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {
 	}
 }
 
+type contextImpl struct{}
+
 // TODO in production we want to just parse once
-func parseAndExecute(w http.ResponseWriter, templateName string, data map[string]interface{}) {
+func (c *contextImpl) ParseAndExecute(w http.ResponseWriter, templateName string, data map[string]interface{}) {
 	template, err := template.ParseGlob(base + "/templates/*.html")
 	if err != nil {
 		panic(err)
@@ -109,7 +120,7 @@ func parseAndExecute(w http.ResponseWriter, templateName string, data map[string
 	}
 }
 
-func commonSessionData(w http.ResponseWriter, r *http.Request) map[string]interface{} {
+func (c *contextImpl) SessionData(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 	data := map[string]interface{}{}
 	data["trackingCode"] = trackingCode
 	user, _ := get_session(r, "user")

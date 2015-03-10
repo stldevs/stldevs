@@ -8,45 +8,47 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	data := commonSessionData(w, r)
-	parseAndExecute(w, "index", data)
+func index(ctx Context) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		data := ctx.SessionData(w, r)
+		ctx.ParseAndExecute(w, "index", data)
+	}
 }
 
-func topLangs(agg *aggregator.Aggregator) httprouter.Handle {
+func topLangs(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		data := commonSessionData(w, r)
+		data := ctx.SessionData(w, r)
 		data["langs"] = agg.PopularLanguages()
 		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
-		parseAndExecute(w, "toplangs", data)
+		ctx.ParseAndExecute(w, "toplangs", data)
 	}
 }
 
-func topDevs(agg *aggregator.Aggregator) httprouter.Handle {
+func topDevs(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		data := commonSessionData(w, r)
+		data := ctx.SessionData(w, r)
 		data["devs"] = agg.PopularDevs()
 		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
-		parseAndExecute(w, "topdevs", data)
+		ctx.ParseAndExecute(w, "topdevs", data)
 	}
 }
 
-func profile(agg *aggregator.Aggregator) httprouter.Handle {
+func profile(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := commonSessionData(w, r)
+		data := ctx.SessionData(w, r)
 		profile := agg.Profile(p.ByName("profile"))
 		if profile != nil {
 			data["profile"] = profile
-			parseAndExecute(w, "profile", data)
+			ctx.ParseAndExecute(w, "profile", data)
 		} else {
-			parseAndExecute(w, "add", data)
+			ctx.ParseAndExecute(w, "add", data)
 		}
 	}
 }
 
-func add(agg *aggregator.Aggregator) httprouter.Handle {
+func add(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		data := commonSessionData(w, r)
+		data := ctx.SessionData(w, r)
 		user := data["user"]
 		if user == nil {
 			return
@@ -57,33 +59,33 @@ func add(agg *aggregator.Aggregator) httprouter.Handle {
 	}
 }
 
-func language(agg *aggregator.Aggregator) httprouter.Handle {
+func language(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := commonSessionData(w, r)
+		data := ctx.SessionData(w, r)
 		data["languages"] = agg.Language(p.ByName("lang"))
 		data["language"] = p.ByName("lang")
-		parseAndExecute(w, "language", data)
+		ctx.ParseAndExecute(w, "language", data)
 	}
 }
 
-func admin(agg *aggregator.Aggregator) httprouter.Handle {
+func admin(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := commonSessionData(w, r)
+		data := ctx.SessionData(w, r)
 		if isAdmin, ok := data["admin"]; !ok || !isAdmin.(bool) {
-			parseAndExecute(w, "403", data)
+			ctx.ParseAndExecute(w, "403", data)
 			return
 		}
 		data["lastRun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
 		data["running"] = agg.Running()
-		parseAndExecute(w, "admin", data)
+		ctx.ParseAndExecute(w, "admin", data)
 	}
 }
 
-func adminCmd(agg *aggregator.Aggregator) httprouter.Handle {
+func adminCmd(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := commonSessionData(w, r)
+		data := ctx.SessionData(w, r)
 		if isAdmin, ok := data["admin"]; !ok || !isAdmin.(bool) {
-			parseAndExecute(w, "403", data)
+			ctx.ParseAndExecute(w, "403", data)
 			return
 		}
 		if r.FormValue("run") != "" {
@@ -93,14 +95,14 @@ func adminCmd(agg *aggregator.Aggregator) httprouter.Handle {
 	}
 }
 
-func search(agg *aggregator.Aggregator) httprouter.Handle {
+func search(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := commonSessionData(w, r)
+		data := ctx.SessionData(w, r)
 		q := r.URL.Query().Get("q")
 		data["q"] = q
 		if q != "" {
 			data["results"] = agg.Search(q)
 		}
-		parseAndExecute(w, "search", data)
+		ctx.ParseAndExecute(w, "search", data)
 	}
 }
