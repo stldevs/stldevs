@@ -1,0 +1,16 @@
+{{define "add"}}
+{{template "top" .}}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-offset-2 col-sm-8">
+            <h1>Oops</h1>
+            <p>It appears you aren't in the database. Would you like to be added to it?</p>
+
+            <form action="/add" method="post">
+                <input type="submit" name="add" value="yes, add me" class="btn btn-primary">
+            </form>
+        </div>
+    </div>
+</div>
+{{template "bot" .}}
+{{end}}

@@ -146,8 +146,8 @@ func (a *Aggregator) PopularLanguages() []LanguageCount {
 
 type DevCount struct {
 	Login, Name, AvatarUrl, Followers string
-	Stars                  int
-	Forks                  int
+	Stars                             int
+	Forks                             int
 }
 
 func (a *Aggregator) PopularDevs() []DevCount {
@@ -221,7 +221,7 @@ type ProfileData struct {
 	Repos map[string][]github.Repository
 }
 
-func (a *Aggregator) Profile(name string) ProfileData {
+func (a *Aggregator) Profile(name string) *ProfileData {
 	rows, err := a.db.Query(`
 	select login,email,name,blog,followers,public_repos,public_gists,avatar_url
 	from agg_user
@@ -229,12 +229,12 @@ func (a *Aggregator) Profile(name string) ProfileData {
 	check(err)
 	defer rows.Close()
 
-	profile := ProfileData{&github.User{}, map[string][]github.Repository{}}
 	if !rows.Next() {
 		log.Println("No rows found for Profile", name)
-		return profile
+		return nil
 	}
 
+	profile := &ProfileData{&github.User{}, map[string][]github.Repository{}}
 	user := profile.User
 	err = rows.Scan(&user.Login, &user.Email, &user.Name, &user.Blog, &user.Followers, &user.PublicRepos,
 		&user.PublicGists, &user.AvatarURL)

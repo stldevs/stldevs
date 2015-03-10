@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 
+	"github.com/google/go-github/github"
 	"github.com/jakecoffman/stldevs/aggregator"
 	"github.com/julienschmidt/httprouter"
 )
@@ -33,8 +34,26 @@ func topDevs(agg *aggregator.Aggregator) httprouter.Handle {
 func profile(agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		data := commonSessionData(w, r)
-		data["profile"] = agg.Profile(p.ByName("profile"))
-		parseAndExecute(w, "profile", data)
+		profile := agg.Profile(p.ByName("profile"))
+		if profile != nil {
+			data["profile"] = profile
+			parseAndExecute(w, "profile", data)
+		} else {
+			parseAndExecute(w, "add", data)
+		}
+	}
+}
+
+func add(agg *aggregator.Aggregator) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		data := commonSessionData(w, r)
+		user := data["user"]
+		if user == nil {
+			return
+		}
+		githubUser := user.(github.User)
+		agg.Add(*githubUser.Login)
+		http.Redirect(w, r, "/profile/"+*githubUser.Login, 302)
 	}
 }
 

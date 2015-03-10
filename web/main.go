@@ -65,6 +65,7 @@ func Run(config Config) {
 	router.GET("/toplangs", topLangs(agg))
 	router.GET("/topdevs", topDevs(agg))
 	router.GET("/profile/:profile", profile(agg))
+	router.POST("/add", add(agg))
 	router.GET("/lang/:lang", language(agg))
 	router.NotFound = http.HandlerFunc(notFound)
 	router.PanicHandler = panicHandler

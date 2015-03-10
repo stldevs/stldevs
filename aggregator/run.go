@@ -42,7 +42,7 @@ func (agg *Aggregator) updateUsers(users map[string]struct{}) {
 		go func(c chan string, wg *sync.WaitGroup) {
 			defer wg.Done()
 			for user := range c {
-				agg.updateUserDetails(user)
+				agg.Add(user)
 			}
 		}(c, &wg)
 	}
@@ -147,7 +147,7 @@ func (a *Aggregator) findStlUsers() map[string]struct{} {
 	return users
 }
 
-func (a *Aggregator) updateUserDetails(user string) {
+func (a *Aggregator) Add(user string) {
 	u, resp, err := a.client.Users.Get(user)
 	if err != nil {
 		if strings.Contains(err.Error(), "404") {
