@@ -1,6 +1,8 @@
 # stldevs
 St. Louis developer profiles
 
+[![Build Status](https://secure.travis-ci.org/jakecoffman/stldevs.png?branch=master)](http://travis-ci.org/jakecoffman/stldevs)
+
 ## motivations
 
 - St. Louis designers and developers that contribute to open source should be more visible
