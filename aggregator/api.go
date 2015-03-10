@@ -89,7 +89,8 @@ func (a *Aggregator) Run() {
 	a.running = true
 	defer func() { a.running = false }()
 	a.insertRunLog()
-	step1(a)
+	users := a.findStlUsers()
+	a.updateUsers(users)
 	step2(a)
 }
 

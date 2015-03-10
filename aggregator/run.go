@@ -7,13 +7,33 @@ import (
 	"sync"
 	"time"
 
+	"log"
+
+	"strings"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 )
 
-func step1(agg *Aggregator) {
-	users := agg.searchUsers()
+func (agg *Aggregator) updateUsers(users map[string]struct{}) {
+	// add users that have already been added previously to this list
+	rows, err := agg.db.Query(`SELECT login
+	FROM agg_user
+	`)
+	if err != nil {
+		check(err)
+	}
+	for rows.Next() {
+		user := github.User{}
+		if err = rows.Scan(&user.Login); err != nil {
+			check(err)
+		}
+		if _, ok := users[*user.Login]; !ok {
+			users[*user.Login] = struct{}{}
+		}
+	}
 
+	// update users in 10 worker pools, c is the input channel
 	c := make(chan string)
 	wg := sync.WaitGroup{}
 
@@ -22,13 +42,14 @@ func step1(agg *Aggregator) {
 		go func(c chan string, wg *sync.WaitGroup) {
 			defer wg.Done()
 			for user := range c {
-				agg.gatherUserDetails(user)
+				agg.updateUserDetails(user)
 			}
 		}(c, &wg)
 	}
 
-	for _, user := range users {
-		c <- *user.Login
+	// pump users through the input channel until depleted
+	for user, _ := range users {
+		c <- user
 	}
 
 	close(c)
@@ -44,7 +65,7 @@ func step2(agg *Aggregator) {
 		go func(c chan string, wg *sync.WaitGroup) {
 			defer wg.Done()
 			for user := range c {
-				agg.gatherRepos(user)
+				agg.updateRepos(user)
 			}
 		}(c, &wg)
 	}
@@ -64,7 +85,7 @@ func step2(agg *Aggregator) {
 	wg.Wait()
 }
 
-func (a *Aggregator) gatherRepos(user string) {
+func (a *Aggregator) updateRepos(user string) {
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
 	for {
 		result, resp, err := a.client.Repositories.List(user, opts)
@@ -105,15 +126,17 @@ func (a *Aggregator) gatherRepos(user string) {
 	}
 }
 
-func (a *Aggregator) searchUsers() []github.User {
+func (a *Aggregator) findStlUsers() map[string]struct{} {
 	searchString := `location:"St. Louis"  location:"STL" location:"St Louis" location:"Saint Louis"`
 	opts := &github.SearchOptions{Sort: "followers", Order: "desc", ListOptions: github.ListOptions{Page: 1, PerPage: 100}}
-	users := []github.User{}
+	users := map[string]struct{}{}
 	for {
 		result, resultResp, err := a.client.Search.Users(searchString, opts)
 		check(err)
 		checkRespAndWait(resultResp)
-		users = append(users, result.Users...)
+		for _, user := range result.Users {
+			users[*user.Login] = struct{}{}
+		}
 		if resultResp.NextPage == 0 {
 			break
 		}
@@ -124,9 +147,19 @@ func (a *Aggregator) searchUsers() []github.User {
 	return users
 }
 
-func (a *Aggregator) gatherUserDetails(user string) {
+func (a *Aggregator) updateUserDetails(user string) {
 	u, resp, err := a.client.Users.Get(user)
-	check(err)
+	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			log.Println("Deleting user", user)
+			// remove user from database
+			_, err = a.db.Exec(`DELETE FROM agg_user WHERE login=?`, user)
+			check(err)
+			return
+		}
+		log.Println(err)
+		return
+	}
 	checkRespAndWait(resp)
 	stmt, err := a.db.Prepare(`REPLACE INTO agg_user VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
 	check(err)

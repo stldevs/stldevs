@@ -5,10 +5,14 @@ import (
 	"log"
 	"os"
 
+	"runtime"
+
 	"github.com/jakecoffman/stldevs/web"
 )
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	config := web.Config{}
 	f, err := os.Open("config.json")
 	if err != nil {
