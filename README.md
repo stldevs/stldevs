@@ -1,5 +1,5 @@
 # stldevs
-St. Louis developer profiles
+St. Louis developer profiles (http://stldevs.com)
 
 [![Build Status](https://secure.travis-ci.org/jakecoffman/stldevs.png?branch=master)](http://travis-ci.org/jakecoffman/stldevs)
 
