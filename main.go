@@ -7,11 +7,19 @@ import (
 
 	"runtime"
 
+	"io"
+
 	"github.com/jakecoffman/stldevs/web"
 )
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	file, err := os.OpenFile("log.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalln("Failed to open log file", err)
+	}
+	log.SetOutput(io.MultiWriter(os.Stderr, file))
 
 	config := web.Config{}
 	f, err := os.Open("config.json")

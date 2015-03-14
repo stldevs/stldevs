@@ -145,6 +145,11 @@ func Logger(h http.Handler) http.Handler {
 		if r.URL.RawQuery != "" {
 			path += "?" + r.URL.RawQuery
 		}
-		log.Println(path, r.Method)
+		user, _ := get_session(r, "user")
+		if user != nil {
+			log.Println(path, r.Method, r.RemoteAddr, *user.(github.User).Login)
+		} else {
+			log.Println(path, r.Method, r.RemoteAddr)
+		}
 	})
 }
