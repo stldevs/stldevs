@@ -36,7 +36,7 @@ func oauth2Handler(ctx Context) httprouter.Handle {
 			panic(err)
 		}
 
-		if err = set_session(w, r, "user", user); err != nil {
+		if err = set_session(w, r, "user", *user); err != nil {
 			panic(err)
 		}
 
