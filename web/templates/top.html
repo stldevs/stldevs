@@ -28,20 +28,20 @@
                 <li class='{{if eq .page "topdevs"}}active{{end}}'><a href="/topdevs">Top Developers</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
-                {{if .user}}
+                {{if .session.user}}
                 <li class="dropdown">
                     <a href="#" class='dropdown-toggle' data-toggle="dropdown" role="button" aria-expanded="false">
-                        {{.user.Login}} <span class="caret"></span>
+                        {{.session.user.Login}} <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu" role="menu">
-                        {{if .admin}}<li><a href="/admin"><i class="fa fa-cogs"></i> Admin</a></li>{{end}}
-                        <li><a href="/profile/{{.user.Login}}"><i class="fa fa-user"></i> Profile</a></li>
+                        {{if .session.admin}}<li><a href="/admin"><i class="fa fa-cogs"></i> Admin</a></li>{{end}}
+                        <li><a href="/profile/{{.session.user.Login}}"><i class="fa fa-user"></i> Profile</a></li>
                         <li><a href="/logout"><i class="fa fa-sign-out"></i> Logout</a></li>
                     </ul>
                 </li>
                 {{else}}
                 <li>
-                    <a href="{{.github}}"><i class="fa fa-github"></i> Login</a>
+                    <a href="{{.session.github}}"><i class="fa fa-github"></i> Login</a>
                 </li>
                 {{end}}
             </ul>

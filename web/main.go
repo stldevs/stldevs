@@ -23,32 +23,11 @@ const (
 	base = "web"
 )
 
-var conf *oauth2.Config
-var store *sessions.FilesystemStore
-var trackingCode string
-
 type Config struct {
 	GithubKey, MysqlPw, GithubClientID, GithubClientSecret, SessionSecret, TrackingCode string
 }
 
-type Context interface {
-	// gets common session data, like user
-	SessionData(http.ResponseWriter, *http.Request) map[string]interface{}
-	// parses and executes template
-	ParseAndExecute(http.ResponseWriter, string, map[string]interface{})
-}
-
 func Run(config Config) {
-	store = sessions.NewFilesystemStore("", []byte(config.SessionSecret))
-	trackingCode = config.TrackingCode
-
-	conf = &oauth2.Config{
-		ClientID:     config.GithubClientID,
-		ClientSecret: config.GithubClientSecret,
-		Scopes:       []string{"public_repo"},
-		Endpoint:     oa2gh.Endpoint,
-	}
-
 	db, err := sql.Open("mysql", "root:"+config.MysqlPw+"@/stldevs")
 	if err != nil {
 		log.Println(err)
@@ -57,7 +36,16 @@ func Run(config Config) {
 	defer db.Close()
 	agg := aggregator.New(db, config.GithubKey)
 
-	ctx := &contextImpl{}
+	ctx := &contextImpl{
+		store:        sessions.NewFilesystemStore("", []byte(config.SessionSecret)),
+		trackingCode: config.TrackingCode,
+		conf: &oauth2.Config{
+			ClientID:     config.GithubClientID,
+			ClientSecret: config.GithubClientSecret,
+			Scopes:       []string{"public_repo"},
+			Endpoint:     oa2gh.Endpoint,
+		},
+	}
 
 	gob.Register(github.User{})
 
@@ -66,7 +54,7 @@ func Run(config Config) {
 	router := httprouter.New()
 	router.GET("/static/*filepath", handleFiles(fileHandler))
 	router.GET("/oauth2", oauth2Handler(ctx))
-	router.GET("/logout", logout)
+	router.GET("/logout", logout(ctx))
 	router.GET("/", index(ctx))
 	router.GET("/admin", admin(ctx, agg))
 	router.POST("/admin", adminCmd(ctx, agg))
@@ -80,7 +68,7 @@ func Run(config Config) {
 	router.PanicHandler = panicHandler
 
 	log.Println("Serving on port 80")
-	log.Println(http.ListenAndServe("0.0.0.0:80", context.ClearHandler(Logger(router))))
+	log.Println(http.ListenAndServe("0.0.0.0:80", context.ClearHandler(finisher(router, ctx))))
 }
 
 func handleFiles(fileServer http.Handler) httprouter.Handle {
@@ -106,46 +94,15 @@ func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {
 	}
 }
 
-type contextImpl struct{}
-
-// TODO in production we want to just parse once
-func (c *contextImpl) ParseAndExecute(w http.ResponseWriter, templateName string, data map[string]interface{}) {
-	template, err := template.ParseGlob(base + "/templates/*.html")
-	if err != nil {
-		panic(err)
-	}
-	data["page"] = templateName
-	if err = template.ExecuteTemplate(w, templateName, data); err != nil {
-		panic(err)
-	}
-}
-
-func (c *contextImpl) SessionData(w http.ResponseWriter, r *http.Request) map[string]interface{} {
-	data := map[string]interface{}{}
-	data["trackingCode"] = trackingCode
-	user, _ := get_session(r, "user")
-	if user != nil {
-		data["user"] = user
-		// TODO extract an admin list
-		if *user.(github.User).Login == "jakecoffman" {
-			data["admin"] = true
-		}
-	} else {
-		state := randSeq(10)
-		set_session(w, r, "state", state)
-		data["github"] = conf.AuthCodeURL(state, oauth2.AccessTypeOffline)
-	}
-	return data
-}
-
-func Logger(h http.Handler) http.Handler {
+func finisher(h http.Handler, ctx Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h.ServeHTTP(w, r)
+		ctx.Save(w, r)
 		path := r.URL.Path
 		if r.URL.RawQuery != "" {
 			path += "?" + r.URL.RawQuery
 		}
-		user, _ := get_session(r, "user")
+		user, _ := ctx.SessionData(w, r).Values["user"]
 		if user != nil {
 			log.Println(path, r.Method, r.RemoteAddr, *user.(github.User).Login)
 		} else {

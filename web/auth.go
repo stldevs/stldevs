@@ -4,9 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/google/go-github/github"
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/oauth2"
 )
 
 func oauth2Handler(ctx Context) httprouter.Handle {
@@ -18,41 +16,31 @@ func oauth2Handler(ctx Context) httprouter.Handle {
 		}
 
 		state := r.URL.Query().Get("state")
-		sessState, _ := get_session(r, "state")
-		if sessState == nil || state != sessState.(string) {
-			ctx.ParseAndExecute(w, "error", map[string]interface{}{"error": "state is incorrect"})
+		session := ctx.SessionData(w, r)
+		sessState, ok := session.Values["state"]
+		if !ok || state != sessState.(string) {
+			log.Println("State mismatch", ok, state, sessState)
+			ctx.ParseAndExecute(w, "error", response{"error": "state is incorrect"})
 			return
 		}
 
-		token, err := conf.Exchange(oauth2.NoContext, code)
-		if err != nil {
-			panic(err)
+		if user, err := ctx.GithubLogin(code); err != nil {
+			log.Println(err)
+			ctx.ParseAndExecute(w, "error", response{"error": "error in logging in"})
+			return
+		} else {
+			session.Values["user"] = *user
+			http.Redirect(w, r, "/", 302)
 		}
-
-		client := github.NewClient(conf.Client(oauth2.NoContext, token))
-
-		user, _, err := client.Users.Get("")
-		if err != nil {
-			panic(err)
-		}
-
-		if err = set_session(w, r, "user", *user); err != nil {
-			panic(err)
-		}
-
-		http.Redirect(w, r, "/", 302)
 	}
 }
 
-func logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	session, err := store.Get(r, "session")
-	if err != nil {
-		log.Println(err)
-		return
+func logout(ctx Context) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		session := ctx.SessionData(w, r)
+		for key, _ := range session.Values {
+			delete(session.Values, key)
+		}
+		http.Redirect(w, r, "/", 302)
 	}
-	delete(session.Values, "user")
-	if err := session.Save(r, w); err != nil {
-		log.Println(err)
-	}
-	http.Redirect(w, r, "/", 302)
 }

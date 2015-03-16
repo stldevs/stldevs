@@ -8,16 +8,20 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+type response map[interface{}]interface{}
+
 func index(ctx Context) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		data := ctx.SessionData(w, r)
+		data := response{}
+		data["session"] = ctx.SessionData(w, r).Values
 		ctx.ParseAndExecute(w, "index", data)
 	}
 }
 
 func topLangs(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		data := ctx.SessionData(w, r)
+		data := response{}
+		data["session"] = ctx.SessionData(w, r).Values
 		data["langs"] = agg.PopularLanguages()
 		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
 		ctx.ParseAndExecute(w, "toplangs", data)
@@ -26,7 +30,8 @@ func topLangs(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 
 func topDevs(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		data := ctx.SessionData(w, r)
+		data := response{}
+		data["session"] = ctx.SessionData(w, r).Values
 		data["devs"] = agg.PopularDevs()
 		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
 		ctx.ParseAndExecute(w, "topdevs", data)
@@ -35,7 +40,8 @@ func topDevs(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 
 func profile(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := ctx.SessionData(w, r)
+		data := response{}
+		data["session"] = ctx.SessionData(w, r).Values
 		profile := agg.Profile(p.ByName("profile"))
 		if profile != nil {
 			data["profile"] = profile
@@ -48,7 +54,8 @@ func profile(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 
 func add(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		data := ctx.SessionData(w, r)
+		data := response{}
+		data["session"] = ctx.SessionData(w, r).Values
 		user := data["user"]
 		if user == nil {
 			return
@@ -61,7 +68,8 @@ func add(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 
 func language(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := ctx.SessionData(w, r)
+		data := response{}
+		data["session"] = ctx.SessionData(w, r).Values
 		data["languages"] = agg.Language(p.ByName("lang"))
 		data["language"] = p.ByName("lang")
 		ctx.ParseAndExecute(w, "language", data)
@@ -70,8 +78,10 @@ func language(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 
 func admin(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := ctx.SessionData(w, r)
-		if isAdmin, ok := data["admin"]; !ok || !isAdmin.(bool) {
+		data := response{}
+		session := ctx.SessionData(w, r).Values
+		data["session"] = session
+		if !isAdmin(session) {
 			ctx.ParseAndExecute(w, "403", data)
 			return
 		}
@@ -83,8 +93,10 @@ func admin(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 
 func adminCmd(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := ctx.SessionData(w, r)
-		if isAdmin, ok := data["admin"]; !ok || !isAdmin.(bool) {
+		data := response{}
+		session := ctx.SessionData(w, r).Values
+		data["session"] = session
+		if !isAdmin(session) {
 			ctx.ParseAndExecute(w, "403", data)
 			return
 		}
@@ -97,7 +109,8 @@ func adminCmd(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 
 func search(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := ctx.SessionData(w, r)
+		data := response{}
+		data["session"] = ctx.SessionData(w, r).Values
 		q := r.URL.Query().Get("q")
 		data["q"] = q
 		if q != "" {
@@ -105,4 +118,11 @@ func search(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 		}
 		ctx.ParseAndExecute(w, "search", data)
 	}
+}
+
+func isAdmin(s map[interface{}]interface{}) bool {
+	if isAdmin, ok := s["admin"]; !ok || !isAdmin.(bool) {
+		return false
+	}
+	return true
 }
