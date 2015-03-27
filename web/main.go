@@ -68,7 +68,7 @@ func Run(config Config) {
 	router.PanicHandler = panicHandler
 
 	log.Println("Serving on port 80")
-	log.Println(http.ListenAndServe("0.0.0.0:80", context.ClearHandler(finisher(router, ctx))))
+	log.Println(http.ListenAndServe("0.0.0.0:80", finisher(router, ctx)))
 }
 
 func handleFiles(fileServer http.Handler) httprouter.Handle {
@@ -96,6 +96,7 @@ func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {
 
 func finisher(h http.Handler, ctx Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer context.Clear(r)
 		h.ServeHTTP(w, r)
 		ctx.Save(w, r)
 		path := r.URL.Path

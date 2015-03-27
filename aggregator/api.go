@@ -187,7 +187,7 @@ func (a *Aggregator) Language(name string) []*LanguageResult {
 		SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, r1.fork, cnt
 		FROM agg_repo r1
 		JOIN (
-			select owner, count(*) as cnt
+			select owner, sum(stargazers_count) as cnt
 			from stldevs.agg_repo
 			where language=?
 			group by owner
