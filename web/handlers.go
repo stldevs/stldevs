@@ -23,7 +23,9 @@ func topLangs(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 		data := response{}
 		data["session"] = ctx.SessionData(w, r).Values
 		data["langs"] = agg.PopularLanguages()
-		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
+		if time, err := agg.LastRun(); err == nil {
+			data["lastrun"] = time
+		}
 		ctx.ParseAndExecute(w, "toplangs", data)
 	}
 }
@@ -33,7 +35,9 @@ func topDevs(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 		data := response{}
 		data["session"] = ctx.SessionData(w, r).Values
 		data["devs"] = agg.PopularDevs()
-		data["lastrun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
+		if time, err := agg.LastRun(); err == nil {
+			data["lastrun"] = time
+		}
 		ctx.ParseAndExecute(w, "topdevs", data)
 	}
 }
@@ -85,7 +89,9 @@ func admin(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 			ctx.ParseAndExecute(w, "403", data)
 			return
 		}
-		data["lastRun"] = agg.LastRun().Local().Format("Jan 2, 2006 at 3:04pm")
+		if time, err := agg.LastRun(); err == nil {
+			data["lastRun"] = time
+		}
 		data["running"] = agg.Running()
 		ctx.ParseAndExecute(w, "admin", data)
 	}

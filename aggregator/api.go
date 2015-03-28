@@ -10,6 +10,8 @@ import (
 
 	"strings"
 
+	"errors"
+
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
@@ -22,64 +24,15 @@ type Aggregator struct {
 }
 
 func New(db *sql.DB, githubKey string) *Aggregator {
-	// TODO add more metadata like number of users found etc
-	_, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS agg_meta (
-		created_at DATETIME
-	);`)
+	_, err := db.Exec(createMeta)
+	check(err)
+	_, err = db.Exec(createUser)
+	check(err)
+	_, err = db.Exec(createRepo)
 	check(err)
 
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS agg_user (
-			login VARCHAR(255) NOT NULL PRIMARY KEY,
-			email TEXT,
-			name TEXT,
-			location TEXT,
-			hireable BOOL,
-			blog TEXT,
-			bio TEXT,
-			followers INTEGER,
-			following INTEGER,
-			public_repos INTEGER,
-			public_gists INTEGER,
-			avatar_url TEXT,
-			disk_usage INTEGER,
-			created_at DATETIME,
-			updated_at DATETIME
-		);`)
-	check(err)
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS agg_repo (
-			owner VARCHAR(255) NOT NULL,
-			name VARCHAR(255) NOT NULL PRIMARY KEY,
-			description TEXT,
-			language TEXT,
-			homepage TEXT,
-			forks_count INT,
-			network_count INT,
-			open_issues_count INT,
-			stargazers_count INT,
-			subscribers_count INT,
-			watchers_count INT,
-			size INT,
-			fork BOOL,
-			default_branch TEXT,
-			master_branch TEXT,
-			created_at DATETIME,
-			pushed_at DATETIME,
-			updated_at DATETIME
-		);`)
-	check(err)
-
-	// init client
-	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: githubKey},
-	}
-
-	var agg Aggregator
-	agg.db = db
-	agg.client = github.NewClient(t.Client())
-	return &agg
+	t := &oauth.Transport{Token: &oauth.Token{AccessToken: githubKey}}
+	return &Aggregator{db: db, client: github.NewClient(t.Client())}
 }
 
 func (a *Aggregator) Run() {
@@ -91,26 +44,37 @@ func (a *Aggregator) Run() {
 	a.insertRunLog()
 	users := a.findStlUsers()
 	a.updateUsers(users)
-	step2(a)
+	a.updateRepos()
 }
 
 func (a *Aggregator) Running() bool {
 	return a.running
 }
 
-func (a *Aggregator) LastRun() time.Time {
-	rows, err := a.db.Query("select created_at from agg_meta order by created_at desc limit 1;")
-	check(err)
+func (a *Aggregator) LastRun() (string, error) {
+	rows, err := a.db.Query(queryLastRun)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
 	defer rows.Close()
 
 	if !rows.Next() {
-		return time.Time{}
+		// has never run!
+		return time.Time{}.Local().Format("Jan 2, 2006 at 3:04pm"), nil
 	}
+	// it might be null
 	var t mysql.NullTime
 	if err = rows.Scan(&t); err != nil {
 		log.Println(err)
+		return "", err
 	}
-	return t.Time
+	if !t.Valid {
+		err = errors.New("null time in LastRun call results")
+		log.Println(err.Error())
+		return "", err
+	}
+	return t.Time.Local().Format("Jan 2, 2006 at 3:04pm"), nil
 }
 
 type LanguageCount struct {
@@ -120,13 +84,7 @@ type LanguageCount struct {
 }
 
 func (a *Aggregator) PopularLanguages() []LanguageCount {
-	rows, err := a.db.Query(`
-		select language, count(*) as cnt, count(distinct(owner))
-		from agg_repo
-		where language is not null
-		group by language
-		order by cnt desc;
-	`)
+	rows, err := a.db.Query(queryPopularLanguages)
 	check(err)
 	defer rows.Close()
 
@@ -151,16 +109,7 @@ type DevCount struct {
 }
 
 func (a *Aggregator) PopularDevs() []DevCount {
-	rows, err := a.db.Query(`
-		select login,name,avatar_url,followers,cnt,frks
-		from stldevs.agg_user user
-		join(
-			select owner,sum(stargazers_count) as cnt,sum(forks_count) as frks
-			from stldevs.agg_repo
-			group by owner
-		) repo ON (repo.owner=user.login)
-		where name is not null and cnt > 100
-		order by cnt desc;`)
+	rows, err := a.db.Query(queryPopularDevs)
 	check(err)
 	defer rows.Close()
 
@@ -183,17 +132,7 @@ type LanguageResult struct {
 }
 
 func (a *Aggregator) Language(name string) []*LanguageResult {
-	rows, err := a.db.Query(`
-		SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, r1.fork, cnt
-		FROM agg_repo r1
-		JOIN (
-			select owner, sum(stargazers_count) as cnt
-			from stldevs.agg_repo
-			where language=?
-			group by owner
-		) r2 ON ( r2.owner = r1.owner )
-		where language=?
-		order by r2.cnt desc, r2.owner, stargazers_count desc;`, name, name)
+	rows, err := a.db.Query(queryLanguage, name, name)
 	check(err)
 	defer rows.Close()
 
@@ -222,10 +161,7 @@ type ProfileData struct {
 }
 
 func (a *Aggregator) Profile(name string) *ProfileData {
-	rows, err := a.db.Query(`
-	select login,email,name,blog,followers,public_repos,public_gists,avatar_url
-	from agg_user
-	where login=?`, name)
+	rows, err := a.db.Query(queryProfileForUser, name)
 	check(err)
 	defer rows.Close()
 
@@ -239,18 +175,13 @@ func (a *Aggregator) Profile(name string) *ProfileData {
 	err = rows.Scan(&user.Login, &user.Email, &user.Name, &user.Blog, &user.Followers, &user.PublicRepos,
 		&user.PublicGists, &user.AvatarURL)
 	check(err)
+	rows.Close()
 
 	if user.Blog != nil && *user.Blog != "" && !strings.HasPrefix(*user.Blog, "http://") {
 		*user.Blog = "http://" + *user.Blog
 	}
 
-	rows.Close()
-
-	rows, err = a.db.Query(`
-	select name,language,forks_count,stargazers_count
-	from agg_repo
-	where owner=? and language is not null
-	order by language, stargazers_count desc, name`, user.Login)
+	rows, err = a.db.Query(queryRepoForUser, user.Login)
 	check(err)
 
 	for rows.Next() {
@@ -268,12 +199,9 @@ func (a *Aggregator) Profile(name string) *ProfileData {
 	return profile
 }
 
-func (a *Aggregator) Search(query string) []github.User {
-	percentified := "%" + query + "%"
-	rows, err := a.db.Query(`
-	select login,email,name,blog,followers,public_repos,public_gists,avatar_url
-	from agg_user
-	where login like ? or name like ?`, percentified, percentified)
+func (a *Aggregator) Search(term string) []github.User {
+	query := "%" + term + "%"
+	rows, err := a.db.Query(querySearch, query, query)
 	check(err)
 	defer rows.Close()
 

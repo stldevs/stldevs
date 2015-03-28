@@ -56,7 +56,7 @@ func (agg *Aggregator) updateUsers(users map[string]struct{}) {
 	wg.Wait()
 }
 
-func step2(agg *Aggregator) {
+func (agg *Aggregator) updateRepos() {
 	c := make(chan string)
 	wg := sync.WaitGroup{}
 
@@ -65,7 +65,7 @@ func step2(agg *Aggregator) {
 		go func(c chan string, wg *sync.WaitGroup) {
 			defer wg.Done()
 			for user := range c {
-				agg.updateRepos(user)
+				agg.updateUsersRepos(user)
 			}
 		}(c, &wg)
 	}
@@ -85,7 +85,7 @@ func step2(agg *Aggregator) {
 	wg.Wait()
 }
 
-func (a *Aggregator) updateRepos(user string) {
+func (a *Aggregator) updateUsersRepos(user string) {
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
 	for {
 		result, resp, err := a.client.Repositories.List(user, opts)
