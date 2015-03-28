@@ -51,22 +51,22 @@ const (
 		limit 1;`
 
 	queryPopularLanguages = `
-		select language, count(*) as cnt, count(distinct(owner))
+		select language, count(*) as count, count(distinct(owner)) as users
 		from agg_repo
 		where language is not null
 		group by language
-		order by cnt desc;`
+		order by count desc;`
 
 	queryPopularDevs = `
-		select login, name, avatar_url, followers, cnt, frks
+		select login, name, avatar_url, followers, stars, forks
 		from stldevs.agg_user user
 		join(
-			select owner, sum(stargazers_count) as cnt, sum(forks_count) as frks
+			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
 			from stldevs.agg_repo
 			group by owner
 		) repo ON (repo.owner=user.login)
-		where name is not null and cnt > 100
-		order by cnt desc;`
+		where name is not null and stars > 100
+		order by stars desc;`
 
 	queryLanguage = `
 		SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, r1.fork, count

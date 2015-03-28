@@ -16,6 +16,8 @@ func setup() *sqlx.DB {
 	f, err := os.Open("../config.json")
 	if err != nil {
 		log.Fatal("Couldn't find dev_config.json")
+		// we're on travis, do nothing
+		return nil
 	}
 
 	json.NewDecoder(f).Decode(&cfg)
@@ -30,6 +32,9 @@ func setup() *sqlx.DB {
 
 func TestLanguage(t *testing.T) {
 	db := setup()
+	if db == nil {
+		return
+	}
 	agg := New(db, "")
 
 	for _, result := range agg.Language("Go") {

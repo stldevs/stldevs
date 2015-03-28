@@ -80,20 +80,11 @@ type LanguageCount struct {
 }
 
 func (a *Aggregator) PopularLanguages() []LanguageCount {
-	rows, err := a.db.Query(queryPopularLanguages)
-	check(err)
-	defer rows.Close()
-
 	langs := []LanguageCount{}
-	for rows.Next() {
-		var lang string
-		var count int
-		var owners int
-		if err = rows.Scan(&lang, &count, &owners); err != nil {
-			log.Println(err)
-		} else {
-			langs = append(langs, LanguageCount{lang, count, owners})
-		}
+	err := a.db.Select(&langs, queryPopularLanguages)
+	if err != nil {
+		log.Println(err)
+		return nil
 	}
 	return langs
 }
@@ -105,18 +96,11 @@ type DevCount struct {
 }
 
 func (a *Aggregator) PopularDevs() []DevCount {
-	rows, err := a.db.Query(queryPopularDevs)
-	check(err)
-	defer rows.Close()
-
 	devs := []DevCount{}
-	for rows.Next() {
-		dev := DevCount{}
-		if err = rows.Scan(&dev.Login, &dev.Name, &dev.AvatarUrl, &dev.Followers, &dev.Stars, &dev.Forks); err != nil {
-			log.Println(err)
-		} else {
-			devs = append(devs, dev)
-		}
+	err := a.db.Select(&devs, queryPopularDevs)
+	if err != nil {
+		log.Println(err)
+		return nil
 	}
 	return devs
 }
