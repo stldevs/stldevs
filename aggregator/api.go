@@ -122,33 +122,32 @@ func (a *Aggregator) PopularDevs() []DevCount {
 }
 
 type LanguageResult struct {
-	Owner *github.User
-	Repos []github.Repository
+	Owner string
+	Repos []Repository
 	Count int
 }
 
 func (a *Aggregator) Language(name string) []*LanguageResult {
-	rows, err := a.db.Query(queryLanguage, name, name)
-	check(err)
-	defer rows.Close()
-
-	data := []*LanguageResult{}
-	var cur *LanguageResult
-	for rows.Next() {
-		repo := github.Repository{}
-		repo.Owner = &github.User{}
-		var count int
-		rows.Scan(&repo.Owner.Login, &repo.Name, &repo.Description, &repo.ForksCount,
-			&repo.StargazersCount, &repo.WatchersCount, &repo.Fork, &count)
-		if cur == nil || *cur.Owner.Login != *repo.Owner.Login {
-			cur = &LanguageResult{repo.Owner, []github.Repository{repo}, count}
-			data = append(data, cur)
+	repos := []struct {
+		Repository
+		Count int
+	}{}
+	err := a.db.Select(&repos, queryLanguage, name, name)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	results := []*LanguageResult{}
+	var cursor *LanguageResult
+	for _, repo := range repos {
+		if cursor == nil || cursor.Owner != *repo.Owner {
+			cursor = &LanguageResult{Owner: *repo.Owner, Repos: []Repository{repo.Repository}, Count: repo.Count}
+			results = append(results, cursor)
 		} else {
-			cur.Repos = append(cur.Repos, repo)
+			cursor.Repos = append(cursor.Repos, repo.Repository)
 		}
 	}
-
-	return data
+	return results
 }
 
 type ProfileData struct {

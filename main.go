@@ -9,6 +9,7 @@ import (
 
 	"io"
 
+	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/web"
 )
 
@@ -21,7 +22,7 @@ func main() {
 	}
 	log.SetOutput(io.MultiWriter(os.Stderr, file))
 
-	config := web.Config{}
+	config := config.Config{}
 	f, err := os.Open("config.json")
 	if err != nil {
 		log.Println("Couldn't find dev_config.json")

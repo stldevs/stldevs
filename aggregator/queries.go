@@ -69,16 +69,16 @@ const (
 		order by cnt desc;`
 
 	queryLanguage = `
-		SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, r1.fork, cnt
+		SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, r1.fork, count
 		FROM agg_repo r1
 		JOIN (
-			select owner, sum(stargazers_count) as cnt
+			select owner, sum(stargazers_count) as count
 			from stldevs.agg_repo
 			where language=?
 			group by owner
 		) r2 ON ( r2.owner = r1.owner )
 		where language=?
-		order by r2.cnt desc, r2.owner, stargazers_count desc;`
+		order by r2.count desc, r2.owner, stargazers_count desc;`
 
 	queryProfileForUser = `
 		select login, email, name, blog, followers, public_repos, public_gists, avatar_url

@@ -8,13 +8,11 @@ import (
 
 	"encoding/gob"
 
-	"regexp"
-	"strings"
-
 	"github.com/google/go-github/github"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"github.com/jakecoffman/stldevs/aggregator"
+	"github.com/jakecoffman/stldevs/config"
 	"github.com/jmoiron/sqlx"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/oauth2"
@@ -22,38 +20,27 @@ import (
 )
 
 const (
-	base  = "web"
+	base = "web"
 )
 
-var regex = regexp.MustCompile("([A-Z][a-z]+)([A-Z]+[a-z]*)")
-
-type Config struct {
-	GithubKey, MysqlPw, GithubClientID, GithubClientSecret, SessionSecret, TrackingCode string
-}
-
-func CamelToSnake(field string) string {
-	result := regex.ReplaceAllString(field, "${1}_${2}")
-	return strings.ToLower(result)
-}
-
-func Run(config Config) {
+func Run(cfg config.Config) {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	db, err := sqlx.Connect("mysql", "root:"+config.MysqlPw+"@/stldevs?parseTime=true")
+	db, err := sqlx.Connect("mysql", "root:"+cfg.MysqlPw+"@/stldevs?parseTime=true")
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	db.MapperFunc(CamelToSnake)
-	agg := aggregator.New(db, config.GithubKey)
+	db.MapperFunc(config.CamelToSnake)
+	agg := aggregator.New(db, cfg.GithubKey)
 
 	ctx := &contextImpl{
-		store:        sessions.NewFilesystemStore("", []byte(config.SessionSecret)),
-		trackingCode: config.TrackingCode,
+		store:        sessions.NewFilesystemStore("", []byte(cfg.SessionSecret)),
+		trackingCode: cfg.TrackingCode,
 		conf: &oauth2.Config{
-			ClientID:     config.GithubClientID,
-			ClientSecret: config.GithubClientSecret,
+			ClientID:     cfg.GithubClientID,
+			ClientSecret: cfg.GithubClientSecret,
 			Scopes:       []string{"public_repo"},
 			Endpoint:     oa2gh.Endpoint,
 		},

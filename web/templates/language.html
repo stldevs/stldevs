@@ -6,7 +6,7 @@
     <div class="row">
         <div class="col-sm-3">
             <ul class="list-unstyled">
-                <li><a href="/profile/{{.Owner.Login}}">{{.Owner.Login}}</a></li>
+                <li><a href="/profile/{{.Owner}}">{{.Owner}}</a></li>
                 <li>user has {{.Count}} stars in {{$.language}}</li>
             </ul>
         </div>
@@ -14,7 +14,7 @@
             <ul>{{range $index, $repo := .Repos}}
                 {{if lt $index 3}}
                 <li>
-                    <b><a href="http://github.com/{{.Owner.Login}}/{{.Name}}" target="_blank">{{.Name}}</a></b> -
+                    <b><a href="http://github.com/{{.Owner}}/{{.Name}}" target="_blank">{{.Name}}</a></b> -
                     <i class="fa fa-star"></i>{{.StargazersCount}}
                     <i class="fa fa-code-fork"></i>{{.ForksCount}}
                     <i>{{.Description}}</i>
