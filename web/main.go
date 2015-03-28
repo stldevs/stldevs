@@ -6,34 +6,46 @@ import (
 
 	"text/template"
 
-	"database/sql"
-
 	"encoding/gob"
+
+	"regexp"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"github.com/jakecoffman/stldevs/aggregator"
+	"github.com/jmoiron/sqlx"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/oauth2"
 	oa2gh "golang.org/x/oauth2/github"
 )
 
 const (
-	base = "web"
+	base  = "web"
 )
+
+var regex = regexp.MustCompile("([A-Z][a-z]+)([A-Z]+[a-z]*)")
 
 type Config struct {
 	GithubKey, MysqlPw, GithubClientID, GithubClientSecret, SessionSecret, TrackingCode string
 }
 
+func CamelToSnake(field string) string {
+	result := regex.ReplaceAllString(field, "${1}_${2}")
+	return strings.ToLower(result)
+}
+
 func Run(config Config) {
-	db, err := sql.Open("mysql", "root:"+config.MysqlPw+"@/stldevs")
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	db, err := sqlx.Connect("mysql", "root:"+config.MysqlPw+"@/stldevs?parseTime=true")
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	defer db.Close()
+
+	db.MapperFunc(CamelToSnake)
 	agg := aggregator.New(db, config.GithubKey)
 
 	ctx := &contextImpl{

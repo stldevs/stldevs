@@ -1,29 +1,25 @@
 package aggregator
 
 import (
-	"database/sql"
+	"errors"
 	"log"
-
-	"code.google.com/p/goauth2/oauth"
-
+	"strings"
 	"time"
 
-	"strings"
-
-	"errors"
-
+	"code.google.com/p/goauth2/oauth"
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
+	"github.com/jmoiron/sqlx"
 )
 
 type Aggregator struct {
 	client  *github.Client
-	db      *sql.DB
+	db      *sqlx.DB
 	running bool
 }
 
-func New(db *sql.DB, githubKey string) *Aggregator {
+func New(db *sqlx.DB, githubKey string) *Aggregator {
 	_, err := db.Exec(createMeta)
 	check(err)
 	_, err = db.Exec(createUser)
@@ -199,20 +195,13 @@ func (a *Aggregator) Profile(name string) *ProfileData {
 	return profile
 }
 
-func (a *Aggregator) Search(term string) []github.User {
+func (a *Aggregator) Search(term string) *[]User {
 	query := "%" + term + "%"
-	rows, err := a.db.Query(querySearch, query, query)
-	check(err)
-	defer rows.Close()
-
-	users := []github.User{}
-	for rows.Next() {
-		user := github.User{}
-		err = rows.Scan(&user.Login, &user.Email, &user.Name, &user.Blog, &user.Followers, &user.PublicRepos,
-			&user.PublicGists, &user.AvatarURL)
-		check(err)
-		users = append(users, user)
+	users := []User{}
+	if err := a.db.Select(&users, querySearch, query, query); err != nil {
+		log.Println(err)
+		return nil
 	}
 
-	return users
+	return &users
 }

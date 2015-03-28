@@ -92,7 +92,7 @@ const (
 		order by language, stargazers_count desc, name`
 
 	querySearch = `
-		select login, email, name, blog, followers, public_repos, public_gists, avatar_url
+		select *
 		from agg_user
 		where login like ? or name like ?`
 )

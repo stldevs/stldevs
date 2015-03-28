@@ -2,14 +2,12 @@ package aggregator
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
-
-	"log"
-
-	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
