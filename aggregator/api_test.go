@@ -15,7 +15,7 @@ func setup() *sqlx.DB {
 	cfg := config.Config{}
 	f, err := os.Open("../config.json")
 	if err != nil {
-		log.Fatal("Couldn't find dev_config.json")
+		log.Println("Couldn't find dev_config.json")
 		// we're on travis, do nothing
 		return nil
 	}
