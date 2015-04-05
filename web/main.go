@@ -102,7 +102,9 @@ func finisher(h http.Handler, ctx Context) http.Handler {
 		if r.URL.RawQuery != "" {
 			path += "?" + r.URL.RawQuery
 		}
-		user, _ := ctx.SessionData(w, r).Values["user"]
+		session := ctx.SessionData(w, r)
+		session.Save(r, w)
+		user, _ := session.Values["user"]
 		if user != nil {
 			log.Println(path, r.Method, r.RemoteAddr, *user.(github.User).Login)
 		} else {

@@ -13,7 +13,7 @@ func login(ctx Context) httprouter.Handle {
 		session := ctx.SessionData(w, r)
 		state := randSeq(10)
 		session.Values["state"] = state
-		ctx.Save(w, r)
+		session.Save(r, w)
 		url := ctx.AuthCodeURL(state, oauth2.AccessTypeOffline)
 		http.Redirect(w, r, url, 302)
 	}
