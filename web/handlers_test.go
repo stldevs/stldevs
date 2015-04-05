@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/sessions"
+	"golang.org/x/oauth2"
 )
 
 type mockContext struct {
@@ -35,6 +36,10 @@ func (m *mockContext) Save(http.ResponseWriter, *http.Request) {
 
 func (m *mockContext) ParseAndExecute(w http.ResponseWriter, name string, data map[interface{}]interface{}) {
 	m.calls = append(m.calls, fmt.Sprintf("ParseAndExecute %v %v", name, data))
+}
+
+func (m *mockContext) AuthCodeURL(string, oauth2.AuthCodeOption) string {
+	return ""
 }
 
 func (m *mockContext) GithubLogin(code string) (*github.User, error) {

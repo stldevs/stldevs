@@ -2,7 +2,6 @@ package aggregator
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -38,6 +37,7 @@ func TestLanguage(t *testing.T) {
 	agg := New(db, "")
 
 	for _, result := range agg.Language("Go") {
-		fmt.Printf("%v\n", result)
+		// TODO
+		_ = result
 	}
 }
