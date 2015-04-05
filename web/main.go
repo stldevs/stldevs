@@ -52,6 +52,7 @@ func Run(cfg config.Config) {
 
 	router := httprouter.New()
 	router.GET("/static/*filepath", handleFiles(fileHandler))
+	router.GET("/login", login(ctx))
 	router.GET("/oauth2", oauth2Handler(ctx))
 	router.GET("/logout", logout(ctx))
 	router.GET("/", index(ctx))
@@ -97,7 +98,6 @@ func finisher(h http.Handler, ctx Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer context.Clear(r)
 		h.ServeHTTP(w, r)
-		ctx.Save(w, r)
 		path := r.URL.Path
 		if r.URL.RawQuery != "" {
 			path += "?" + r.URL.RawQuery

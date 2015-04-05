@@ -5,7 +5,19 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/oauth2"
 )
+
+func login(ctx Context) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		session := ctx.SessionData(w, r)
+		state := randSeq(10)
+		session.Values["state"] = state
+		ctx.Save(w, r)
+		url := ctx.AuthCodeURL(state, oauth2.AccessTypeOffline)
+		http.Redirect(w, r, url, 302)
+	}
+}
 
 func oauth2Handler(ctx Context) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {

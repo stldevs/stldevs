@@ -17,6 +17,8 @@ type Context interface {
 	Save(http.ResponseWriter, *http.Request)
 	// parses and executes template
 	ParseAndExecute(http.ResponseWriter, string, map[interface{}]interface{})
+	// gets login URL
+	AuthCodeURL(string, oauth2.AuthCodeOption) string
 	// logs in with github
 	GithubLogin(code string) (*github.User, error)
 }
@@ -37,6 +39,10 @@ func (c *contextImpl) ParseAndExecute(w http.ResponseWriter, templateName string
 	if err = template.ExecuteTemplate(w, templateName, data); err != nil {
 		panic(err)
 	}
+}
+
+func (c *contextImpl) AuthCodeURL(state string, option oauth2.AuthCodeOption) string {
+	return c.conf.AuthCodeURL(state, option)
 }
 
 func (c *contextImpl) GithubLogin(code string) (*github.User, error) {
@@ -67,12 +73,6 @@ func (c *contextImpl) SessionData(w http.ResponseWriter, r *http.Request) *sessi
 		// TODO extract an admin list
 		if *user.(github.User).Login == "jakecoffman" {
 			session.Values["admin"] = true
-		}
-	} else {
-		if _, ok := session.Values["state"]; !ok {
-			state := randSeq(10)
-			session.Values["state"] = state
-			session.Values["github"] = c.conf.AuthCodeURL(state, oauth2.AccessTypeOffline)
 		}
 	}
 	return session
