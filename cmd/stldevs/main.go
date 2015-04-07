@@ -1,14 +1,14 @@
 package main
 
 import (
+	"github.com/jakecoffman/stldevs/aggregator"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/web"
+	"github.com/jmoiron/sqlx"
 	"io"
 	"log"
 	"os"
 	"runtime"
-	"github.com/jmoiron/sqlx"
-	"github.com/jakecoffman/stldevs/aggregator"
 )
 
 func main() {
@@ -44,4 +44,3 @@ func setupLogger(fileName string) {
 	log.SetOutput(io.MultiWriter(os.Stderr, file))
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
-
