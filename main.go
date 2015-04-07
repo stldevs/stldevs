@@ -16,20 +16,28 @@ import (
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	file, err := os.OpenFile("log.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	setupLogger("log.txt")
+	cfg, err := parseConfig("config.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	web.Run(cfg)
+}
+
+func setupLogger(fileName string) {
+	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalln("Failed to open log file", err)
 	}
 	log.SetOutput(io.MultiWriter(os.Stderr, file))
+}
 
-	config := config.Config{}
-	f, err := os.Open("config.json")
+func parseConfig(fileName string) (*config.Config, error) {
+	f, err := os.Open(fileName)
 	if err != nil {
-		log.Println("Couldn't find dev_config.json")
-		return
+		return nil, err
 	}
-
-	json.NewDecoder(f).Decode(&config)
-
-	web.Run(config)
+	cfg := &config.Config{}
+	err = json.NewDecoder(f).Decode(cfg)
+	return cfg, err
 }

@@ -23,7 +23,7 @@ const (
 	base = "web"
 )
 
-func Run(cfg config.Config) {
+func Run(cfg *config.Config) {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	db, err := sqlx.Connect("mysql", "root:"+cfg.MysqlPw+"@/stldevs?parseTime=true")
