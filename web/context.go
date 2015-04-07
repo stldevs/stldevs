@@ -13,8 +13,6 @@ import (
 type Context interface {
 	// gets common session data, like user
 	SessionData(http.ResponseWriter, *http.Request) *sessions.Session
-	// Saves changes to session data
-	Save(http.ResponseWriter, *http.Request)
 	// parses and executes template
 	ParseAndExecute(http.ResponseWriter, string, map[interface{}]interface{})
 	// gets login URL
@@ -76,15 +74,4 @@ func (c *contextImpl) SessionData(w http.ResponseWriter, r *http.Request) *sessi
 		}
 	}
 	return session
-}
-
-func (c *contextImpl) Save(w http.ResponseWriter, r *http.Request) {
-	session, err := c.store.Get(r, "session")
-	if err != nil {
-		log.Println("In Save:", err)
-		return
-	}
-	if err = session.Save(r, w); err != nil {
-		log.Println("In Save:", err)
-	}
 }

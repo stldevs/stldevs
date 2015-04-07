@@ -23,18 +23,7 @@ const (
 	base = "web"
 )
 
-func Run(cfg *config.Config) {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
-	db, err := sqlx.Connect("mysql", "root:"+cfg.MysqlPw+"@/stldevs?parseTime=true")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	db.MapperFunc(config.CamelToSnake)
-	agg := aggregator.New(db, cfg.GithubKey)
-
+func Run(cfg *config.Config, db *sqlx.DB, agg *aggregator.Aggregator) {
 	ctx := &contextImpl{
 		store:        sessions.NewFilesystemStore("", []byte(cfg.SessionSecret)),
 		trackingCode: cfg.TrackingCode,
@@ -46,6 +35,7 @@ func Run(cfg *config.Config) {
 		},
 	}
 
+	// for session storing
 	gob.Register(github.User{})
 
 	fileHandler := http.FileServer(http.Dir(base + "/static/"))
