@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/jakecoffman/stldevs/aggregator"
-	"github.com/jakecoffman/stldevs/config"
-	"github.com/jakecoffman/stldevs/web"
-	"github.com/jmoiron/sqlx"
 	"io"
 	"log"
 	"os"
 	"runtime"
+
+	"github.com/jakecoffman/stldevs/aggregator"
+	"github.com/jakecoffman/stldevs/config"
+	"github.com/jakecoffman/stldevs/web"
+	"github.com/jmoiron/sqlx"
 )
 
 func main() {

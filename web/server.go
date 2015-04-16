@@ -30,7 +30,7 @@ func Run(cfg *config.Config, db *sqlx.DB, agg *aggregator.Aggregator) {
 		conf: &oauth2.Config{
 			ClientID:     cfg.GithubClientID,
 			ClientSecret: cfg.GithubClientSecret,
-			Scopes:       []string{"public_repo"},
+			Scopes:       []string{},
 			Endpoint:     oa2gh.Endpoint,
 		},
 	}
@@ -41,19 +41,23 @@ func Run(cfg *config.Config, db *sqlx.DB, agg *aggregator.Aggregator) {
 	fileHandler := http.FileServer(http.Dir(base + "/static/"))
 
 	router := httprouter.New()
+	router.GET("/", index(ctx))
 	router.GET("/static/*filepath", handleFiles(fileHandler))
+
 	router.GET("/login", login(ctx))
 	router.GET("/oauth2", oauth2Handler(ctx))
 	router.GET("/logout", logout(ctx))
-	router.GET("/", index(ctx))
+
 	router.GET("/admin", admin(ctx, agg))
 	router.POST("/admin", adminCmd(ctx, agg))
+
 	router.GET("/search", search(ctx, agg))
 	router.GET("/toplangs", topLangs(ctx, agg))
 	router.GET("/topdevs", topDevs(ctx, agg))
+	router.GET("/lang/:lang", language(ctx, agg))
 	router.GET("/profile/:profile", profile(ctx, agg))
 	router.POST("/add", add(ctx, agg))
-	router.GET("/lang/:lang", language(ctx, agg))
+
 	router.NotFound = http.HandlerFunc(notFound)
 	router.PanicHandler = panicHandler
 
