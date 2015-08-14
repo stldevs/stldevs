@@ -50,7 +50,7 @@ func oauth2Handler(ctx Context) httprouter.Handle {
 func logout(ctx Context) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		session := ctx.SessionData(w, r)
-		for key, _ := range session.Values {
+		for key := range session.Values {
 			delete(session.Values, key)
 		}
 		http.Redirect(w, r, "/", 302)

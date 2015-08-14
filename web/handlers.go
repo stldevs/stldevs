@@ -6,6 +6,7 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/jakecoffman/stldevs/aggregator"
 	"github.com/julienschmidt/httprouter"
+	"log"
 )
 
 type response map[interface{}]interface{}
@@ -46,7 +47,10 @@ func profile(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		data := response{}
 		data["session"] = ctx.SessionData(w, r).Values
-		profile := agg.Profile(p.ByName("profile"))
+		profile, err := agg.Profile(p.ByName("profile"))
+		if err != nil {
+			log.Println(err)
+		}
 		if profile != nil {
 			data["profile"] = profile
 			ctx.ParseAndExecute(w, "profile", data)
@@ -100,6 +104,13 @@ func admin(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 func adminCmd(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		data := response{}
+		defer func() {
+			if recover := recover(); recover != nil {
+				log.Println("Recovered in f", recover)
+				data["error"] = recover
+				http.Redirect(w, r, "/admin", 302)
+			}
+		}()
 		session := ctx.SessionData(w, r).Values
 		data["session"] = session
 		if !isAdmin(session) {

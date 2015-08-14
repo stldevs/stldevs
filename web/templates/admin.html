@@ -1,6 +1,7 @@
 {{define "admin"}}
 {{template "top" .}}
 <div class="container-fluid">
+    {{.error}}
     <h1>Admin page</h1>
     {{if .running}}<p>Currently running</p>{{end}}
     <p>Last scan was at {{.lastRun}}</p>

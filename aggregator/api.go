@@ -21,11 +21,17 @@ type Aggregator struct {
 
 func New(db *sqlx.DB, githubKey string) *Aggregator {
 	_, err := db.Exec(createMeta)
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	_, err = db.Exec(createUser)
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	_, err = db.Exec(createRepo)
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	t := &oauth.Transport{Token: &oauth.Token{AccessToken: githubKey}}
 	return &Aggregator{db: db, client: github.NewClient(t.Client())}
@@ -37,10 +43,22 @@ func (a *Aggregator) Run() {
 	}
 	a.running = true
 	defer func() { a.running = false }()
-	a.insertRunLog()
-	users := a.findStlUsers()
-	a.updateUsers(users)
-	a.updateRepos()
+	if err := a.insertRunLog(); err != nil {
+		log.Println(err)
+		return
+	}
+	users, err := a.findStlUsers()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	if err = a.updateUsers(users); err != nil {
+		log.Println(err)
+		return
+	}
+	if err = a.updateRepos(); err != nil {
+		log.Println(err)
+	}
 }
 
 func (a *Aggregator) Running() bool {
@@ -139,34 +157,46 @@ type ProfileData struct {
 	Repos map[string][]github.Repository
 }
 
-func (a *Aggregator) Profile(name string) *ProfileData {
+func (a *Aggregator) Profile(name string) (*ProfileData, error) {
 	rows, err := a.db.Query(queryProfileForUser, name)
-	check(err)
+	if err != nil {
+		log.Println("Error querying profile")
+		return nil, err
+	}
 	defer rows.Close()
 
 	if !rows.Next() {
 		log.Println("No rows found for Profile", name)
-		return nil
+		return nil, nil
 	}
 
 	profile := &ProfileData{&github.User{}, map[string][]github.Repository{}}
 	user := profile.User
 	err = rows.Scan(&user.Login, &user.Email, &user.Name, &user.Blog, &user.Followers, &user.PublicRepos,
 		&user.PublicGists, &user.AvatarURL)
-	check(err)
-	rows.Close()
+	if err != nil {
+		log.Println("Error scanning profile data")
+		return nil, err
+	}
 
 	if user.Blog != nil && *user.Blog != "" && !strings.HasPrefix(*user.Blog, "http://") {
 		*user.Blog = "http://" + *user.Blog
 	}
 
 	rows, err = a.db.Query(queryRepoForUser, user.Login)
-	check(err)
+	if err != nil {
+		log.Println("Error querying repo for user", user.Login)
+		return nil, err
+	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var repo github.Repository
 		err = rows.Scan(&repo.Name, &repo.Language, &repo.ForksCount, &repo.StargazersCount)
-		check(err)
+		if err != nil {
+			log.Println("Error scanning repo row")
+			return nil, err
+		}
 
 		if _, ok := profile.Repos[*repo.Language]; ok {
 			profile.Repos[*repo.Language] = append(profile.Repos[*repo.Language], repo)
@@ -175,7 +205,7 @@ func (a *Aggregator) Profile(name string) *ProfileData {
 		}
 	}
 
-	return profile
+	return profile, nil
 }
 
 func (a *Aggregator) Search(term string) *[]User {
