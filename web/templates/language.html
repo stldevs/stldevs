@@ -7,7 +7,8 @@
         <div class="col-sm-3">
             <ul class="list-unstyled">
                 <li><a href="/profile/{{.Owner}}">{{.Owner}}</a></li>
-                <li>user has {{.Count}} stars in {{$.language}}</li>
+                <li>{{.Count}} stars in {{$.language}}</li>
+                <li>{{.Repos|len}} repos in {{$.language}}</li>
             </ul>
         </div>
         <div class="col-sm-9">
