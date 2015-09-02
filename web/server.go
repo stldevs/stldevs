@@ -38,11 +38,7 @@ func Run(cfg *config.Config, db *sqlx.DB, agg *aggregator.Aggregator) {
 	// for session storing
 	gob.Register(github.User{})
 
-	fileHandler := http.FileServer(http.Dir(base + "/static/"))
-
 	router := httprouter.New()
-	router.GET("/", index(ctx))
-	router.GET("/static/*filepath", handleFiles(fileHandler))
 
 	router.GET("/login", login(ctx))
 	router.GET("/oauth2", oauth2Handler(ctx))
@@ -58,7 +54,6 @@ func Run(cfg *config.Config, db *sqlx.DB, agg *aggregator.Aggregator) {
 	router.GET("/profile/:profile", profile(ctx, agg))
 	router.POST("/add", add(ctx, agg))
 
-	router.NotFound = http.HandlerFunc(notFound)
 	router.PanicHandler = panicHandler
 
 	log.Println("Serving on port 80")
@@ -97,12 +92,14 @@ func finisher(h http.Handler, ctx Context) http.Handler {
 			path += "?" + r.URL.RawQuery
 		}
 		session := ctx.SessionData(w, r)
-		session.Save(r, w)
-		user, _ := session.Values["user"]
-		if user != nil {
-			log.Println(path, r.Method, r.RemoteAddr, *user.(github.User).Login)
-		} else {
-			log.Println(path, r.Method, r.RemoteAddr)
+		if session != nil {
+			session.Save(r, w)
+			user, _ := session.Values["user"]
+			if user != nil {
+				log.Println(path, r.Method, r.RemoteAddr, *user.(github.User).Login)
+				return
+			}
 		}
+		log.Println(path, r.Method, r.RemoteAddr)
 	})
 }

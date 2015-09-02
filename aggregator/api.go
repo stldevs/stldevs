@@ -65,30 +65,31 @@ func (a *Aggregator) Running() bool {
 	return a.running
 }
 
-func (a *Aggregator) LastRun() (string, error) {
+func (a *Aggregator) LastRun() (*time.Time, error) {
 	rows, err := a.db.Query(queryLastRun)
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return nil, err
 	}
 	defer rows.Close()
 
 	if !rows.Next() {
 		// has never run!
-		return time.Time{}.Local().Format("Jan 2, 2006 at 3:04pm"), nil
+		t := time.Now()
+		return &t, nil
 	}
 	// it might be null
 	var t mysql.NullTime
 	if err = rows.Scan(&t); err != nil {
 		log.Println(err)
-		return "", err
+		return nil, err
 	}
 	if !t.Valid {
 		err = errors.New("null time in LastRun call results")
 		log.Println(err.Error())
-		return "", err
+		return nil, err
 	}
-	return t.Time.Local().Format("Jan 2, 2006 at 3:04pm"), nil
+	return &t.Time, nil
 }
 
 type LanguageCount struct {

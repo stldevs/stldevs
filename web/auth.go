@@ -32,13 +32,11 @@ func oauth2Handler(ctx Context) httprouter.Handle {
 		sessState, ok := session.Values["state"]
 		if !ok || state != sessState.(string) {
 			log.Println("State mismatch", ok, state, sessState)
-			ctx.ParseAndExecute(w, "error", response{"error": "state is incorrect"})
 			return
 		}
 
 		if user, err := ctx.GithubLogin(code); err != nil {
 			log.Println(err)
-			ctx.ParseAndExecute(w, "error", response{"error": "error in logging in"})
 			return
 		} else {
 			session.Values["user"] = *user
