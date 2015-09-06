@@ -23,7 +23,9 @@ const (
 	base = "web"
 )
 
-func Run(cfg *config.Config, db *sqlx.DB, agg *aggregator.Aggregator) {
+func Run(cfg *config.Config, db *sqlx.DB) {
+	agg := aggregator.New(db, cfg.GithubKey)
+	myDb := &DB{db}
 	ctx := &contextImpl{
 		store:        sessions.NewFilesystemStore("", []byte(cfg.SessionSecret)),
 		trackingCode: cfg.TrackingCode,
@@ -44,31 +46,20 @@ func Run(cfg *config.Config, db *sqlx.DB, agg *aggregator.Aggregator) {
 	router.GET("/oauth2", oauth2Handler(ctx))
 	router.GET("/logout", logout(ctx))
 
-	router.GET("/admin", admin(ctx, agg))
+	router.GET("/admin", admin(ctx, myDb, agg))
 	router.POST("/admin", adminCmd(ctx, agg))
 
-	router.GET("/search", search(ctx, agg))
-	router.GET("/toplangs", topLangs(ctx, agg))
-	router.GET("/topdevs", topDevs(ctx, agg))
-	router.GET("/lang/:lang", language(ctx, agg))
-	router.GET("/profile/:profile", profile(ctx, agg))
+	router.GET("/search", search(ctx, myDb))
+	router.GET("/toplangs", topLangs(ctx, myDb))
+	router.GET("/topdevs", topDevs(ctx, myDb))
+	router.GET("/lang/:lang", language(ctx, myDb))
+	router.GET("/profile/:profile", profile(ctx, myDb))
 	router.POST("/add", add(ctx, agg))
 
 	router.PanicHandler = panicHandler
 
 	log.Println("Serving on port 80")
 	log.Println(http.ListenAndServe("0.0.0.0:80", finisher(router, ctx)))
-}
-
-func handleFiles(fileServer http.Handler) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		r.URL.Path = p.ByName("filepath")
-		fileServer.ServeHTTP(w, r)
-	}
-}
-
-func notFound(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, base+"/static/404.html")
 }
 
 func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {

@@ -1,4 +1,4 @@
-package aggregator
+package web
 
 import (
 	"time"

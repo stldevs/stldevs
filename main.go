@@ -6,7 +6,6 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/jakecoffman/stldevs/aggregator"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/web"
 	"github.com/jmoiron/sqlx"
@@ -32,9 +31,7 @@ func main() {
 	}
 	db.MapperFunc(config.CamelToSnake)
 
-	agg := aggregator.New(db, cfg.GithubKey)
-
-	web.Run(cfg, db, agg)
+	web.Run(cfg, db)
 }
 
 func setupLogger(fileName string) {

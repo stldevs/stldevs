@@ -10,32 +10,32 @@ import (
 	"encoding/json"
 )
 
-func topLangs(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
+func topLangs(ctx Context, cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		data := map[string]interface{}{}
-		data["langs"] = agg.PopularLanguages()
-		if time, err := agg.LastRun(); err == nil {
+		data["langs"] = cmd.PopularLanguages()
+		if time, err := cmd.LastRun(); err == nil {
 			data["lastrun"] = time
 		}
 		render(w, data)
 	}
 }
 
-func topDevs(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
+func topDevs(ctx Context, cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		data := map[string]interface{}{}
-		data["devs"] = agg.PopularDevs()
-		if time, err := agg.LastRun(); err == nil {
+		data["devs"] = cmd.PopularDevs()
+		if time, err := cmd.LastRun(); err == nil {
 			data["lastrun"] = time
 		}
 		render(w, data)
 	}
 }
 
-func profile(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
+func profile(ctx Context, cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		data := map[string]interface{}{}
-		profile, err := agg.Profile(p.ByName("profile"))
+		profile, err := cmd.Profile(p.ByName("profile"))
 		if err != nil {
 			log.Println(err)
 		}
@@ -59,16 +59,16 @@ func add(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	}
 }
 
-func language(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
+func language(ctx Context, cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		data := map[string]interface{}{}
-		data["languages"] = agg.Language(p.ByName("lang"))
+		data["languages"] = cmd.Language(p.ByName("lang"))
 		data["language"] = p.ByName("lang")
 		render(w, data)
 	}
 }
 
-func admin(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
+func admin(ctx Context, cmd Commands, agg *aggregator.Aggregator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		data := map[string]interface{}{}
 		session := ctx.SessionData(w, r).Values
@@ -76,7 +76,7 @@ func admin(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 			log.Println("User is not admin")
 			return
 		}
-		if time, err := agg.LastRun(); err == nil {
+		if time, err := cmd.LastRun(); err == nil {
 			data["lastRun"] = time
 		}
 		data["running"] = agg.Running()
@@ -103,14 +103,14 @@ func adminCmd(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 	}
 }
 
-func search(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
+func search(ctx Context, cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		data := map[string]interface{}{}
 		data["session"] = ctx.SessionData(w, r).Values
 		q := r.URL.Query().Get("q")
 		data["q"] = q
 		if q != "" {
-			data["results"] = agg.Search(q)
+			data["results"] = cmd.Search(q)
 		}
 		render(w, data)
 	}
