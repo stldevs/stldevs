@@ -3,9 +3,6 @@ package web
 import (
 	"log"
 	"net/http"
-
-	"text/template"
-
 	"encoding/gob"
 
 	"github.com/google/go-github/github"
@@ -63,15 +60,9 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 }
 
 func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {
-	template, err := template.ParseGlob(base + "/templates/*.html")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	if err = template.ExecuteTemplate(w, "error", d); err != nil {
-		log.Println(err)
-	}
+	log.Println("ERROR WAS:", d)
+	w.WriteHeader(500)
+	w.Write([]byte("There was an error"))
 }
 
 func finisher(h http.Handler, ctx Context) http.Handler {

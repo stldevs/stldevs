@@ -1,14 +1,14 @@
 package web
 
 import (
-	"errors"
 	"log"
 	"strings"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 	"github.com/jmoiron/sqlx"
+	"errors"
+	"github.com/go-sql-driver/mysql"
 )
 
 type DB struct {
@@ -28,30 +28,14 @@ type Commands interface {
 }
 
 func (db *DB) LastRun() (*time.Time, error) {
-	rows, err := db.Query(queryLastRun)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		// has never run!
-		t := time.Now()
-		return &t, nil
-	}
-	// it might be null
-	var t mysql.NullTime
-	if err = rows.Scan(&t); err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	if !t.Valid {
+	timeStr := mysql.NullTime{}
+	err := db.Get(&timeStr, queryLastRun)
+	if !timeStr.Valid {
 		err = errors.New("null time in LastRun call results")
 		log.Println(err.Error())
 		return nil, err
 	}
-	return &t.Time, nil
+	return &timeStr.Time, err
 }
 
 type LanguageCount struct {
@@ -121,51 +105,33 @@ type ProfileData struct {
 }
 
 func (db *DB) Profile(name string) (*ProfileData, error) {
-	rows, err := db.Query(queryProfileForUser, name)
+	user := &github.User{}
+	reposByLang := map[string][]github.Repository{}
+	profile := &ProfileData{user, reposByLang}
+	err := db.Get(profile.User, queryProfileForUser, name)
 	if err != nil {
 		log.Println("Error querying profile")
 		return nil, err
 	}
-	defer rows.Close()
 
-	if !rows.Next() {
-		log.Println("No rows found for Profile", name)
-		return nil, nil
+	if profile.User.Blog != nil && *profile.User.Blog != "" && !strings.HasPrefix(*profile.User.Blog, "http://") {
+		*profile.User.Blog = "http://" + *profile.User.Blog
 	}
 
-	profile := &ProfileData{&github.User{}, map[string][]github.Repository{}}
-	user := profile.User
-	err = rows.Scan(&user.Login, &user.Email, &user.Name, &user.Blog, &user.Followers, &user.PublicRepos,
-		&user.PublicGists, &user.AvatarURL)
+	repos := []github.Repository{}
+	err = db.Select(&repos, queryRepoForUser, profile.User.Login)
 	if err != nil {
-		log.Println("Error scanning profile data")
+		log.Println("Error querying repo for user", *profile.User.Login)
 		return nil, err
 	}
 
-	if user.Blog != nil && *user.Blog != "" && !strings.HasPrefix(*user.Blog, "http://") {
-		*user.Blog = "http://" + *user.Blog
-	}
-
-	rows, err = db.Query(queryRepoForUser, user.Login)
-	if err != nil {
-		log.Println("Error querying repo for user", user.Login)
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var repo github.Repository
-		err = rows.Scan(&repo.Name, &repo.Language, &repo.ForksCount, &repo.StargazersCount)
-		if err != nil {
-			log.Println("Error scanning repo row")
-			return nil, err
+	for _, repo := range repos {
+		lang := *repo.Language
+		if _, ok := reposByLang[lang]; !ok {
+			reposByLang[lang] = []github.Repository{repo}
+			continue
 		}
-
-		if _, ok := profile.Repos[*repo.Language]; ok {
-			profile.Repos[*repo.Language] = append(profile.Repos[*repo.Language], repo)
-		} else {
-			profile.Repos[*repo.Language] = []github.Repository{repo}
-		}
+		reposByLang[lang] = append(reposByLang[lang], repo)
 	}
 
 	return profile, nil
