@@ -55,8 +55,8 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 
 	router.PanicHandler = panicHandler
 
-	log.Println("Serving on port 80")
-	log.Println(http.ListenAndServe("0.0.0.0:80", finisher(router, ctx)))
+	log.Println("Serving on port 8080")
+	log.Println(http.ListenAndServe("0.0.0.0:8080", finisher(router, ctx)))
 }
 
 func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {
