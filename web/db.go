@@ -4,10 +4,10 @@ import (
 	"log"
 	"strings"
 	"time"
+	"errors"
 
 	"github.com/google/go-github/github"
 	"github.com/jmoiron/sqlx"
-	"errors"
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -101,12 +101,12 @@ func (db *DB) Language(name string) []*LanguageResult {
 
 type ProfileData struct {
 	User  *github.User
-	Repos map[string][]github.Repository
+	Repos map[string][]Repository
 }
 
 func (db *DB) Profile(name string) (*ProfileData, error) {
 	user := &github.User{}
-	reposByLang := map[string][]github.Repository{}
+	reposByLang := map[string][]Repository{}
 	profile := &ProfileData{user, reposByLang}
 	err := db.Get(profile.User, queryProfileForUser, name)
 	if err != nil {
@@ -118,17 +118,17 @@ func (db *DB) Profile(name string) (*ProfileData, error) {
 		*profile.User.Blog = "http://" + *profile.User.Blog
 	}
 
-	repos := []github.Repository{}
-	err = db.Select(&repos, queryRepoForUser, profile.User.Login)
+	repos := []Repository{}
+	err = db.Select(&repos, queryRepoForUser, name)
 	if err != nil {
-		log.Println("Error querying repo for user", *profile.User.Login)
+		log.Println("Error querying repo for user", name)
 		return nil, err
 	}
 
 	for _, repo := range repos {
 		lang := *repo.Language
 		if _, ok := reposByLang[lang]; !ok {
-			reposByLang[lang] = []github.Repository{repo}
+			reposByLang[lang] = []Repository{repo}
 			continue
 		}
 		reposByLang[lang] = append(reposByLang[lang], repo)

@@ -72,8 +72,6 @@ type Repository struct {
 	WatchersCount    *int
 	Size             *int
 	AutoInit         *bool
-	Parent           *Repository
-	Source           *Repository
 	Organization     *github.Organization
 	Permissions      *map[string]bool
 	Private          *bool
