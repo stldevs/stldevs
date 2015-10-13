@@ -54,7 +54,6 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 	router.POST("/add", add(ctx, agg))
 
 	router.PanicHandler = panicHandler
-	router.NotFound = http.FileServer(http.Dir("dist"))
 
 	log.Println("Serving on port 80")
 	log.Println(http.ListenAndServe("0.0.0.0:80", finisher(router, ctx)))
