@@ -72,7 +72,7 @@ func (a *Aggregator) updateUsersRepos(user string) error {
 			}
 			_, err = stmt.Exec(repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage,
 				repo.ForksCount, repo.NetworkCount, repo.OpenIssuesCount, repo.StargazersCount, repo.SubscribersCount,
-				repo.WatchersCount, repo.Size, repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
+				repo.WatchersCount, repo.Size, *repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
 				pushedAt, repo.UpdatedAt.Time)
 			if err != nil {
 				log.Println("Error executing replace into agg_repo")
