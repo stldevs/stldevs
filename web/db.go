@@ -179,10 +179,10 @@ const (
 		JOIN (
 			select owner, sum(stargazers_count) as count
 			from stldevs.agg_repo
-			where language=?
+			where language=? and fork=0
 			group by owner
 		) r2 ON ( r2.owner = r1.owner )
-		where language=?
+		where language=? and fork=0
 		order by r2.count desc, r2.owner, stargazers_count desc;`
 
 	queryProfileForUser = `
@@ -193,7 +193,7 @@ const (
 	queryRepoForUser = `
 		select name, description, language, forks_count, stargazers_count
 		from agg_repo
-		where owner=? and language is not null
+		where owner=? and language is not null and fork=0
 		order by language, stargazers_count desc, name`
 
 	querySearch = `
