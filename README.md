@@ -13,3 +13,5 @@ St. Louis developer profiles (http://stldevs.com)
 ## contributing
 
 Pull requests are welcome as long as you don't take the site in a new weird direction. All Go files should be run through gofmt and goimport before pushing. I suggest GoSublime or IntelliJ Go plugin (built from source).
+
+Front end developers looks here: https://github.com/jakecoffman/stldevs-frontend
