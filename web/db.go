@@ -191,7 +191,7 @@ const (
 		where login=?`
 
 	queryRepoForUser = `
-		select name, description, language, forks_count, stargazers_count
+		select name, fork, description, language, forks_count, stargazers_count
 		from agg_repo
 		where owner=? and language is not null
 		order by language, stargazers_count desc, name`
