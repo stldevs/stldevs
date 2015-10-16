@@ -193,7 +193,7 @@ const (
 	queryRepoForUser = `
 		select name, description, language, forks_count, stargazers_count
 		from agg_repo
-		where owner=? and language is not null and fork=0
+		where owner=? and language is not null
 		order by language, stargazers_count desc, name`
 
 	querySearch = `
