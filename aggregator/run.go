@@ -61,21 +61,28 @@ func (a *Aggregator) updateUsersRepos(user string) error {
 		}
 		checkRespAndWait(resp)
 		for _, repo := range result {
-			stmt, err := a.db.Prepare(`REPLACE INTO agg_repo VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-			if err != nil {
-				log.Println("Error preparing agg_repo")
+			// TODO: refactor, IIFE for defer
+			err := func() error {
+				stmt, err := a.db.Prepare(`REPLACE INTO agg_repo VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+				if err != nil {
+					log.Println("Error preparing agg_repo")
+					return err
+				}
+				defer stmt.Close()
+				var pushedAt *time.Time
+				if repo.PushedAt != nil {
+					pushedAt = &repo.PushedAt.Time
+				}
+				_, err = stmt.Exec(repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage,
+					repo.ForksCount, repo.NetworkCount, repo.OpenIssuesCount, repo.StargazersCount, repo.SubscribersCount,
+					repo.WatchersCount, repo.Size, *repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
+					pushedAt, repo.UpdatedAt.Time)
+				if err != nil {
+					log.Println("Error executing replace into agg_repo")
+				}
 				return err
-			}
-			var pushedAt *time.Time
-			if repo.PushedAt != nil {
-				pushedAt = &repo.PushedAt.Time
-			}
-			_, err = stmt.Exec(repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage,
-				repo.ForksCount, repo.NetworkCount, repo.OpenIssuesCount, repo.StargazersCount, repo.SubscribersCount,
-				repo.WatchersCount, repo.Size, *repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
-				pushedAt, repo.UpdatedAt.Time)
+			}()
 			if err != nil {
-				log.Println("Error executing replace into agg_repo")
 				return err
 			}
 		}
@@ -141,6 +148,7 @@ func (a *Aggregator) insertRunLog() error {
 		log.Println("Error preparing insert into agg_meta")
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.Exec(time.Now())
 	if err != nil {
