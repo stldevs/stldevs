@@ -19,14 +19,15 @@ func (a *Aggregator) updateUsers(users map[string]struct{}) error {
 
 	// remove users that no longer come up in search
 	for _, existing := range existingUsers {
-		if _, ok := users[existing]; !ok {
-			_, err = a.db.Exec(`DELETE FROM agg_user WHERE login=?`, existing)
+		if _, ok := users[*existing.Login]; !ok {
+			log.Println(*existing.Login, "is no longer in St. Louis")
+			_, err = a.db.Exec(`DELETE FROM agg_user WHERE login=?`, *existing.Login)
 			if err != nil {
-				log.Println("Error while deleting moved user:", existing)
+				log.Println("Error while deleting moved user:", *existing.Login)
 			}
-			_, err = a.db.Exec(`DELETE FROM agg_repo WHERE owner=?`, existing)
+			_, err = a.db.Exec(`DELETE FROM agg_repo WHERE owner=?`, *existing.Login)
 			if err != nil {
-				log.Println("Error while deleting moved user's repos", existing)
+				log.Println("Error while deleting moved user's repos", *existing.Login)
 			}
 		}
 	}
@@ -38,6 +39,7 @@ func (a *Aggregator) updateUsers(users map[string]struct{}) error {
 }
 
 func (a *Aggregator) updateRepos() error {
+	log.Println("Starting update of all user repositories")
 	rows, err := a.db.Query("select login from agg_user")
 	if err != nil {
 		log.Println("error whilst selecting from agg_user")
@@ -56,6 +58,7 @@ func (a *Aggregator) updateRepos() error {
 }
 
 func (a *Aggregator) updateUsersRepos(user string) error {
+	log.Println("Updating repos of", user)
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
 	for {
 		result, resp, err := a.client.Repositories.List(user, opts)
@@ -107,11 +110,12 @@ func (a *Aggregator) findStlUsers() (map[string]struct{}, error) {
 
 		opts.ListOptions.Page = resultResp.NextPage
 	}
-	fmt.Printf("Total found: %v\n", len(users))
+	fmt.Printf("total devs in St. Louis found: %v\n", len(users))
 	return users, nil
 }
 
 func (a *Aggregator) Add(user string) error {
+	log.Println("adding/updating", user)
 	u, resp, err := a.client.Users.Get(user)
 	if err != nil {
 		log.Println("Failed getting user details for", user, ":", err)
@@ -137,7 +141,5 @@ func checkRespAndWait(r *github.Response) {
 		duration := time.Now().Sub(r.Rate.Reset.Time)
 		fmt.Println("I ran out of requests, waiting", duration)
 		time.Sleep(duration)
-	} else {
-		fmt.Println(r.Remaining, "calls remaining until", r.Rate.Reset.String())
 	}
 }
