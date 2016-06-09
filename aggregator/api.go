@@ -3,7 +3,7 @@ package aggregator
 import (
 	"log"
 
-	"code.google.com/p/goauth2/oauth"
+	"golang.org/x/oauth2"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 	"github.com/jmoiron/sqlx"
@@ -29,8 +29,9 @@ func New(db *sqlx.DB, githubKey string) *Aggregator {
 		log.Fatal(err)
 	}
 
-	t := &oauth.Transport{Token: &oauth.Token{AccessToken: githubKey}}
-	return &Aggregator{db: db, client: github.NewClient(t.Client())}
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: githubKey})
+	client := oauth2.NewClient(oauth2.NoContext, ts)
+	return &Aggregator{db: db, client: github.NewClient(client)}
 }
 
 func (a *Aggregator) Run() {
