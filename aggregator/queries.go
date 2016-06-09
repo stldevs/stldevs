@@ -26,9 +26,9 @@ const (
 	createRepo = `
 		CREATE TABLE IF NOT EXISTS agg_repo (
 			owner VARCHAR(255) NOT NULL,
-			name VARCHAR(255) NOT NULL PRIMARY KEY,
+			name VARCHAR(255) NOT NULL,
 			description TEXT,
-			language TEXT,
+			language VARCHAR(255),
 			homepage TEXT,
 			forks_count INT,
 			network_count INT,
@@ -42,6 +42,14 @@ const (
 			master_branch TEXT,
 			created_at DATETIME,
 			pushed_at DATETIME,
-			updated_at DATETIME);`
+			updated_at DATETIME,
+			primary key (owner, name),
+			INDEX(language),
+			INDEX(forks_count),
+			INDEX(network_count),
+			INDEX(stargazers_count),
+			INDEX(subscribers_count),
+			INDEX(watchers_count)
+			);`
 
 )
