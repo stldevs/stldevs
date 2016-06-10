@@ -1,8 +1,6 @@
 # stldevs
 St. Louis developer profiles (http://stldevs.com)
 
-[![Build Status](https://secure.travis-ci.org/jakecoffman/stldevs.png?branch=master)](http://travis-ci.org/jakecoffman/stldevs)
-
 ## motivations
 
 - St. Louis designers and developers that contribute to open source should be more visible
@@ -12,6 +10,6 @@ St. Louis developer profiles (http://stldevs.com)
 
 ## contributing
 
-Pull requests are welcome as long as you don't take the site in a new weird direction. All Go files should be run through gofmt and goimport before pushing. I suggest GoSublime or IntelliJ Go plugin (built from source).
+Pull requests are welcome as long as you don't take the site in a new weird direction. All Go files should be run through gofmt and goimport before pushing. I suggest GoSublime or IntelliJ Go plugin.
 
 Front end developers look here: https://github.com/jakecoffman/stldevs-frontend
