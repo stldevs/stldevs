@@ -15,7 +15,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	setupLogger("log.txt")
-	f, err := os.Open("config.json")
+	f, err := os.Open("./config.json") // TODO: Make configurable
 	if err != nil {
 		log.Fatal(err)
 	}

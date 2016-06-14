@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	f, err := os.Open("../../config.json")
+	f, err := os.Open("./config.json") // TODO: make configurable
 	if err != nil {
 		log.Fatal(err)
 	}
