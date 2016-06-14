@@ -110,7 +110,7 @@ func (db *DB) Profile(name string) (*ProfileData, error) {
 	profile := &ProfileData{user, reposByLang}
 	err := db.Get(profile.User, queryProfileForUser, name)
 	if err != nil {
-		log.Println("Error querying profile")
+		log.Println("Error querying profile", name)
 		return nil, err
 	}
 

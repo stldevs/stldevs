@@ -49,12 +49,16 @@ func (a *Aggregator) Run() {
 		log.Println(err)
 		return
 	}
-	if err = a.updateUsers(users); err != nil {
-		log.Println(err)
+	if err = a.removeUsersNotFoundInSearch(users); err != nil {
 		return
 	}
-	if err = a.updateRepos(); err != nil {
-		log.Println(err)
+	for user := range users {
+		log.Println("Adding/Updating", user)
+		if err = a.Add(user); err != nil {
+			continue
+		}
+		log.Println("Updating repos of", user)
+		a.updateUsersRepos(user)
 	}
 }
 

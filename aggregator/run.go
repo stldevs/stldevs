@@ -9,11 +9,11 @@ import (
 	"github.com/google/go-github/github"
 )
 
-func (a *Aggregator) updateUsers(users map[string]struct{}) error {
+func (a *Aggregator) removeUsersNotFoundInSearch(users map[string]struct{}) error {
 	existingUsers := []github.User{}
 	err := a.db.Select(&existingUsers, `SELECT login FROM agg_user`)
 	if err != nil {
-		log.Println("Error querying agg_user")
+		log.Println("Error querying agg_user", err)
 		return err
 	}
 
@@ -31,34 +31,10 @@ func (a *Aggregator) updateUsers(users map[string]struct{}) error {
 			}
 		}
 	}
-
-	for user := range users {
-		a.Add(user)
-	}
-	return nil
-}
-
-func (a *Aggregator) updateRepos() error {
-	log.Println("Starting update of all user repositories")
-	rows, err := a.db.Query("select login from agg_user")
-	if err != nil {
-		log.Println("error whilst selecting from agg_user")
-		return err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var user string
-		if err = rows.Scan(&user); err != nil {
-			log.Println("Error scanning")
-			return err
-		}
-		a.updateUsersRepos(user)
-	}
 	return nil
 }
 
 func (a *Aggregator) updateUsersRepos(user string) error {
-	log.Println("Updating repos of", user)
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
 	for {
 		result, resp, err := a.client.Repositories.List(user, opts)
@@ -115,7 +91,6 @@ func (a *Aggregator) findStlUsers() (map[string]struct{}, error) {
 }
 
 func (a *Aggregator) Add(user string) error {
-	log.Println("adding/updating", user)
 	u, resp, err := a.client.Users.Get(user)
 	if err != nil {
 		log.Println("Failed getting user details for", user, ":", err)
