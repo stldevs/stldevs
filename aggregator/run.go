@@ -23,11 +23,11 @@ func (a *Aggregator) removeUsersNotFoundInSearch(users map[string]struct{}) erro
 			log.Println(*existing.Login, "is no longer in St. Louis")
 			_, err = a.db.Exec(`DELETE FROM agg_user WHERE login=?`, *existing.Login)
 			if err != nil {
-				log.Println("Error while deleting moved user:", *existing.Login)
+				log.Println("Error while deleting moved user:", *existing.Login, err)
 			}
 			_, err = a.db.Exec(`DELETE FROM agg_repo WHERE owner=?`, *existing.Login)
 			if err != nil {
-				log.Println("Error while deleting moved user's repos", *existing.Login)
+				log.Println("Error while deleting moved user's repos", *existing.Login, err)
 			}
 		}
 	}
@@ -39,7 +39,7 @@ func (a *Aggregator) updateUsersRepos(user string) error {
 	for {
 		result, resp, err := a.client.Repositories.List(user, opts)
 		if err != nil {
-			log.Println("error while listing repositories")
+			log.Println("error while listing repositories", err)
 			return err
 		}
 		checkRespAndWait(resp)
@@ -54,7 +54,7 @@ func (a *Aggregator) updateUsersRepos(user string) error {
 				repo.WatchersCount, repo.Size, *repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
 				pushedAt, repo.UpdatedAt.Time)
 			if err != nil {
-				log.Println("Error executing replace into agg_repo")
+				log.Println("Error executing replace into agg_repo", err)
 				return err
 			}
 		}
@@ -73,7 +73,7 @@ func (a *Aggregator) findStlUsers() (map[string]struct{}, error) {
 	for {
 		result, resultResp, err := a.client.Search.Users(searchString, opts)
 		if err != nil {
-			log.Println("Error Searching users")
+			log.Println("Error Searching users", err)
 			return nil, err
 		}
 		checkRespAndWait(resultResp)
@@ -106,7 +106,7 @@ func (a *Aggregator) Add(user string) error {
 func (a *Aggregator) insertRunLog() error {
 	_, err := a.db.Exec(`INSERT INTO agg_meta VALUES (?)`, time.Now())
 	if err != nil {
-		log.Println("Error executing insert")
+		log.Println("Error executing insert", err)
 	}
 	return err
 }
