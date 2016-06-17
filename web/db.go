@@ -157,7 +157,7 @@ func (db *DB) Search(term, kind string) interface{} {
 		return users
 	} else if kind == "repos" {
 		repos := []Repository{}
-		if err := db.Select(&repos, querySearchRepos, query, query, query); err != nil {
+		if err := db.Select(&repos, querySearchRepos, query, query); err != nil {
 			log.Println(err)
 			return nil
 		}
@@ -227,8 +227,7 @@ const (
 	querySearchRepos = `
 		select *
 		from agg_repo
-		where owner like LOWER(?)
-			or LOWER(name) like LOWER(?)
+		where LOWER(name) like LOWER(?)
 			or LOWER(description) like LOWER(?)
 			limit 100
 	`
