@@ -18,11 +18,13 @@ type DB struct {
 type AdminCommands interface {
 }
 
+const pageSize = 20
+
 type Commands interface {
 	LastRun() (*time.Time, error)
 	PopularLanguages() []LanguageCount
 	PopularDevs() []DevCount
-	Language(name string) []*LanguageResult
+	Language(name string, page int) ([]*LanguageResult, int)
 	Profile(name string) (*ProfileData, error)
 	Search(term string) *[]User
 }
@@ -76,15 +78,16 @@ type LanguageResult struct {
 	Count int
 }
 
-func (db *DB) Language(name string) []*LanguageResult {
+func (db *DB) Language(name string, page int) ([]*LanguageResult, int) {
 	repos := []struct {
 		Repository
 		Count int
 	}{}
-	err := db.Select(&repos, queryLanguage, name, name)
+	offset := page * pageSize
+	err := db.Select(&repos, queryLanguage, name, offset, pageSize, name)
 	if err != nil {
 		log.Println(err)
-		return nil
+		return nil, 0
 	}
 	results := []*LanguageResult{}
 	var cursor *LanguageResult
@@ -96,7 +99,13 @@ func (db *DB) Language(name string) []*LanguageResult {
 			cursor.Repos = append(cursor.Repos, repo.Repository)
 		}
 	}
-	return results
+
+	var total int
+	if err = db.Get(&total, countLanguageUsers, name); err != nil {
+		log.Println(err)
+	}
+
+	return results, total
 }
 
 type ProfileData struct {
@@ -181,9 +190,11 @@ const (
 			from stldevs.agg_repo
 			where language=? and fork=0
 			group by owner
+			order by count desc
+			limit ?, ?
 		) r2 ON ( r2.owner = r1.owner )
 		where language=? and fork=0
-		order by r2.count desc, r2.owner, stargazers_count desc;`
+		order by r2.count desc, r2.owner, stargazers_count desc`
 
 	queryProfileForUser = `
 		select login, email, name, blog, followers, public_repos, public_gists, avatar_url
@@ -200,4 +211,8 @@ const (
 		select *
 		from agg_user
 		where login like ? or name like ?`
+
+	countLanguageUsers = `select count(distinct owner)
+			from stldevs.agg_repo
+			where language=? and fork=0;`
 )

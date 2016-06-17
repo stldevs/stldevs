@@ -8,6 +8,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"encoding/json"
+	"strconv"
 )
 
 func topLangs(ctx Context, cmd Commands) httprouter.Handle {
@@ -61,9 +62,23 @@ func add(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 
 func language(ctx Context, cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		pageParam := r.URL.Query().Get("page")
+		page := 0
+		if pageParam != "" {
+			var err error
+			page, err = strconv.Atoi(pageParam)
+			if err != nil {
+				w.WriteHeader(400)
+				return
+			}
+		}
+
 		data := map[string]interface{}{}
-		data["languages"] = cmd.Language(p.ByName("lang"))
+		langs, userCount := cmd.Language(p.ByName("lang"), page)
+		data["languages"] = langs
+		data["count"] = userCount
 		data["language"] = p.ByName("lang")
+		data["page"] = page
 		render(w, data)
 	}
 }
