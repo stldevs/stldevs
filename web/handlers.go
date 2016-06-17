@@ -121,11 +121,15 @@ func adminCmd(ctx Context, agg *aggregator.Aggregator) httprouter.Handle {
 func search(ctx Context, cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		data := map[string]interface{}{}
-		data["session"] = ctx.SessionData(w, r).Values
 		q := r.URL.Query().Get("q")
-		data["q"] = q
+		kind := r.URL.Query().Get("type")
 		if q != "" {
-			data["results"] = cmd.Search(q)
+			results := cmd.Search(q, kind)
+			if kind == "users" {
+				data["results"] = results.([]User)
+			} else if kind == "repos" {
+				data["results"] = results.([]Repository)
+			}
 		}
 		render(w, data)
 	}

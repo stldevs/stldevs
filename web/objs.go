@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
+	"fmt"
 )
 
 type User struct {
@@ -45,6 +46,10 @@ type User struct {
 	SubscriptionsURL  *string
 }
 
+func (u User) String() string {
+	return fmt.Sprintf("User: %v", *u.Login)
+}
+
 type Repository struct {
 	Owner            *string
 	Name             *string
@@ -66,7 +71,7 @@ type Repository struct {
 	Fork             *bool
 	ForksCount       *int
 	NetworkCount     *int
-	OpenIssuesCount  *int
+	OpenIssuesCount  *int `db:"open_issues_count"`
 	StargazersCount  *int
 	SubscribersCount *int
 	WatchersCount    *int
@@ -117,4 +122,8 @@ type Repository struct {
 	TagsURL          *string
 	TreesURL         *string
 	TeamsURL         *string
+}
+
+func (u Repository) String() string {
+	return fmt.Sprintf("Repo: %v/%v", *u.Owner, *u.Name)
 }

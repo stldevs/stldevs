@@ -26,7 +26,7 @@ type Commands interface {
 	PopularDevs() []DevCount
 	Language(name string, page int) ([]*LanguageResult, int)
 	Profile(name string) (*ProfileData, error)
-	Search(term string) *[]User
+	Search(term, kind string) interface{}
 }
 
 func (db *DB) LastRun() (*time.Time, error) {
@@ -146,15 +146,25 @@ func (db *DB) Profile(name string) (*ProfileData, error) {
 	return profile, nil
 }
 
-func (db *DB) Search(term string) *[]User {
+func (db *DB) Search(term, kind string) interface{} {
 	query := "%" + term + "%"
-	users := []User{}
-	if err := db.Select(&users, querySearch, query, query); err != nil {
-		log.Println(err)
-		return nil
+	if kind == "users" {
+		users := []User{}
+		if err := db.Select(&users, querySearchUsers, query, query); err != nil {
+			log.Println(err)
+			return nil
+		}
+		return users
+	} else if kind == "repos" {
+		repos := []Repository{}
+		if err := db.Select(&repos, querySearchRepos, query, query, query); err != nil {
+			log.Println(err)
+			return nil
+		}
+		return repos
 	}
-
-	return &users
+	log.Println("Unknown search kind", kind)
+	return nil
 }
 
 const (
@@ -207,10 +217,21 @@ const (
 		where owner=? and language is not null
 		order by language, stargazers_count desc, name`
 
-	querySearch = `
+	querySearchUsers = `
 		select *
 		from agg_user
-		where login like ? or name like ?`
+		where login like LOWER(?)
+			or LOWER(name) like LOWER(?)
+			limit 100`
+
+	querySearchRepos = `
+		select *
+		from agg_repo
+		where owner like LOWER(?)
+			or LOWER(name) like LOWER(?)
+			or LOWER(description) like LOWER(?)
+			limit 100
+	`
 
 	countLanguageUsers = `select count(distinct owner)
 			from stldevs.agg_repo
