@@ -229,6 +229,7 @@ const (
 		from agg_repo
 		where LOWER(name) like LOWER(?)
 			or LOWER(description) like LOWER(?)
+			order by stargazers_count desc
 			limit 100
 	`
 
