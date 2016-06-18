@@ -1,20 +1,17 @@
 package main
 
 import (
-	"io"
 	"log"
 	"os"
-	"runtime"
 
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/web"
 	"github.com/jmoiron/sqlx"
+	"github.com/jakecoffman/stldevs/migrations"
 )
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	setupLogger("log.txt")
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	f, err := os.Open("./config.json") // TODO: Make configurable
 	if err != nil {
 		log.Fatal(err)
@@ -31,14 +28,9 @@ func main() {
 	}
 	db.MapperFunc(config.CamelToSnake)
 
-	web.Run(cfg, db)
-}
-
-func setupLogger(fileName string) {
-	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalln("Failed to open log file", err)
+	if err = migrations.Migrate(db); err != nil {
+		log.Fatal("Could not migrate schema")
 	}
-	log.SetOutput(io.MultiWriter(os.Stderr, file))
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	web.Run(cfg, db)
 }

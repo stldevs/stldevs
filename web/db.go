@@ -24,6 +24,7 @@ type Commands interface {
 	LastRun() (*time.Time, error)
 	PopularLanguages() []LanguageCount
 	PopularDevs() []DevCount
+	PopularOrgs() []DevCount
 	Language(name string, page int) ([]*LanguageResult, int)
 	Profile(name string) (*ProfileData, error)
 	Search(term, kind string) interface{}
@@ -57,14 +58,24 @@ func (db *DB) PopularLanguages() []LanguageCount {
 }
 
 type DevCount struct {
-	Login, Name, AvatarUrl, Followers string
-	Stars                             int
-	Forks                             int
+	Login, AvatarUrl, Followers string
+	Name *string
+	Stars, Forks int
 }
 
 func (db *DB) PopularDevs() []DevCount {
 	devs := []DevCount{}
 	err := db.Select(&devs, queryPopularDevs)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	return devs
+}
+
+func (db *DB) PopularOrgs() []DevCount {
+	devs := []DevCount{}
+	err := db.Select(&devs, queryPopularOrgs)
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -179,7 +190,8 @@ const (
 		from agg_repo
 		where language is not null
 		group by language
-		order by count desc;`
+		order by count desc
+		limit 100;`
 
 	queryPopularDevs = `
 		select login, name, avatar_url, followers, stars, forks
@@ -189,8 +201,21 @@ const (
 			from stldevs.agg_repo
 			group by owner
 		) repo ON (repo.owner=user.login)
-		where name is not null and stars > 100
-		order by stars desc;`
+		where type='User'
+		order by stars desc
+		limit 100;`
+
+	queryPopularOrgs = `
+		select login, name, avatar_url, followers, stars, forks
+		from stldevs.agg_user user
+		join(
+			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
+			from stldevs.agg_repo
+			group by owner
+		) repo ON (repo.owner=user.login)
+		where type='Organization'
+		order by stars desc
+		limit 100;`
 
 	queryLanguage = `
 		SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, r1.fork, count

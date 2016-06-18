@@ -66,8 +66,8 @@ func (a *Aggregator) updateUsersRepos(user string) error {
 	return nil
 }
 
-func (a *Aggregator) findStlUsers() (map[string]struct{}, error) {
-	searchString := `location:"St. Louis"  location:"STL" location:"St Louis" location:"Saint Louis"`
+func (a *Aggregator) FindInStl(typ string) (map[string]struct{}, error) {
+	searchString := fmt.Sprintf(`location:"St. Louis" location:"STL" location:"St Louis" location:"Saint Louis" type:"%v"`, typ)
 	opts := &github.SearchOptions{Sort: "followers", Order: "desc", ListOptions: github.ListOptions{Page: 1, PerPage: 100}}
 	users := map[string]struct{}{}
 	for {
@@ -97,9 +97,9 @@ func (a *Aggregator) Add(user string) error {
 		return err
 	}
 	checkRespAndWait(resp)
-	_, err = a.db.Exec(`REPLACE INTO agg_user VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+	_, err = a.db.Exec(`REPLACE INTO agg_user VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		u.Login, u.Email, u.Name, u.Location, u.Hireable, u.Blog, u.Bio, u.Followers, u.Following,
-		u.PublicRepos, u.PublicGists, u.AvatarURL, u.DiskUsage, u.CreatedAt.Time, u.UpdatedAt.Time)
+		u.PublicRepos, u.PublicGists, u.AvatarURL, u.Type, u.DiskUsage, u.CreatedAt.Time, u.UpdatedAt.Time)
 	return err
 }
 

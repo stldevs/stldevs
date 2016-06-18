@@ -6,12 +6,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/jakecoffman/stldevs/config"
 	"os"
-	"github.com/jakecoffman/stldevs/migrations"
 )
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
 	f, err := os.Open("./config.json") // TODO: make configurable
 	if err != nil {
 		log.Fatal(err)
@@ -28,10 +25,8 @@ func main() {
 	}
 	db.MapperFunc(config.CamelToSnake)
 
-	if err = migrations.Migrate(db); err != nil {
-		log.Fatal("Could not migrate schema")
-	}
-
 	agg := aggregator.New(db, cfg.GithubKey)
-	agg.Run()
+	u, _ := agg.FindInStl("org")
+	log.Println(len(u))
 }
+

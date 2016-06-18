@@ -16,19 +16,6 @@ type Aggregator struct {
 }
 
 func New(db *sqlx.DB, githubKey string) *Aggregator {
-	_, err := db.Exec(createMeta)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = db.Exec(createUser)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = db.Exec(createRepo)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: githubKey})
 	client := oauth2.NewClient(oauth2.NoContext, ts)
 	return &Aggregator{db: db, client: github.NewClient(client)}
@@ -44,10 +31,18 @@ func (a *Aggregator) Run() {
 		log.Println(err)
 		return
 	}
-	users, err := a.findStlUsers()
+	users, err := a.FindInStl("user")
 	if err != nil {
 		log.Println(err)
 		return
+	}
+	orgs, err := a.FindInStl("org")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for o := range orgs {
+		users[o] = struct{}{}
 	}
 	if err = a.removeUsersNotFoundInSearch(users); err != nil {
 		return
