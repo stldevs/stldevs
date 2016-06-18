@@ -58,7 +58,7 @@ func (db *DB) PopularLanguages() []LanguageCount {
 }
 
 type DevCount struct {
-	Login, AvatarUrl, Followers string
+	Login, AvatarUrl, Followers, PublicRepos string
 	Name *string
 	Stars, Forks int
 }
@@ -194,7 +194,7 @@ const (
 		limit 100;`
 
 	queryPopularDevs = `
-		select login, name, avatar_url, followers, stars, forks
+		select login, name, avatar_url, followers, public_repos, stars, forks
 		from stldevs.agg_user user
 		join(
 			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
@@ -206,7 +206,7 @@ const (
 		limit 100;`
 
 	queryPopularOrgs = `
-		select login, name, avatar_url, followers, stars, forks
+		select login, name, avatar_url, followers, public_repos, stars, forks
 		from stldevs.agg_user user
 		join(
 			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
