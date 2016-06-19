@@ -29,33 +29,15 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 
 	router := httprouter.New()
 
-	router.GET("/search", search(services))
-	router.GET("/toplangs", topLangs(services))
-	router.GET("/topdevs", topDevs(services))
-	router.GET("/toporgs", topOrgs(services))
-	router.GET("/lang/:lang", language(services))
-	router.GET("/profile/:profile", profile(services))
+	router.GET("/search", mw(services, search))
+	router.GET("/toplangs", mw(services, topLangs))
+	router.GET("/topdevs", mw(services, topDevs))
+	router.GET("/toporgs", mw(services, topOrgs))
+	router.GET("/lang/:lang", mw(services, language))
+	router.GET("/profile/:profile", mw(services, profile))
 
 	router.PanicHandler = panicHandler
 
 	log.Println("Serving on port 8080")
-	log.Println(http.ListenAndServe("0.0.0.0:8080", finisher(router)))
-}
-
-func panicHandler(w http.ResponseWriter, _ *http.Request, d interface{}) {
-	log.Println("ERROR WAS:", d)
-	w.WriteHeader(500)
-	w.Write([]byte("There was an error"))
-}
-
-func finisher(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		h.ServeHTTP(w, r)
-		path := r.URL.Path
-		if r.URL.RawQuery != "" {
-			path += "?" + r.URL.RawQuery
-		}
-		log.Println(path, r.Method, r.RemoteAddr)
-	})
+	log.Println(http.ListenAndServe("0.0.0.0:8080", router))
 }
