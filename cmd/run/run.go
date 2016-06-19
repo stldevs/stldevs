@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/jakecoffman/stldevs/aggregator"
 	"log"
-	"github.com/jmoiron/sqlx"
-	"github.com/jakecoffman/stldevs/config"
 	"os"
+
+	"github.com/jakecoffman/stldevs/aggregator"
+	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/migrations"
+	"github.com/jmoiron/sqlx"
 )
 
 func main() {

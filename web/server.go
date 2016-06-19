@@ -1,13 +1,11 @@
 package web
 
 import (
+	"encoding/gob"
 	"log"
 	"net/http"
-	"encoding/gob"
 
 	"github.com/google/go-github/github"
-	"github.com/gorilla/context"
-	"github.com/gorilla/sessions"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jmoiron/sqlx"
 	"github.com/julienschmidt/httprouter"
@@ -16,11 +14,9 @@ import (
 )
 
 func Run(cfg *config.Config, db *sqlx.DB) {
-	myDb := &DB{db}
-	ctx := &contextImpl{
-		store:        sessions.NewFilesystemStore("", []byte(cfg.SessionSecret)),
-		trackingCode: cfg.TrackingCode,
-		conf: &oauth2.Config{
+	services := &Stldevs{
+		db,
+		&oauth2.Config{
 			ClientID:     cfg.GithubClientID,
 			ClientSecret: cfg.GithubClientSecret,
 			Scopes:       []string{},
@@ -33,28 +29,27 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 
 	router := httprouter.New()
 
-	router.GET("/search", search(ctx, myDb))
-	router.GET("/toplangs", topLangs(ctx, myDb))
-	router.GET("/topdevs", topDevs(ctx, myDb))
-	router.GET("/toporgs", topOrgs(ctx, myDb))
-	router.GET("/lang/:lang", language(ctx, myDb))
-	router.GET("/profile/:profile", profile(ctx, myDb))
+	router.GET("/search", search(services))
+	router.GET("/toplangs", topLangs(services))
+	router.GET("/topdevs", topDevs(services))
+	router.GET("/toporgs", topOrgs(services))
+	router.GET("/lang/:lang", language(services))
+	router.GET("/profile/:profile", profile(services))
 
 	router.PanicHandler = panicHandler
 
 	log.Println("Serving on port 8080")
-	log.Println(http.ListenAndServe("0.0.0.0:8080", finisher(router, ctx)))
+	log.Println(http.ListenAndServe("0.0.0.0:8080", finisher(router)))
 }
 
-func panicHandler(w http.ResponseWriter, r *http.Request, d interface{}) {
+func panicHandler(w http.ResponseWriter, _ *http.Request, d interface{}) {
 	log.Println("ERROR WAS:", d)
 	w.WriteHeader(500)
 	w.Write([]byte("There was an error"))
 }
 
-func finisher(h http.Handler, ctx Context) http.Handler {
+func finisher(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer context.Clear(r)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		h.ServeHTTP(w, r)
 		path := r.URL.Path

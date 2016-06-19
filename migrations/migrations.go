@@ -1,8 +1,9 @@
 package migrations
 
 import (
-	"github.com/jmoiron/sqlx"
 	"log"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type migration func(*sqlx.DB) error

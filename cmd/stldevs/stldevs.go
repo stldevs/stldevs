@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/jakecoffman/stldevs/config"
+	"github.com/jakecoffman/stldevs/migrations"
 	"github.com/jakecoffman/stldevs/web"
 	"github.com/jmoiron/sqlx"
-	"github.com/jakecoffman/stldevs/migrations"
 )
 
 func main() {

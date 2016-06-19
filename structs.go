@@ -1,10 +1,11 @@
-package web
+package stldevs
 
 import (
 	"time"
 
-	"github.com/google/go-github/github"
 	"fmt"
+
+	"github.com/google/go-github/github"
 )
 
 type User struct {

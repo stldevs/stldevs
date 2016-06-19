@@ -3,10 +3,10 @@ package aggregator
 import (
 	"log"
 
-	"golang.org/x/oauth2"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 	"github.com/jmoiron/sqlx"
+	"golang.org/x/oauth2"
 )
 
 type Aggregator struct {
@@ -60,4 +60,3 @@ func (a *Aggregator) Run() {
 func (a *Aggregator) Running() bool {
 	return a.running
 }
-

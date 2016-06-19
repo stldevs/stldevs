@@ -1,62 +1,51 @@
 package web
 
 import (
-	"net/http"
-	"log"
 	"encoding/json"
+	"log"
+	"net/http"
 	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 )
 
-func topLangs(ctx Context, cmd Commands) httprouter.Handle {
+func topLangs(cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		data := map[string]interface{}{}
-		data["langs"] = cmd.PopularLanguages()
-		if time, err := cmd.LastRun(); err == nil {
-			data["lastrun"] = time
-		}
-		render(w, data)
+		render(w, map[string]interface{}{
+			"langs":   cmd.PopularLanguages(),
+			"lastrun": cmd.LastRun(),
+		})
 	}
 }
 
-func topDevs(ctx Context, cmd Commands) httprouter.Handle {
+func topDevs(cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		data := map[string]interface{}{}
-		data["devs"] = cmd.PopularDevs()
-		if time, err := cmd.LastRun(); err == nil {
-			data["lastrun"] = time
-		}
-		render(w, data)
+		render(w, map[string]interface{}{
+			"devs":    cmd.PopularDevs(),
+			"lastrun": cmd.LastRun(),
+		})
 	}
 }
 
-func topOrgs(ctx Context, cmd Commands) httprouter.Handle {
+func topOrgs(cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		data := map[string]interface{}{}
-		data["devs"] = cmd.PopularOrgs()
-		if time, err := cmd.LastRun(); err == nil {
-			data["lastrun"] = time
-		}
-		render(w, data)
+		render(w, map[string]interface{}{
+			"devs":    cmd.PopularOrgs(),
+			"lastrun": cmd.LastRun(),
+		})
 	}
 }
 
-func profile(ctx Context, cmd Commands) httprouter.Handle {
+func profile(cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := map[string]interface{}{}
-		profile, err := cmd.Profile(p.ByName("profile"))
-		if err != nil {
-			log.Println(err)
-		}
-		if profile != nil {
-			data["profile"] = profile
-		}
-		render(w, data)
+		profile, _ := cmd.Profile(p.ByName("profile"))
+		render(w, map[string]interface{}{
+			"profile": profile,
+		})
 	}
 }
 
-func language(ctx Context, cmd Commands) httprouter.Handle {
+func language(cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		pageParam := r.URL.Query().Get("page")
 		page := 0
@@ -69,30 +58,29 @@ func language(ctx Context, cmd Commands) httprouter.Handle {
 			}
 		}
 
-		data := map[string]interface{}{}
 		langs, userCount := cmd.Language(p.ByName("lang"), page)
-		data["languages"] = langs
-		data["count"] = userCount
-		data["language"] = p.ByName("lang")
-		data["page"] = page
-		render(w, data)
+		render(w, map[string]interface{}{
+			"languages": langs,
+			"count":     userCount,
+			"language":  p.ByName("lang"),
+			"page":      page,
+		})
 	}
 }
 
-func search(ctx Context, cmd Commands) httprouter.Handle {
+func search(cmd Commands) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		data := map[string]interface{}{}
 		q := r.URL.Query().Get("q")
 		kind := r.URL.Query().Get("type")
-		if q != "" {
-			results := cmd.Search(q, kind)
-			if kind == "users" {
-				data["results"] = results.([]User)
-			} else if kind == "repos" {
-				data["results"] = results.([]Repository)
-			}
+
+		if q == "" {
+			w.WriteHeader(400)
+			return
 		}
-		render(w, data)
+
+		render(w, map[string]interface{}{
+			"results": cmd.Search(q, kind),
+		})
 	}
 }
 

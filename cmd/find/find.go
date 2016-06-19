@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/jakecoffman/stldevs/aggregator"
 	"log"
-	"github.com/jmoiron/sqlx"
-	"github.com/jakecoffman/stldevs/config"
 	"os"
+
+	"github.com/jakecoffman/stldevs/aggregator"
+	"github.com/jakecoffman/stldevs/config"
+	"github.com/jmoiron/sqlx"
 )
 
 func main() {
@@ -29,4 +30,3 @@ func main() {
 	u, _ := agg.FindInStl("org")
 	log.Println(len(u))
 }
-

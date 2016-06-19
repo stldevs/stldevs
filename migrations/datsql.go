@@ -59,12 +59,11 @@ const (
 			);`
 
 	selectMigrations = "select * from migrations where name=?"
-	insertMigration = `INSERT INTO migrations VALUES(?)`
+	insertMigration  = `INSERT INTO migrations VALUES(?)`
 
 	migrationOrganizations = `ALTER TABLE agg_user
 		ADD COLUMN type VARCHAR(255) AFTER avatar_url,
 		MODIFY name VARCHAR(255),
 		ADD INDEX type (type),
 		ADD INDEX name (name)`
-
 )
