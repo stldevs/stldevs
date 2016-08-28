@@ -44,9 +44,6 @@ func (a *Aggregator) Run() {
 	for o := range orgs {
 		users[o] = struct{}{}
 	}
-	if err = a.removeUsersNotFoundInSearch(users); err != nil {
-		return
-	}
 	for user := range users {
 		log.Println("Adding/Updating", user)
 		if err = a.Add(user); err != nil {
