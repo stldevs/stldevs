@@ -68,7 +68,7 @@ func (a *Aggregator) updateUsersRepos(user string) error {
 
 func (a *Aggregator) FindInStl(typ string) (map[string]struct{}, error) {
 	searchString := fmt.Sprintf(`location:"St. Louis" location:"STL" location:"St Louis" location:"Saint Louis" type:"%v"`, typ)
-	opts := &github.SearchOptions{Sort: "followers", Order: "desc", ListOptions: github.ListOptions{Page: 1, PerPage: 100}}
+	opts := &github.SearchOptions{ListOptions: github.ListOptions{Page: 1, PerPage: 100}}
 	users := map[string]struct{}{}
 	for {
 		result, resultResp, err := a.client.Search.Users(searchString, opts)
