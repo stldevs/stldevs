@@ -90,7 +90,7 @@ func (a *Aggregator) FindInStl(typ string) (map[string]struct{}, error) {
 
 func (a *Aggregator) Add(user string) error {
 	u, resp, err := a.client.Users.Get(user)
-	if checkRespAndWait(resp, err) != nil {
+	if checkRespAndWait(resp, err) != nil || u == nil {
 		log.Println("Failed getting user details for", user, ":", err)
 		return err
 	}
