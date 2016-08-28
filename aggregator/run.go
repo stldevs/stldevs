@@ -38,11 +38,10 @@ func (a *Aggregator) updateUsersRepos(user string) error {
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
 	for {
 		result, resp, err := a.client.Repositories.List(user, opts)
-		if err != nil {
-			log.Println("error while listing repositories", err)
+		if checkRespAndWait(resp, err) != nil {
+			log.Println(err)
 			return err
 		}
-		checkRespAndWait(resp)
 		for _, repo := range result {
 			var pushedAt *time.Time
 			if repo.PushedAt != nil {
@@ -72,11 +71,10 @@ func (a *Aggregator) FindInStl(typ string) (map[string]struct{}, error) {
 	users := map[string]struct{}{}
 	for {
 		result, resultResp, err := a.client.Search.Users(searchString, opts)
-		if err != nil {
-			log.Println("Error Searching users", err)
-			return nil, err
+		if checkRespAndWait(resultResp, err) != nil {
+			log.Println(err)
+			return
 		}
-		checkRespAndWait(resultResp)
 		for _, user := range result.Users {
 			users[*user.Login] = struct{}{}
 		}
@@ -92,11 +90,10 @@ func (a *Aggregator) FindInStl(typ string) (map[string]struct{}, error) {
 
 func (a *Aggregator) Add(user string) error {
 	u, resp, err := a.client.Users.Get(user)
-	if err != nil {
+	if checkRespAndWait(resp, err) != nil {
 		log.Println("Failed getting user details for", user, ":", err)
-		return err
+		return
 	}
-	checkRespAndWait(resp)
 	_, err = a.db.Exec(`REPLACE INTO agg_user VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		u.Login, u.Email, u.Name, u.Location, u.Hireable, u.Blog, u.Bio, u.Followers, u.Following,
 		u.PublicRepos, u.PublicGists, u.AvatarURL, u.Type, u.DiskUsage, u.CreatedAt.Time, u.UpdatedAt.Time)
@@ -111,10 +108,13 @@ func (a *Aggregator) insertRunLog() error {
 	return err
 }
 
-func checkRespAndWait(r *github.Response) {
+func checkRespAndWait(r *github.Response, err error) error {
 	if r.Remaining == 0 {
 		duration := time.Now().Sub(r.Rate.Reset.Time)
 		fmt.Println("I ran out of requests, waiting", duration)
 		time.Sleep(duration)
+	} else if err != nil {
+		return err
 	}
+	return nil
 }
