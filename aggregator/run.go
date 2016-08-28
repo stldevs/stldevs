@@ -73,7 +73,7 @@ func (a *Aggregator) FindInStl(typ string) (map[string]struct{}, error) {
 		result, resultResp, err := a.client.Search.Users(searchString, opts)
 		if checkRespAndWait(resultResp, err) != nil {
 			log.Println(err)
-			return
+			return err
 		}
 		for _, user := range result.Users {
 			users[*user.Login] = struct{}{}
@@ -92,7 +92,7 @@ func (a *Aggregator) Add(user string) error {
 	u, resp, err := a.client.Users.Get(user)
 	if checkRespAndWait(resp, err) != nil {
 		log.Println("Failed getting user details for", user, ":", err)
-		return
+		return err
 	}
 	_, err = a.db.Exec(`REPLACE INTO agg_user VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		u.Login, u.Email, u.Name, u.Location, u.Hireable, u.Blog, u.Bio, u.Followers, u.Following,
