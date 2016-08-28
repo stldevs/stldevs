@@ -73,7 +73,7 @@ func (a *Aggregator) FindInStl(typ string) (map[string]struct{}, error) {
 		result, resultResp, err := a.client.Search.Users(searchString, opts)
 		if checkRespAndWait(resultResp, err) != nil {
 			log.Println(err)
-			return err
+			return users, err
 		}
 		for _, user := range result.Users {
 			users[*user.Login] = struct{}{}
