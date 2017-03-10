@@ -2,27 +2,23 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/migrations"
 	"github.com/jakecoffman/stldevs/web"
 	"github.com/jmoiron/sqlx"
+	"os"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	f, err := os.Open("./config.json") // TODO: Make configurable
+
+	cfg, err := config.NewConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	cfg, err := config.NewConfig(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	db, err := sqlx.Connect("mysql", "root:"+cfg.MysqlPw+"@/stldevs?parseTime=true")
+	db, err := sqlx.Connect("mysql", os.Getenv("DB") + "?parseTime=true")
 	if err != nil {
 		log.Fatal(err)
 	}

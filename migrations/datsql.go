@@ -8,7 +8,6 @@ const (
 	createUser = `CREATE TABLE IF NOT EXISTS agg_user (
 			login VARCHAR(255) NOT NULL PRIMARY KEY,
 			email TEXT,
-			name VARCHAR(255),
 			location TEXT,
 			hireable BOOL,
 			blog TEXT,
@@ -18,12 +17,9 @@ const (
 			public_repos INTEGER,
 			public_gists INTEGER,
 			avatar_url TEXT,
-			type VARCHAR(255),
 			disk_usage INTEGER,
 			created_at DATETIME,
-			updated_at DATETIME,
-			INDEX type (type),
-			INDEX name (name)
+			updated_at DATETIME
 			);`
 
 	createRepo = `CREATE TABLE IF NOT EXISTS agg_repo (
@@ -63,7 +59,7 @@ const (
 
 	migrationOrganizations = `ALTER TABLE agg_user
 		ADD COLUMN type VARCHAR(255) AFTER avatar_url,
-		MODIFY name VARCHAR(255),
+		ADD COLUMN name VARCHAR(255),
 		ADD INDEX type (type),
 		ADD INDEX name (name)`
 )

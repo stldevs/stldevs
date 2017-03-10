@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/jakecoffman/stldevs/aggregator"
 	"github.com/jakecoffman/stldevs/config"
@@ -13,12 +12,7 @@ import (
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	f, err := os.Open("./config.json") // TODO: make configurable
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	cfg, err := config.NewConfig(f)
+	cfg, err := config.NewConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
