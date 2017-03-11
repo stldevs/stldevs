@@ -14,7 +14,6 @@ type Handler func(context *Context, commands Commands) error
 
 func mw(commands Commands, handlers ...Handler) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
 		ctx := &Context{w, r, p}
 		for _, h := range handlers {
 			if err := h(ctx, commands); err != nil {
