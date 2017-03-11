@@ -1,8 +1,8 @@
 *.db
 *.csv
 *.json
-*.idea
+.idea
 bower_components
 *.iml
 log.txt
-vars.env
+*.env

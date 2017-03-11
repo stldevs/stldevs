@@ -1,21 +1,19 @@
 version: '2'
 services:
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASS}"
+      MYSQL_DATABASE: stldevs
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
   web:
     build: .
     ports:
     - "8080:8080"
-    links:
-    - mysql
     depends_on:
     - mysql
     env_file:
-    - ./vars.env
+    - ./.env
     environment:
-      DB: "root:pass@tcp(mysql:3306)/stldevs"
-  mysql:
-    image: mysql:5.7
-    environment:
-      MYSQL_ROOT_PASSWORD: pass
-      MYSQL_DATABASE: stldevs
-      MYSQL_USER: user
-      MYSQL_PASSWORD: pass
+      DB: "root:${DB_ROOT_PASS}@tcp(mysql:3306)/stldevs"

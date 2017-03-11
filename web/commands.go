@@ -10,6 +10,7 @@ import (
 	"github.com/jakecoffman/stldevs"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
+	"database/sql"
 )
 
 type Stldevs struct {
@@ -40,6 +41,9 @@ type Commands interface {
 func (s *Stldevs) LastRun() *time.Time {
 	timeStr := mysql.NullTime{}
 	err := s.Get(&timeStr, queryLastRun)
+	if err == sql.ErrNoRows {
+		return &time.Time{}
+	}
 	if err != nil {
 		log.Println(err)
 		return nil
