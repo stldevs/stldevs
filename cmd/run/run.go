@@ -7,12 +7,18 @@ import (
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/migrations"
 	"github.com/jmoiron/sqlx"
+	"os"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	cfg, err := config.NewConfig()
+	f, err := os.Open("./config.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cfg, err := config.NewConfig(f)
 	if err != nil {
 		log.Fatal(err)
 	}
