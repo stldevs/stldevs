@@ -1,99 +1,76 @@
 package web
 
 import (
-	"encoding/json"
-	"errors"
-	"log"
-	"net/http"
 	"strconv"
-
-	"github.com/julienschmidt/httprouter"
+	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/jmoiron/sqlx"
 )
 
-type Handler func(context *Context, commands Commands) error
-
-func mw(commands Commands, handlers ...Handler) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		ctx := &Context{w, r, p}
-		for _, h := range handlers {
-			if err := h(ctx, commands); err != nil {
-				break
-			}
-		}
-		path := r.URL.Path
-		if r.URL.RawQuery != "" {
-			path += "?" + r.URL.RawQuery
-		}
-		log.Println(path, r.Method, r.RemoteAddr)
-	}
-}
-
-func panicHandler(w http.ResponseWriter, _ *http.Request, d interface{}) {
-	w.WriteHeader(500)
-	if err := json.NewEncoder(w).Encode(d); err != nil {
-		log.Println(err)
-	}
-}
-
-func topLangs(ctx *Context, cmd Commands) error {
-	return ctx.Render(map[string]interface{}{
-		"langs":   cmd.PopularLanguages(),
-		"lastrun": cmd.LastRun(),
+func topLangs(c *gin.Context) {
+	db := c.MustGet("db").(*sqlx.DB)
+	c.JSON(200, map[string]interface{}{
+		"langs":   PopularLanguages(db),
+		"lastrun": LastRun(db),
 	})
 }
 
-func topDevs(ctx *Context, cmd Commands) error {
-	return ctx.Render(map[string]interface{}{
-		"devs":    cmd.PopularDevs(),
-		"lastrun": cmd.LastRun(),
+func topDevs(c *gin.Context) {
+	db := c.MustGet("db").(*sqlx.DB)
+	c.JSON(200, map[string]interface{}{
+		"devs":    PopularDevs(db),
+		"lastrun": LastRun(db),
 	})
 }
 
-func topOrgs(ctx *Context, cmd Commands) error {
-	return ctx.Render(map[string]interface{}{
-		"devs":    cmd.PopularOrgs(),
-		"lastrun": cmd.LastRun(),
+func topOrgs(c *gin.Context) {
+	db := c.MustGet("db").(*sqlx.DB)
+	c.JSON(200, map[string]interface{}{
+		"devs":    PopularOrgs(db),
+		"lastrun": LastRun(db),
 	})
 }
 
-func profile(ctx *Context, cmd Commands) error {
-	profile, _ := cmd.Profile(ctx.Params.ByName("profile"))
-	return ctx.Render(map[string]interface{}{
+func profile(c *gin.Context) {
+	db := c.MustGet("db").(*sqlx.DB)
+	profile, _ := Profile(db, c.Params.ByName("profile"))
+	c.JSON(200, map[string]interface{}{
 		"profile": profile,
 	})
 }
 
-func language(ctx *Context, cmd Commands) error {
-	pageParam := ctx.Request.URL.Query().Get("page")
+func language(c *gin.Context) {
+	db := c.MustGet("db").(*sqlx.DB)
+	pageParam := c.Request.URL.Query().Get("page")
 	page := 0
 	if pageParam != "" {
 		var err error
 		page, err = strconv.Atoi(pageParam)
 		if err != nil {
-			ctx.Response.WriteHeader(400)
-			return err
+			c.Status(400)
+			return
 		}
 	}
 
-	langs, userCount := cmd.Language(ctx.Params.ByName("lang"), page)
-	return ctx.Render(map[string]interface{}{
+	langs, userCount := Language(db, c.Params.ByName("lang"), page)
+	c.JSON(200, map[string]interface{}{
 		"languages": langs,
 		"count":     userCount,
-		"language":  ctx.Params.ByName("lang"),
+		"language":  c.Params.ByName("lang"),
 		"page":      page,
 	})
 }
 
-func search(ctx *Context, cmd Commands) error {
-	q := ctx.Request.URL.Query().Get("q")
-	kind := ctx.Request.URL.Query().Get("type")
+func search(c *gin.Context) {
+	db := c.MustGet("db").(*sqlx.DB)
+	q := c.Request.URL.Query().Get("q")
+	kind := c.Request.URL.Query().Get("type")
 
 	if q == "" {
-		ctx.Response.WriteHeader(400)
-		return errors.New("q is empty")
+		c.Status(400)
+		return
 	}
 
-	return ctx.Render(map[string]interface{}{
-		"results": cmd.Search(q, kind),
+	c.JSON(200, map[string]interface{}{
+		"results": Search(db, q, kind),
 	})
 }

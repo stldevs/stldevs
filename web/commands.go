@@ -8,39 +8,20 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 	"github.com/jakecoffman/stldevs"
-	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
 	"database/sql"
 )
 
-type Stldevs struct {
-	*sqlx.DB
-	*oauth2.Config
-}
-
-type AdminCommands interface {
-}
-
 const pageSize = 20
 
-type Commands interface {
-	// queries
-	LastRun() *time.Time
-	PopularLanguages() []LanguageCount
-	PopularDevs() []DevCount
-	PopularOrgs() []DevCount
-	Language(name string, page int) ([]*LanguageResult, int)
-	Profile(name string) (*ProfileData, error)
-	Search(term, kind string) interface{}
-
-	// auth flow
-	AuthCode(string, oauth2.AuthCodeOption) string
-	GithubLogin(code string) (*github.User, error)
+type DBReader interface {
+	Select(dest interface{}, query string, args ...interface{}) error
+	Get(dest interface{}, query string, args ...interface{}) error
 }
 
-func (s *Stldevs) LastRun() *time.Time {
+func LastRun(db DBReader) *time.Time {
 	timeStr := mysql.NullTime{}
-	err := s.Get(&timeStr, queryLastRun)
+	err := db.Get(&timeStr, queryLastRun)
 	if err == sql.ErrNoRows {
 		return &time.Time{}
 	}
@@ -61,9 +42,9 @@ type LanguageCount struct {
 	Users    int
 }
 
-func (s *Stldevs) PopularLanguages() []LanguageCount {
+func PopularLanguages(db DBReader) []LanguageCount {
 	langs := []LanguageCount{}
-	err := s.Select(&langs, queryPopularLanguages)
+	err := db.Select(&langs, queryPopularLanguages)
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -77,9 +58,9 @@ type DevCount struct {
 	Stars, Forks                             int
 }
 
-func (s *Stldevs) PopularDevs() []DevCount {
+func PopularDevs(db DBReader) []DevCount {
 	devs := []DevCount{}
-	err := s.Select(&devs, queryPopularDevs)
+	err := db.Select(&devs, queryPopularDevs)
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -87,9 +68,9 @@ func (s *Stldevs) PopularDevs() []DevCount {
 	return devs
 }
 
-func (s *Stldevs) PopularOrgs() []DevCount {
+func PopularOrgs(db DBReader) []DevCount {
 	devs := []DevCount{}
-	err := s.Select(&devs, queryPopularOrgs)
+	err := db.Select(&devs, queryPopularOrgs)
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -103,13 +84,13 @@ type LanguageResult struct {
 	Count int
 }
 
-func (s *Stldevs) Language(name string, page int) ([]*LanguageResult, int) {
+func Language(db DBReader, name string, page int) ([]*LanguageResult, int) {
 	repos := []struct {
 		stldevs.Repository
 		Count int
 	}{}
 	offset := page * pageSize
-	err := s.Select(&repos, queryLanguage, name, offset, pageSize, name)
+	err := db.Select(&repos, queryLanguage, name, offset, pageSize, name)
 	if err != nil {
 		log.Println(err)
 		return nil, 0
@@ -126,7 +107,7 @@ func (s *Stldevs) Language(name string, page int) ([]*LanguageResult, int) {
 	}
 
 	var total int
-	if err = s.Get(&total, countLanguageUsers, name); err != nil {
+	if err = db.Get(&total, countLanguageUsers, name); err != nil {
 		log.Println(err)
 	}
 
@@ -138,11 +119,11 @@ type ProfileData struct {
 	Repos map[string][]stldevs.Repository
 }
 
-func (s *Stldevs) Profile(name string) (*ProfileData, error) {
+func Profile(db DBReader, name string) (*ProfileData, error) {
 	user := &github.User{}
 	reposByLang := map[string][]stldevs.Repository{}
 	profile := &ProfileData{user, reposByLang}
-	err := s.Get(profile.User, queryProfileForUser, name)
+	err := db.Get(profile.User, queryProfileForUser, name)
 	if err != nil {
 		log.Println("Error querying profile", name)
 		return nil, err
@@ -153,7 +134,7 @@ func (s *Stldevs) Profile(name string) (*ProfileData, error) {
 	}
 
 	repos := []stldevs.Repository{}
-	err = s.Select(&repos, queryRepoForUser, name)
+	err = db.Select(&repos, queryRepoForUser, name)
 	if err != nil {
 		log.Println("Error querying repo for user", name)
 		return nil, err
@@ -171,18 +152,18 @@ func (s *Stldevs) Profile(name string) (*ProfileData, error) {
 	return profile, nil
 }
 
-func (s *Stldevs) Search(term, kind string) interface{} {
+func Search(db DBReader, term, kind string) interface{} {
 	query := "%" + term + "%"
 	if kind == "users" {
 		users := []stldevs.User{}
-		if err := s.Select(&users, querySearchUsers, query, query); err != nil {
+		if err := db.Select(&users, querySearchUsers, query, query); err != nil {
 			log.Println(err)
 			return nil
 		}
 		return users
 	} else if kind == "repos" {
 		repos := []stldevs.Repository{}
-		if err := s.Select(&repos, querySearchRepos, query, query); err != nil {
+		if err := db.Select(&repos, querySearchRepos, query, query); err != nil {
 			log.Println(err)
 			return nil
 		}
@@ -192,17 +173,17 @@ func (s *Stldevs) Search(term, kind string) interface{} {
 	return nil
 }
 
-func (s *Stldevs) AuthCode(state string, option oauth2.AuthCodeOption) string {
-	return s.AuthCodeURL(state, option)
+func AuthCode(conf *oauth2.Config, state string, option oauth2.AuthCodeOption) string {
+	return conf.AuthCodeURL(state, option)
 }
 
-func (s *Stldevs) GithubLogin(code string) (*github.User, error) {
-	token, err := s.Exchange(oauth2.NoContext, code)
+func GithubLogin(conf *oauth2.Config, code string) (*github.User, error) {
+	token, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		return nil, err
 	}
 
-	client := github.NewClient(s.Client(oauth2.NoContext, token))
+	client := github.NewClient(conf.Client(oauth2.NoContext, token))
 
 	user, _, err := client.Users.Get("")
 	if err != nil {
