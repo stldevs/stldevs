@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
+	"context"
 )
 
 func (a *Aggregator) removeUsersNotFoundInSearch(users map[string]struct{}) error {
@@ -37,7 +38,7 @@ func (a *Aggregator) removeUsersNotFoundInSearch(users map[string]struct{}) erro
 func (a *Aggregator) updateUsersRepos(user string) error {
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
 	for {
-		result, resp, err := a.client.Repositories.List(user, opts)
+		result, resp, err := a.client.Repositories.List(context.Background(), user, opts)
 		if checkRespAndWait(resp, err) != nil {
 			log.Println(err)
 			return err
@@ -70,7 +71,7 @@ func (a *Aggregator) FindInStl(typ string) (map[string]struct{}, error) {
 	opts := &github.SearchOptions{ListOptions: github.ListOptions{Page: 1, PerPage: 100}}
 	users := map[string]struct{}{}
 	for {
-		result, resultResp, err := a.client.Search.Users(searchString, opts)
+		result, resultResp, err := a.client.Search.Users(context.Background(), searchString, opts)
 		if checkRespAndWait(resultResp, err) != nil {
 			log.Println(err)
 			return users, err
@@ -89,7 +90,7 @@ func (a *Aggregator) FindInStl(typ string) (map[string]struct{}, error) {
 }
 
 func (a *Aggregator) Add(user string) error {
-	u, resp, err := a.client.Users.Get(user)
+	u, resp, err := a.client.Users.Get(context.Background(), user)
 	if checkRespAndWait(resp, err) != nil || u == nil {
 		log.Println("Failed getting user details for", user, ":", err)
 		return err

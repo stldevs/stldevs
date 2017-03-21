@@ -10,6 +10,7 @@ import (
 	"github.com/jakecoffman/stldevs"
 	"golang.org/x/oauth2"
 	"database/sql"
+	"context"
 )
 
 const pageSize = 20
@@ -185,7 +186,7 @@ func GithubLogin(conf *oauth2.Config, code string) (*github.User, error) {
 
 	client := github.NewClient(conf.Client(oauth2.NoContext, token))
 
-	user, _, err := client.Users.Get("")
+	user, _, err := client.Users.Get(context.Background(), "")
 	if err != nil {
 		return nil, err
 	}
