@@ -8,6 +8,7 @@ import (
 	"github.com/jakecoffman/stldevs/migrations"
 	"github.com/jakecoffman/stldevs/web"
 	"github.com/jmoiron/sqlx"
+	"time"
 )
 
 func main() {
@@ -22,9 +23,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := sqlx.Connect("mysql", "root:"+cfg.MysqlPw+"@/stldevs?parseTime=true")
-	if err != nil {
-		log.Fatal(err)
+	var db *sqlx.DB
+	start := time.Now()
+	for {
+		db, err = sqlx.Connect("mysql", "root:"+cfg.MysqlPw+"@/stldevs?parseTime=true")
+		if err != nil {
+			if time.Now().Sub(start) > 11 * time.Second {
+				log.Fatal(err)
+			} else {
+				log.Println("failed to connect to mysql, trying again in 5 seconds")
+				time.Sleep(5 * time.Second)
+			}
+		} else {
+			break
+		}
 	}
 	db.MapperFunc(config.CamelToSnake)
 
