@@ -8,6 +8,7 @@ import (
 	"github.com/jakecoffman/stldevs/migrations"
 	"github.com/jakecoffman/stldevs/web"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/jackc/pgx/stdlib"
 	"time"
 )
 
@@ -26,12 +27,13 @@ func main() {
 	var db *sqlx.DB
 	start := time.Now()
 	for {
-		db, err = sqlx.Connect("mysql", "root:"+cfg.MysqlPw+"@/stldevs?parseTime=true")
+		// postgres://pgx_md5:secret@localhost:5432/pgx_test
+		db, err = sqlx.Connect("pgx", "postgres://postgres:"+cfg.PostgresPw+"@localhost:5432/stldevs")
 		if err != nil {
 			if time.Now().Sub(start) > 11 * time.Second {
 				log.Fatal(err)
 			} else {
-				log.Println("failed to connect to mysql, trying again in 5 seconds")
+				log.Println("failed to connect to db, trying again in 5 seconds", err)
 				time.Sleep(5 * time.Second)
 			}
 		} else {

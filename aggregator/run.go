@@ -22,11 +22,11 @@ func (a *Aggregator) removeUsersNotFoundInSearch(users map[string]struct{}) erro
 	for _, existing := range existingUsers {
 		if _, ok := users[*existing.Login]; !ok {
 			log.Println(*existing.Login, "is no longer in St. Louis")
-			_, err = a.db.Exec(`DELETE FROM agg_user WHERE login=?`, *existing.Login)
+			_, err = a.db.Exec(`DELETE FROM agg_user WHERE login=$1`, *existing.Login)
 			if err != nil {
 				log.Println("Error while deleting moved user:", *existing.Login, err)
 			}
-			_, err = a.db.Exec(`DELETE FROM agg_repo WHERE owner=?`, *existing.Login)
+			_, err = a.db.Exec(`DELETE FROM agg_repo WHERE owner=$1`, *existing.Login)
 			if err != nil {
 				log.Println("Error while deleting moved user's repos", *existing.Login, err)
 			}
@@ -48,14 +48,46 @@ func (a *Aggregator) updateUsersRepos(user string) error {
 			if repo.PushedAt != nil {
 				pushedAt = &repo.PushedAt.Time
 			}
-			_, err = a.db.Exec(`REPLACE INTO agg_repo VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-				repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage,
+			r, err := a.db.Exec(`UPDATE agg_repo
+set owner = $1,
+	name = $2,
+	description = $3,
+	language = $4,
+	homepage = $5,
+	forks_count = $6,
+	network_count = $7,
+	open_issues_count = $8,
+	stargazers_count = $9,
+	subscribers_count = $10,
+	watchers_count = $11,
+	size = $12,
+	fork = $13,
+	default_branch = $14,
+	master_branch = $15,
+	created_at = $16,
+	pushed_at=$17,
+	updated_at = $18
+where owner=$1 and name=$2`, repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage,
 				repo.ForksCount, repo.NetworkCount, repo.OpenIssuesCount, repo.StargazersCount, repo.SubscribersCount,
 				repo.WatchersCount, repo.Size, *repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
 				pushedAt, repo.UpdatedAt.Time)
 			if err != nil {
-				log.Println("Error executing replace into agg_repo", err)
+				log.Println(err)
 				return err
+			}
+			if n, err := r.RowsAffected(); err != nil {
+				log.Println(err)
+				return err
+			} else if n == 0 {
+				_, err = a.db.Exec(`INSERT INTO agg_repo VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+					repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage,
+					repo.ForksCount, repo.NetworkCount, repo.OpenIssuesCount, repo.StargazersCount, repo.SubscribersCount,
+					repo.WatchersCount, repo.Size, *repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
+					pushedAt, repo.UpdatedAt.Time)
+				if err != nil {
+					log.Println("Error executing replace into agg_repo", err)
+					return err
+				}
 			}
 		}
 		if resp.NextPage == 0 {
@@ -95,14 +127,48 @@ func (a *Aggregator) Add(user string) error {
 		log.Println("Failed getting user details for", user, ":", err)
 		return err
 	}
-	_, err = a.db.Exec(`REPLACE INTO agg_user VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-		u.Login, u.Email, u.Name, u.Location, u.Hireable, u.Blog, u.Bio, u.Followers, u.Following,
+	r, err := a.db.Exec(`UPDATE agg_user 
+set login = $1,
+	email = $2,
+	name = $3,
+	location = $4,
+	hireable = $5,
+	blog = $6,
+	bio = $7,
+	followers = $8,
+	following = $9,
+	public_repos = $10,
+	public_gists = $11,
+	avatar_url = $12,
+	type = $13,
+	disk_usage = $14,
+	created_at = $15,
+	updated_at = $16
+where login=$1`, u.Login, u.Email, u.Name, u.Location, u.Hireable, u.Blog, u.Bio, u.Followers, u.Following,
 		u.PublicRepos, u.PublicGists, u.AvatarURL, u.Type, u.DiskUsage, u.CreatedAt.Time, u.UpdatedAt.Time)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	if n, err := r.RowsAffected(); err != nil {
+		log.Println(err)
+		return err
+	} else if n == 0 {
+		_, err = a.db.Exec(`INSERT INTO agg_user (
+login, email, name, location, hireable, blog, bio, followers, following, public_repos, public_gists, avatar_url, type, disk_usage, created_at, updated_at)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`, u.Login, u.Email, u.Name, u.Location, u.Hireable,
+			u.Blog, u.Bio, u.Followers, u.Following, u.PublicRepos, u.PublicGists, u.AvatarURL, u.Type, u.DiskUsage,
+			u.CreatedAt.Time, u.UpdatedAt.Time)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+	}
 	return err
 }
 
 func (a *Aggregator) insertRunLog() error {
-	_, err := a.db.Exec(`INSERT INTO agg_meta VALUES (?)`, time.Now())
+	_, err := a.db.Exec(`INSERT INTO agg_meta VALUES ($1)`, time.Now())
 	if err != nil {
 		log.Println("Error executing insert", err)
 	}
@@ -111,7 +177,7 @@ func (a *Aggregator) insertRunLog() error {
 
 func checkRespAndWait(r *github.Response, err error) error {
 	if r.Remaining == 0 {
-		duration := time.Now().Sub(r.Rate.Reset.Time)
+		duration := r.Rate.Reset.Time.Sub(time.Now())
 		fmt.Println("I ran out of requests, waiting", duration)
 		time.Sleep(duration)
 	} else if err != nil {

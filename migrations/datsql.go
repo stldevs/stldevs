@@ -3,7 +3,7 @@ package migrations
 const (
 	createMeta = `
 		CREATE TABLE IF NOT EXISTS agg_meta (
-			created_at DATETIME);`
+			created_at TIMESTAMP);`
 
 	createUser = `CREATE TABLE IF NOT EXISTS agg_user (
 			login VARCHAR(255) NOT NULL PRIMARY KEY,
@@ -18,8 +18,8 @@ const (
 			public_gists INTEGER,
 			avatar_url TEXT,
 			disk_usage INTEGER,
-			created_at DATETIME,
-			updated_at DATETIME
+			created_at TIMESTAMP,
+			updated_at TIMESTAMP
 			);`
 
 	createRepo = `CREATE TABLE IF NOT EXISTS agg_repo (
@@ -38,28 +38,20 @@ const (
 			fork BOOL,
 			default_branch TEXT,
 			master_branch TEXT,
-			created_at DATETIME,
-			pushed_at DATETIME,
-			updated_at DATETIME,
-			primary key (owner, name),
-			INDEX language (language),
-			INDEX forks_count (forks_count),
-			INDEX network_count (network_count),
-			INDEX stargazers_count (stargazers_count),
-			INDEX subscribers_count (subscribers_count),
-			INDEX watchers_count (watchers_count)
+			created_at TIMESTAMP,
+			pushed_at TIMESTAMP,
+			updated_at TIMESTAMP,
+			primary key (owner, name)
 			);`
 
 	createMigrations = `CREATE TABLE IF NOT EXISTS migrations (
 			name VARCHAR(255) NOT NULL PRIMARY KEY
 			);`
 
-	selectMigrations = "select * from migrations where name=?"
-	insertMigration  = `INSERT INTO migrations VALUES(?)`
+	selectMigrations = "select * from migrations where name=$1"
+	insertMigration  = `INSERT INTO migrations VALUES($1)`
 
 	migrationOrganizations = `ALTER TABLE agg_user
-		ADD COLUMN type VARCHAR(255) AFTER avatar_url,
-		ADD COLUMN name VARCHAR(255),
-		ADD INDEX type (type),
-		ADD INDEX name (name)`
+		ADD COLUMN type VARCHAR(255),
+		ADD COLUMN name VARCHAR(255)`
 )

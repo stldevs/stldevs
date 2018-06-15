@@ -47,6 +47,7 @@ func (a *Aggregator) Run() {
 	for user := range users {
 		log.Println("Adding/Updating", user)
 		if err = a.Add(user); err != nil {
+			log.Println(err)
 			continue
 		}
 		log.Println("Updating repos of", user)

@@ -91,7 +91,7 @@ func Language(db DBReader, name string, page int) ([]*LanguageResult, int) {
 		Count int
 	}{}
 	offset := page * pageSize
-	err := db.Select(&repos, queryLanguage, name, offset, pageSize, name)
+	err := db.Select(&repos, queryLanguage, name, offset, pageSize)
 	if err != nil {
 		log.Println(err)
 		return nil, 0
@@ -157,14 +157,14 @@ func Search(db DBReader, term, kind string) interface{} {
 	query := "%" + term + "%"
 	if kind == "users" {
 		users := []stldevs.User{}
-		if err := db.Select(&users, querySearchUsers, query, query); err != nil {
+		if err := db.Select(&users, querySearchUsers, query); err != nil {
 			log.Println(err)
 			return nil
 		}
 		return users
 	} else if kind == "repos" {
 		repos := []stldevs.Repository{}
-		if err := db.Select(&repos, querySearchRepos, query, query); err != nil {
+		if err := db.Select(&repos, querySearchRepos, query); err != nil {
 			log.Println(err)
 			return nil
 		}

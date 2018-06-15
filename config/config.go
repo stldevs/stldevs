@@ -8,6 +8,7 @@ import (
 type Config struct {
 	GithubKey,
 	MysqlPw,
+	PostgresPw,
 	GithubClientID,
 	GithubClientSecret,
 	SessionSecret string

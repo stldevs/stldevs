@@ -7,6 +7,7 @@ import (
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/migrations"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/jackc/pgx/stdlib"
 	"os"
 )
 
@@ -23,7 +24,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := sqlx.Connect("mysql", "root:"+cfg.MysqlPw+"@/stldevs?parseTime=true")
+	db, err := sqlx.Connect("pgx", "postgres://postgres:"+cfg.PostgresPw+"@localhost:5432/stldevs")
 	if err != nil {
 		log.Fatal(err)
 	}
