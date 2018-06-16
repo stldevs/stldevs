@@ -9,42 +9,42 @@ import (
 )
 
 type User struct {
-	Login             *string
-	AvatarURL         *string
-	HTMLURL           *string
-	GravatarID        *string
-	Name              *string
-	Company           *string
-	Blog              *string
-	Location          *string
-	Email             *string
-	Hireable          *bool
-	Bio               *string
-	PublicRepos       *int
-	PublicGists       *int
-	Followers         *int
-	Following         *int
-	CreatedAt         *time.Time
-	UpdatedAt         *time.Time
-	Type              *string
-	SiteAdmin         *bool
-	TotalPrivateRepos *int
-	OwnedPrivateRepos *int
-	PrivateGists      *int
-	DiskUsage         *int
-	Collaborators     *int
+	Login             *string `json:",omitempty"`
+	AvatarURL         *string `json:",omitempty"`
+	HTMLURL           *string `json:",omitempty"`
+	GravatarID        *string `json:",omitempty"`
+	Name              *string `json:",omitempty"`
+	Company           *string `json:",omitempty"`
+	Blog              *string `json:",omitempty"`
+	Location          *string `json:",omitempty"`
+	Email             *string `json:",omitempty"`
+	Hireable          *bool `json:",omitempty"`
+	Bio               *string `json:",omitempty"`
+	PublicRepos       *int `json:",omitempty"`
+	PublicGists       *int `json:",omitempty"`
+	Followers         *int `json:",omitempty"`
+	Following         *int `json:",omitempty"`
+	CreatedAt         *time.Time `json:",omitempty"`
+	UpdatedAt         *time.Time `json:",omitempty"`
+	Type              *string `json:",omitempty"`
+	SiteAdmin         *bool `json:",omitempty"`
+	TotalPrivateRepos *int `json:",omitempty"`
+	OwnedPrivateRepos *int `json:",omitempty"`
+	PrivateGists      *int `json:",omitempty"`
+	DiskUsage         *int `json:",omitempty"`
+	Collaborators     *int `json:",omitempty"`
 
 	// API URLs
-	URL               *string
-	EventsURL         *string
-	FollowingURL      *string
-	FollowersURL      *string
-	GistsURL          *string
-	OrganizationsURL  *string
-	ReceivedEventsURL *string
-	ReposURL          *string
-	StarredURL        *string
-	SubscriptionsURL  *string
+	URL               *string `json:",omitempty"`
+	EventsURL         *string `json:",omitempty"`
+	FollowingURL      *string `json:",omitempty"`
+	FollowersURL      *string `json:",omitempty"`
+	GistsURL          *string `json:",omitempty"`
+	OrganizationsURL  *string `json:",omitempty"`
+	ReceivedEventsURL *string `json:",omitempty"`
+	ReposURL          *string `json:",omitempty"`
+	StarredURL        *string `json:",omitempty"`
+	SubscriptionsURL  *string `json:",omitempty"`
 }
 
 func (u User) String() string {
@@ -54,75 +54,75 @@ func (u User) String() string {
 type Repository struct {
 	Owner            *string
 	Name             *string
-	FullName         *string
-	Description      *string
-	Homepage         *string
-	DefaultBranch    *string
-	MasterBranch     *string
-	CreatedAt        *time.Time
-	PushedAt         *time.Time
-	UpdatedAt        *time.Time
-	HTMLURL          *string
-	CloneURL         *string
-	GitURL           *string
-	MirrorURL        *string
-	SSHURL           *string
-	SVNURL           *string
-	Language         *string
-	Fork             *bool
-	ForksCount       *int
-	NetworkCount     *int
-	OpenIssuesCount  *int `db:"open_issues_count"`
-	StargazersCount  *int
-	SubscribersCount *int
-	WatchersCount    *int
-	Size             *int
-	AutoInit         *bool
-	Organization     *github.Organization
-	Permissions      *map[string]bool
-	Private          *bool
-	HasIssues        *bool
-	HasWiki          *bool
-	HasDownloads     *bool
-	TeamID           *int
+	FullName         *string `json:",omitempty"`
+	Description      *string `json:",omitempty"`
+	Homepage         *string `json:",omitempty"`
+	DefaultBranch    *string `json:",omitempty"`
+	MasterBranch     *string `json:",omitempty"`
+	CreatedAt        *time.Time `json:",omitempty"`
+	PushedAt         *time.Time `json:",omitempty"`
+	UpdatedAt        *time.Time `json:",omitempty"`
+	HTMLURL          *string `json:",omitempty"`
+	CloneURL         *string `json:",omitempty"`
+	GitURL           *string `json:",omitempty"`
+	MirrorURL        *string `json:",omitempty"`
+	SSHURL           *string `json:",omitempty"`
+	SVNURL           *string `json:",omitempty"`
+	Language         *string `json:",omitempty"`
+	Fork             *bool `json:",omitempty"`
+	ForksCount       *int `json:",omitempty"`
+	NetworkCount     *int `json:",omitempty"`
+	OpenIssuesCount  *int `db:"open_issues_count" json:",omitempty"`
+	StargazersCount  *int `json:",omitempty"`
+	SubscribersCount *int `json:",omitempty"`
+	WatchersCount    *int `json:",omitempty"`
+	Size             *int `json:",omitempty"`
+	AutoInit         *bool `json:",omitempty"`
+	Organization     *github.Organization `json:",omitempty"`
+	Permissions      *map[string]bool `json:",omitempty"`
+	Private          *bool `json:",omitempty"`
+	HasIssues        *bool `json:",omitempty"`
+	HasWiki          *bool `json:",omitempty"`
+	HasDownloads     *bool `json:",omitempty"`
+	TeamID           *int `json:",omitempty"`
 
 	// API URLs
-	URL              *string
-	ArchiveURL       *string
-	AssigneesURL     *string
-	BlobsURL         *string
-	BranchesURL      *string
-	CollaboratorsURL *string
-	CommentsURL      *string
-	CommitsURL       *string
-	CompareURL       *string
-	ContentsURL      *string
-	ContributorsURL  *string
-	DownloadsURL     *string
-	EventsURL        *string
-	ForksURL         *string
-	GitCommitsURL    *string
-	GitRefsURL       *string
-	GitTagsURL       *string
-	HooksURL         *string
-	IssueCommentURL  *string
-	IssueEventsURL   *string
-	IssuesURL        *string
-	KeysURL          *string
-	LabelsURL        *string
-	LanguagesURL     *string
-	MergesURL        *string
-	MilestonesURL    *string
-	NotificationsURL *string
-	PullsURL         *string
-	ReleasesURL      *string
-	StargazersURL    *string
-	StatusesURL      *string
-	SubscribersURL   *string
-	SubscriptionURL  *string
-	TagsURL          *string
-	TreesURL         *string
-	TeamsURL         *string
+	URL              *string `json:",omitempty"`
+	ArchiveURL       *string `json:",omitempty"`
+	AssigneesURL     *string `json:",omitempty"`
+	BlobsURL         *string `json:",omitempty"`
+	BranchesURL      *string `json:",omitempty"`
+	CollaboratorsURL *string `json:",omitempty"`
+	CommentsURL      *string `json:",omitempty"`
+	CommitsURL       *string `json:",omitempty"`
+	CompareURL       *string `json:",omitempty"`
+	ContentsURL      *string `json:",omitempty"`
+	ContributorsURL  *string `json:",omitempty"`
+	DownloadsURL     *string `json:",omitempty"`
+	EventsURL        *string `json:",omitempty"`
+	ForksURL         *string `json:",omitempty"`
+	GitCommitsURL    *string `json:",omitempty"`
+	GitRefsURL       *string `json:",omitempty"`
+	GitTagsURL       *string `json:",omitempty"`
+	HooksURL         *string `json:",omitempty"`
+	IssueCommentURL  *string `json:",omitempty"`
+	IssueEventsURL   *string `json:",omitempty"`
+	IssuesURL        *string `json:",omitempty"`
+	KeysURL          *string `json:",omitempty"`
+	LabelsURL        *string `json:",omitempty"`
+	LanguagesURL     *string `json:",omitempty"`
+	MergesURL        *string `json:",omitempty"`
+	MilestonesURL    *string `json:",omitempty"`
+	NotificationsURL *string `json:",omitempty"`
+	PullsURL         *string `json:",omitempty"`
+	ReleasesURL      *string `json:",omitempty"`
+	StargazersURL    *string `json:",omitempty"`
+	StatusesURL      *string `json:",omitempty"`
+	SubscribersURL   *string `json:",omitempty"`
+	SubscriptionURL  *string `json:",omitempty"`
+	TagsURL          *string `json:",omitempty"`
+	TreesURL         *string `json:",omitempty"`
+	TeamsURL         *string `json:",omitempty"`
 }
 
 func (u Repository) String() string {
