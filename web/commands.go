@@ -89,9 +89,9 @@ func Language(db DBReader, name string, page int) ([]*LanguageResult, int) {
 	repos := []struct {
 		stldevs.Repository
 		Count int
+		Rownum int
 	}{}
-	offset := page * pageSize
-	err := db.Select(&repos, queryLanguage, name, offset, pageSize)
+	err := db.Select(&repos, queryLanguage, name)
 	if err != nil {
 		log.Println(err)
 		return nil, 0

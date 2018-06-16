@@ -40,19 +40,17 @@ const (
 		limit 100;`
 
 	queryLanguage = `
-		SELECT r1.owner, r1.name, r1.description, r1.forks_count, r1.stargazers_count, r1.watchers_count, r1.fork, count
-		FROM agg_repo r1
-		JOIN (
-			select owner, sum(stargazers_count) as count
-			from agg_repo
-			where language=$1 and fork=false
-			group by owner
-			order by count desc
-			limit $2
-			offset $3
-		) r2 ON ( r2.owner = r1.owner )
-		where language=$1 and fork=false
-		order by r2.count desc, r2.owner, stargazers_count desc`
+		select * from (
+			select owner, name, description, forks_count, stargazers_count, watchers_count, fork, (
+				select sum(stargazers_count)
+				from agg_repo
+				where lower(language)=lower($1) and fork=false and owner=r1.owner
+			) as count, row_number() over (partition by owner order by stargazers_count desc) as rownum
+			from agg_repo r1
+			where LOWER(r1.language)=LOWER($1) and r1.fork=false
+			group by owner, name
+			order by count desc, owner, stargazers_count desc
+		) q where rownum < 4`
 
 	queryProfileForUser = `
 		select login, email, name, blog, followers, public_repos, public_gists, avatar_url
@@ -62,7 +60,7 @@ const (
 	queryRepoForUser = `
 		select name, fork, description, language, forks_count, stargazers_count
 		from agg_repo
-		where owner=$1 and language is not null
+		where lower(owner)=lower($1) and language is not null
 		order by language, stargazers_count desc, name`
 
 	querySearchUsers = `
@@ -83,5 +81,5 @@ const (
 
 	countLanguageUsers = `select count(distinct owner)
 			from agg_repo
-			where language=$1 and fork=0;`
+			where lower(language)=lower($1) and fork=false;`
 )
