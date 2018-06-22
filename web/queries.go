@@ -10,7 +10,7 @@ const (
 	queryPopularLanguages = `
 		select language, count(*) as count, count(distinct(owner)) as users
 		from agg_repo
-		where language is not null
+		where language is not null and fork=false
 		group by language
 		order by count desc
 		limit 100;`
@@ -79,7 +79,7 @@ const (
 			limit 100
 	`
 
-	countLanguageUsers = `select count(distinct owner)
+	countLanguageUsers = `select count(distinct(owner))
 			from agg_repo
 			where lower(language)=lower($1) and fork=false;`
 )
