@@ -2,7 +2,6 @@ package web
 
 import (
 	"log"
-	"strings"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
