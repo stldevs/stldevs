@@ -130,10 +130,6 @@ func Profile(db DBReader, name string) (*ProfileData, error) {
 		return nil, err
 	}
 
-	if profile.User.Blog != nil && *profile.User.Blog != "" && !strings.HasPrefix(*profile.User.Blog, "http://") {
-		*profile.User.Blog = "http://" + *profile.User.Blog
-	}
-
 	repos := []stldevs.Repository{}
 	err = db.Select(&repos, queryRepoForUser, name)
 	if err != nil {
