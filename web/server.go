@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/gob"
+	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
 	oa2gh "golang.org/x/oauth2/github"
-	"gopkg.in/gin-gonic/gin.v1"
 )
 
 func Run(cfg *config.Config, db *sqlx.DB) {
@@ -29,6 +29,7 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 	router.Use(func (c *gin.Context) {
 		c.Set("db", db)
 		c.Set("oauth", conf)
+		c.Set("users", NewUserCache())
 		c.Next()
 	})
 
@@ -38,6 +39,13 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 	router.GET("/toporgs", topOrgs)
 	router.GET("/lang/:lang", language)
 	router.GET("/profile/:profile", profile)
+
+	router.GET("/start", startAuth)
+	router.GET("/callback", authCallback)
+
+	group := router.Group("/auth", auth)
+	group.POST("/me", addMyself)
+	group.DELETE("/me", removeMyself)
 
 	log.Println("Serving on port 8080")
 	log.Println(http.ListenAndServe("0.0.0.0:8080", router))

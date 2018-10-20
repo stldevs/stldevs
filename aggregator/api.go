@@ -1,6 +1,7 @@
 package aggregator
 
 import (
+	"context"
 	"log"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -17,7 +18,7 @@ type Aggregator struct {
 
 func New(db *sqlx.DB, githubKey string) *Aggregator {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: githubKey})
-	client := oauth2.NewClient(oauth2.NoContext, ts)
+	client := oauth2.NewClient(context.Background(), ts)
 	return &Aggregator{db: db, client: github.NewClient(client)}
 }
 

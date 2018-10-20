@@ -1,15 +1,12 @@
 package web
 
 import (
-	"log"
-	"time"
-
+	"database/sql"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 	"github.com/jakecoffman/stldevs"
-	"golang.org/x/oauth2"
-	"database/sql"
-	"context"
+	"log"
+	"time"
 )
 
 const pageSize = 20
@@ -167,24 +164,4 @@ func Search(db DBReader, term, kind string) interface{} {
 	}
 	log.Println("Unknown search kind", kind)
 	return nil
-}
-
-func AuthCode(conf *oauth2.Config, state string, option oauth2.AuthCodeOption) string {
-	return conf.AuthCodeURL(state, option)
-}
-
-func GithubLogin(conf *oauth2.Config, code string) (*github.User, error) {
-	token, err := conf.Exchange(oauth2.NoContext, code)
-	if err != nil {
-		return nil, err
-	}
-
-	client := github.NewClient(conf.Client(oauth2.NoContext, token))
-
-	user, _, err := client.Users.Get(context.Background(), "")
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }
