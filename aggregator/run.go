@@ -1,39 +1,13 @@
 package aggregator
 
 import (
+	"context"
 	"fmt"
-	"log"
-	"time"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
-	"context"
+	"log"
+	"time"
 )
-
-func (a *Aggregator) removeUsersNotFoundInSearch(users map[string]struct{}) error {
-	existingUsers := []github.User{}
-	err := a.db.Select(&existingUsers, `SELECT login FROM agg_user`)
-	if err != nil {
-		log.Println("Error querying agg_user", err)
-		return err
-	}
-
-	// remove users that no longer come up in search
-	for _, existing := range existingUsers {
-		if _, ok := users[*existing.Login]; !ok {
-			log.Println(*existing.Login, "is no longer in St. Louis")
-			_, err = a.db.Exec(`DELETE FROM agg_user WHERE login=$1`, *existing.Login)
-			if err != nil {
-				log.Println("Error while deleting moved user:", *existing.Login, err)
-			}
-			_, err = a.db.Exec(`DELETE FROM agg_repo WHERE owner=$1`, *existing.Login)
-			if err != nil {
-				log.Println("Error while deleting moved user's repos", *existing.Login, err)
-			}
-		}
-	}
-	return nil
-}
 
 func (a *Aggregator) updateUsersRepos(user string) error {
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
@@ -98,26 +72,34 @@ where owner=$1 and name=$2`, repo.Owner.Login, repo.Name, repo.Description, repo
 	return nil
 }
 
-func (a *Aggregator) FindInStl(typ string) (map[string]struct{}, error) {
-	searchString := fmt.Sprintf(`location:"St. Louis" location:"STL" location:"St Louis" location:"Saint Louis" type:"%v"`, typ)
-	opts := &github.SearchOptions{ListOptions: github.ListOptions{Page: 1, PerPage: 100}}
+func FindInStl(client *github.Client, typ string) (map[string]struct{}, error) {
 	users := map[string]struct{}{}
-	for {
-		result, resultResp, err := a.client.Search.Users(context.Background(), searchString, opts)
-		if checkRespAndWait(resultResp, err) != nil {
-			log.Println(err)
-			return users, err
-		}
-		for _, user := range result.Users {
-			users[*user.Login] = struct{}{}
-		}
-		if resultResp.NextPage == 0 {
-			break
-		}
 
-		opts.ListOptions.Page = resultResp.NextPage
+	// since github limits to 1000 results, break the search up with created
+	for _, date := range []string{"created:<2014-06-01", "created:2014-06-01..2017-01-01", "created:>2017-01-01"} {
+		const locations= `location:"St. Louis" location:"STL" location:"St Louis" location:"Saint Louis"`
+		searchString := fmt.Sprintf(`%v %v repos:>1 type:"%v"`, locations, date, typ)
+		opts := &github.SearchOptions{
+			ListOptions: github.ListOptions{Page: 1, PerPage: 100},
+			Sort:        "repositories",
+		}
+		for {
+			result, resultResp, err := client.Search.Users(context.Background(), searchString, opts)
+			if checkRespAndWait(resultResp, err) != nil {
+				log.Println(err)
+				return users, err
+			}
+			for _, user := range result.Users {
+				users[*user.Login] = struct{}{}
+			}
+			if resultResp.NextPage == 0 {
+				break
+			}
+
+			opts.ListOptions.Page = resultResp.NextPage
+		}
 	}
-	fmt.Printf("total devs in St. Louis found: %v\n", len(users))
+	fmt.Printf("total of type %v found: %v\n", typ, len(users))
 	return users, nil
 }
 

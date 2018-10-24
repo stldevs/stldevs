@@ -31,12 +31,12 @@ func (a *Aggregator) Run() {
 		log.Println(err)
 		return
 	}
-	users, err := a.FindInStl("user")
+	users, err := FindInStl(a.client, "user")
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	orgs, err := a.FindInStl("org")
+	orgs, err := FindInStl(a.client, "org")
 	if err != nil {
 		log.Println(err)
 		return

@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 	"log"
 	"os"
 
 	"github.com/jakecoffman/stldevs/aggregator"
 	"github.com/jakecoffman/stldevs/config"
-	"github.com/jmoiron/sqlx"
 )
 
 func main() {
@@ -20,13 +23,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := sqlx.Connect("mysql", "root:"+cfg.MysqlPw+"@/stldevs?parseTime=true")
-	if err != nil {
-		log.Fatal(err)
-	}
-	db.MapperFunc(config.CamelToSnake)
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cfg.GithubKey})
+	httpClient := oauth2.NewClient(context.Background(), ts)
+	client := github.NewClient(httpClient)
 
-	agg := aggregator.New(db, cfg.GithubKey)
-	u, _ := agg.FindInStl("org")
-	log.Println(len(u))
+	u, _ := aggregator.FindInStl(client, "user")
+	for k := range u {
+		fmt.Println(k)
+	}
 }
