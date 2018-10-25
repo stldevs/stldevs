@@ -15,4 +15,4 @@ St. Louis developer profiles
 Pull requests are welcome! All Go files should be run through goimports
 before pushing. I suggest GoSublime or IntelliJ Go plugin.
 
-Front end developers look here: https://github.com/jakecoffman/stldevs-frontend
+Front end developers look here: https://github.com/jakecoffman/stldevs-vue
