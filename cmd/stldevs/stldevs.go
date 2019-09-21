@@ -1,14 +1,13 @@
 package main
 
 import (
-	"log"
-	"os"
-
+	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/migrations"
 	"github.com/jakecoffman/stldevs/web"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/jackc/pgx/stdlib"
+	"log"
+	"os"
 	"time"
 )
 
@@ -30,7 +29,7 @@ func main() {
 		// postgres://pgx_md5:secret@localhost:5432/pgx_test
 		db, err = sqlx.Connect("pgx", "postgres://postgres:"+cfg.PostgresPw+"@127.0.0.1:5432/stldevs")
 		if err != nil {
-			if time.Now().Sub(start) > 11 * time.Second {
+			if time.Now().Sub(start) > 11*time.Second {
 				log.Fatal(err)
 			} else {
 				log.Println("failed to connect to db, trying again in 5 seconds", err)

@@ -1,5 +1,5 @@
 # stldevs
-St. Louis developer profiles
+St. Louis software developer/programmer/designer profiles
 
 ## motivations
 

@@ -5,12 +5,12 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/github"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
 	oa2gh "golang.org/x/oauth2/github"
-	"gopkg.in/gin-gonic/gin.v1"
 )
 
 func Run(cfg *config.Config, db *sqlx.DB) {
@@ -26,7 +26,7 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 
 	router := gin.Default()
 
-	router.Use(func (c *gin.Context) {
+	router.Use(func(c *gin.Context) {
 		c.Set("db", db)
 		c.Set("oauth", conf)
 		c.Next()

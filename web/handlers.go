@@ -1,9 +1,9 @@
 package web
 
 import (
-	"strconv"
-	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	"strconv"
 )
 
 func topLangs(c *gin.Context) {
