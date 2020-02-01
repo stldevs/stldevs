@@ -8,15 +8,11 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/jakecoffman/stldevs"
+	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
 )
 
-type DBReader interface {
-	Select(dest interface{}, query string, args ...interface{}) error
-	Get(dest interface{}, query string, args ...interface{}) error
-}
-
-func LastRun(db DBReader) *time.Time {
+func LastRun(db *sqlx.DB) *time.Time {
 	var lastRun time.Time
 	err := db.Get(&lastRun, queryLastRun)
 	if err == sql.ErrNoRows {
@@ -39,7 +35,7 @@ type LanguageCount struct {
 	Users    int
 }
 
-func PopularLanguages(db DBReader) []LanguageCount {
+func PopularLanguages(db *sqlx.DB) []LanguageCount {
 	langs := []LanguageCount{}
 	err := db.Select(&langs, queryPopularLanguages)
 	if err != nil {
@@ -55,7 +51,7 @@ type DevCount struct {
 	Stars, Forks                             int
 }
 
-func PopularDevs(db DBReader) []DevCount {
+func PopularDevs(db *sqlx.DB) []DevCount {
 	devs := []DevCount{}
 	err := db.Select(&devs, queryPopularDevs)
 	if err != nil {
@@ -65,7 +61,7 @@ func PopularDevs(db DBReader) []DevCount {
 	return devs
 }
 
-func PopularOrgs(db DBReader) []DevCount {
+func PopularOrgs(db *sqlx.DB) []DevCount {
 	devs := []DevCount{}
 	err := db.Select(&devs, queryPopularOrgs)
 	if err != nil {
@@ -81,7 +77,7 @@ type LanguageResult struct {
 	Count int
 }
 
-func Language(db DBReader, name string) ([]*LanguageResult, int) {
+func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 	repos := []struct {
 		stldevs.Repository
 		Count int
@@ -116,7 +112,7 @@ type ProfileData struct {
 	Repos map[string][]stldevs.Repository
 }
 
-func Profile(db DBReader, name string) (*ProfileData, error) {
+func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
 	user := &github.User{}
 	reposByLang := map[string][]stldevs.Repository{}
 	profile := &ProfileData{user, reposByLang}
@@ -145,7 +141,7 @@ func Profile(db DBReader, name string) (*ProfileData, error) {
 	return profile, nil
 }
 
-func Search(db DBReader, term, kind string) interface{} {
+func Search(db *sqlx.DB, term, kind string) interface{} {
 	query := "%" + term + "%"
 	if kind == "users" {
 		users := []stldevs.User{}
