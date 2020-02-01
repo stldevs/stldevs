@@ -3,7 +3,6 @@ package aggregator
 import (
 	"log"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
@@ -51,7 +50,7 @@ func (a *Aggregator) Run() {
 			continue
 		}
 		log.Println("Updating repos of", user)
-		a.updateUsersRepos(user)
+		_ = a.updateUsersRepos(user)
 	}
 }
 

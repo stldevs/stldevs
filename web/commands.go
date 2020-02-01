@@ -1,18 +1,15 @@
 package web
 
 import (
+	"context"
+	"database/sql"
 	"log"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/google/go-github/github"
 	"github.com/jakecoffman/stldevs"
 	"golang.org/x/oauth2"
-	"database/sql"
-	"context"
 )
-
-const pageSize = 20
 
 type DBReader interface {
 	Select(dest interface{}, query string, args ...interface{}) error
@@ -20,8 +17,8 @@ type DBReader interface {
 }
 
 func LastRun(db DBReader) *time.Time {
-	timeStr := mysql.NullTime{}
-	err := db.Get(&timeStr, queryLastRun)
+	var lastRun time.Time
+	err := db.Get(&lastRun, queryLastRun)
 	if err == sql.ErrNoRows {
 		return &time.Time{}
 	}
@@ -29,11 +26,11 @@ func LastRun(db DBReader) *time.Time {
 		log.Println(err)
 		return nil
 	}
-	if !timeStr.Valid {
+	if lastRun.Equal(time.Time{}) {
 		log.Println("null time in LastRun call results")
 		return nil
 	}
-	return &timeStr.Time
+	return &lastRun
 }
 
 type LanguageCount struct {
@@ -84,7 +81,7 @@ type LanguageResult struct {
 	Count int
 }
 
-func Language(db DBReader, name string, page int) ([]*LanguageResult, int) {
+func Language(db DBReader, name string) ([]*LanguageResult, int) {
 	repos := []struct {
 		stldevs.Repository
 		Count int

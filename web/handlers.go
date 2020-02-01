@@ -3,7 +3,6 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
-	"strconv"
 )
 
 func topLangs(c *gin.Context) {
@@ -40,23 +39,12 @@ func profile(c *gin.Context) {
 
 func language(c *gin.Context) {
 	db := c.MustGet("db").(*sqlx.DB)
-	pageParam := c.Request.URL.Query().Get("page")
-	page := 0
-	if pageParam != "" {
-		var err error
-		page, err = strconv.Atoi(pageParam)
-		if err != nil {
-			c.Status(400)
-			return
-		}
-	}
 
-	langs, userCount := Language(db, c.Params.ByName("lang"), page)
+	langs, userCount := Language(db, c.Params.ByName("lang"))
 	c.JSON(200, map[string]interface{}{
 		"languages": langs,
 		"count":     userCount,
 		"language":  c.Params.ByName("lang"),
-		"page":      page,
 	})
 }
 
