@@ -160,7 +160,7 @@ func checkRespAndWait(r *github.Response, err error) error {
 	if r.Remaining == 0 {
 		duration := r.Rate.Reset.Time.Sub(time.Now())
 		fmt.Println("I ran out of requests, waiting", duration)
-		time.Sleep(duration)
+		time.Sleep(duration+2*time.Second)
 	} else if err != nil {
 		return err
 	}
