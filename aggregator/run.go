@@ -3,9 +3,10 @@ package aggregator
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-github/github"
 	"log"
 	"time"
+
+	"github.com/google/go-github/v29/github"
 )
 
 func (a *Aggregator) updateUsersRepos(user string) error {
@@ -157,10 +158,10 @@ func (a *Aggregator) insertRunLog() error {
 }
 
 func checkRespAndWait(r *github.Response, err error) error {
-	if r.Remaining == 0 {
-		duration := r.Rate.Reset.Time.Sub(time.Now())
+	if r.Rate.Remaining == 0 {
+		duration := time.Until(r.Rate.Reset.Time)
 		fmt.Println("I ran out of requests, waiting", duration)
-		time.Sleep(duration+2*time.Second)
+		time.Sleep(duration+time.Second)
 	} else if err != nil {
 		return err
 	}

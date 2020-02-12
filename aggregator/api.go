@@ -3,7 +3,7 @@ package aggregator
 import (
 	"log"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v29/github"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
 )
