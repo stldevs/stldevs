@@ -13,7 +13,10 @@ func (a *Aggregator) updateUsersRepos(user string) error {
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
 	for {
 		result, resp, err := a.client.Repositories.List(context.Background(), user, opts)
-		if checkRespAndWait(resp, err) != nil {
+		if shouldTryAgain(resp) {
+			continue
+		}
+		if err != nil {
 			log.Println(err)
 			return err
 		}
@@ -85,7 +88,10 @@ func FindInStl(client *github.Client, typ string) (map[string]struct{}, error) {
 		}
 		for {
 			result, resultResp, err := client.Search.Users(context.Background(), searchString, opts)
-			if checkRespAndWait(resultResp, err) != nil {
+			if shouldTryAgain(resultResp) {
+				continue
+			}
+			if err != nil {
 				log.Println(err)
 				return users, err
 			}
@@ -104,8 +110,12 @@ func FindInStl(client *github.Client, typ string) (map[string]struct{}, error) {
 }
 
 func (a *Aggregator) Add(user string) error {
+start:
 	u, resp, err := a.client.Users.Get(context.Background(), user)
-	if checkRespAndWait(resp, err) != nil || u == nil {
+	if shouldTryAgain(resp) {
+		goto start
+	}
+	if err != nil || u == nil {
 		log.Println("Failed getting user details for", user, ":", err)
 		return err
 	}
@@ -157,13 +167,12 @@ func (a *Aggregator) insertRunLog() error {
 	return err
 }
 
-func checkRespAndWait(r *github.Response, err error) error {
-	if r.Rate.Remaining == 0 {
+func shouldTryAgain(r *github.Response) bool {
+	if r.Rate.Remaining <= 0 {
 		duration := time.Until(r.Rate.Reset.Time)
 		fmt.Println("I ran out of requests, waiting", duration)
 		time.Sleep(duration+time.Second)
-	} else if err != nil {
-		return err
+		return true
 	}
-	return nil
+	return false
 }
