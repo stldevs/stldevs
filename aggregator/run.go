@@ -170,7 +170,7 @@ func (a *Aggregator) insertRunLog() error {
 func shouldTryAgain(r *github.Response) bool {
 	if r.Rate.Remaining <= 0 {
 		duration := time.Until(r.Rate.Reset.Time)
-		fmt.Println("I ran out of requests, waiting", duration)
+		fmt.Printf("I ran out of requests (%v), waiting %v\n", r.Rate.Limit, duration)
 		time.Sleep(duration+time.Second)
 		return true
 	}
