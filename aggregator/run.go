@@ -87,6 +87,7 @@ func FindInStl(client *github.Client, typ string) (map[string]struct{}, error) {
 			Sort:        "repositories",
 		}
 		for {
+			time.Sleep(2*time.Second)
 			result, resultResp, err := client.Search.Users(context.Background(), searchString, opts)
 			if shouldTryAgain(resultResp) {
 				continue
