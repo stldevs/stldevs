@@ -31,16 +31,17 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 	oauth2Config := &oauth2.Config{
 		ClientID:     cfg.GithubClientID,
 		ClientSecret: cfg.GithubClientSecret,
-		//RedirectURL:  "http://localhost:8080/callback",
+		RedirectURL:  "http://localhost:8080/callback",
 		Endpoint:     oa2gh.Endpoint,
 	}
 
 	var stateConfig gologin.CookieConfig
 	if cfg.Environment == "prod" {
+		oauth2Config.RedirectURL = "http://www.stldevs.com/stldevs-api/callback"
 		stateConfig = gologin.CookieConfig{
 			Name:     "stldevs",
 			Path:     "/",
-			MaxAge:   60*60*24,
+			MaxAge:   60,
 			HTTPOnly: true,
 			Secure:   true, // secure only
 		}
