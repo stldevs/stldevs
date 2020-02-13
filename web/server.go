@@ -3,7 +3,6 @@ package web
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -137,10 +136,7 @@ func (s *sessionIssuer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Expires: expire,
 	}
 	http.SetCookie(w, &cookie)
-
-	if err = json.NewEncoder(w).Encode(githubUser); err != nil {
-		log.Println(err)
-	}
+	http.Redirect(w, r, "/you", http.StatusFound)
 }
 
 func GenerateRandomBytes(n int) ([]byte, error) {
