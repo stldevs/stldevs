@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/cockroachdb/apd v1.1.0 // indirect
+	github.com/dghubble/gologin/v2 v2.2.0
 	github.com/gin-gonic/gin v1.5.0
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/google/go-github v17.0.0+incompatible

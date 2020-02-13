@@ -14,6 +14,7 @@ func init() {
 	migrations = []migration{
 		genesis,
 		organizations,
+		userEnhancements,
 	}
 }
 
@@ -75,5 +76,19 @@ func organizations(db *sqlx.DB) error {
 		return err
 	}
 
+	return nil
+}
+
+func userEnhancements(db *sqlx.DB) error {
+	_, err := db.Exec("alter table agg_user add column if not exists hide boolean default false")
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	_, err = db.Exec("alter table agg_user add column if not exists is_admin boolean default false")
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 	return nil
 }

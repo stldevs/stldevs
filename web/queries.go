@@ -24,6 +24,7 @@ const (
 			group by owner
 		) repo ON (repo.owner=agg_user.login)
 		where type='User'
+		and hide is false
 		order by stars desc
 		limit 100;`
 
@@ -53,7 +54,7 @@ const (
 		) q where rownum < 4`
 
 	queryProfileForUser = `
-		select login, email, name, blog, followers, public_repos, public_gists, avatar_url
+		select login, email, name, blog, followers, public_repos, public_gists, avatar_url, hide, is_admin
 		from agg_user
 		where login=$1`
 
@@ -66,9 +67,9 @@ const (
 	querySearchUsers = `
 		select *
 		from agg_user
-		where login like LOWER($1)
-			or LOWER(name) like LOWER($1)
-			limit 100`
+		where login like LOWER($1) or LOWER(name) like LOWER($1)
+		and hide is false
+		limit 100`
 
 	querySearchRepos = `
 		select *

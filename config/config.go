@@ -11,6 +11,7 @@ type Config struct {
 	GithubClientID,
 	GithubClientSecret,
 	SessionSecret string
+	Environment string
 }
 
 func NewConfig(r io.Reader) (*Config, error) {

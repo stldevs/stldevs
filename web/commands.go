@@ -1,7 +1,6 @@
 package web
 
 import (
-	"context"
 	"database/sql"
 	"log"
 	"time"
@@ -9,7 +8,6 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/jakecoffman/stldevs"
 	"github.com/jmoiron/sqlx"
-	"golang.org/x/oauth2"
 )
 
 func LastRun(db *sqlx.DB) *time.Time {
@@ -80,7 +78,7 @@ type LanguageResult struct {
 func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 	repos := []struct {
 		stldevs.Repository
-		Count int
+		Count  int
 		Rownum int
 	}{}
 	err := db.Select(&repos, queryLanguage, name)
@@ -107,13 +105,19 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 	return results, total
 }
 
+type StlDevsUser struct {
+	*github.User
+	Hide    bool `json:",omitempty"`
+	IsAdmin bool `json:",omitempty"`
+}
+
 type ProfileData struct {
-	User  *github.User
+	User  *StlDevsUser
 	Repos map[string][]stldevs.Repository
 }
 
 func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
-	user := &github.User{}
+	user := &StlDevsUser{}
 	reposByLang := map[string][]stldevs.Repository{}
 	profile := &ProfileData{user, reposByLang}
 	err := db.Get(profile.User, queryProfileForUser, name)
@@ -121,6 +125,8 @@ func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
 		log.Println("Error querying profile", name)
 		return nil, err
 	}
+
+	// TODO hide the user when other users try to see them but they are set to "Hide" in db
 
 	repos := []stldevs.Repository{}
 	err = db.Select(&repos, queryRepoForUser, name)
@@ -160,24 +166,4 @@ func Search(db *sqlx.DB, term, kind string) interface{} {
 	}
 	log.Println("Unknown search kind", kind)
 	return nil
-}
-
-func AuthCode(conf *oauth2.Config, state string, option oauth2.AuthCodeOption) string {
-	return conf.AuthCodeURL(state, option)
-}
-
-func GithubLogin(conf *oauth2.Config, code string) (*github.User, error) {
-	token, err := conf.Exchange(oauth2.NoContext, code)
-	if err != nil {
-		return nil, err
-	}
-
-	client := github.NewClient(conf.Client(oauth2.NoContext, token))
-
-	user, _, err := client.Users.Get(context.Background(), "")
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }
