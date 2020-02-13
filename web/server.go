@@ -117,6 +117,8 @@ func (s *sessionIssuer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Println("Login success", *githubUser.Login)
+
 	user := &StlDevsUser{
 		User:    githubUser,
 	}
