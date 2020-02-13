@@ -45,6 +45,9 @@ type User struct {
 	ReposURL          *string `json:",omitempty"`
 	StarredURL        *string `json:",omitempty"`
 	SubscriptionsURL  *string `json:",omitempty"`
+
+	Hide bool `json:",omitempty"`
+	IsAdmin bool `json:",omitempty"`
 }
 
 func (u User) String() string {
