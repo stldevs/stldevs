@@ -59,6 +59,7 @@ func (d *DevController) Patch(c *gin.Context) {
 	}
 	if affected, _ := result.RowsAffected(); affected == 1 {
 		profile.User.Hide = cmd.Hide
+		session.User.Hide = cmd.Hide
 	}
 	c.JSON(200, profile)
 }
