@@ -37,7 +37,7 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 
 	var stateConfig gologin.CookieConfig
 	if cfg.Environment == "prod" {
-		oauth2Config.RedirectURL = "http://www.stldevs.com/stldevs-api/callback"
+		oauth2Config.RedirectURL = "https://www.stldevs.com/stldevs-api/callback"
 		stateConfig = gologin.CookieConfig{
 			Name:     "stldevs",
 			Path:     "/",
