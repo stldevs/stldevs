@@ -67,8 +67,7 @@ const (
 	querySearchUsers = `
 		select *
 		from agg_user
-		where login like LOWER($1) or LOWER(name) like LOWER($1)
-		and hide is false
+		where hide is false and (login like LOWER($1) or LOWER(name) like LOWER($1))
 		limit 100`
 
 	querySearchRepos = `
