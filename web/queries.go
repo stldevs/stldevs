@@ -37,6 +37,7 @@ const (
 			group by owner
 		) repo ON (repo.owner=agg_user.login)
 		where type='Organization'
+		and hide is false
 		order by stars desc
 		limit 100;`
 
