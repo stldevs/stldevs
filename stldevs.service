@@ -1,0 +1,12 @@
+[Unit]
+Description=stldevs
+After=network.target
+
+[Service]
+Restart=always
+User=deploy
+WorkingDirectory=/opt/stldevs
+ExecStart=/opt/stldevs/stldevs
+
+[Install]
+WantedBy=default.target
