@@ -13,7 +13,7 @@ type DevController struct {
 }
 
 func (d *DevController) List(c *gin.Context) {
-	if listing := PopularDevs(d.db); listing != nil {
+	if listing := PopularDevs(d.db); listing == nil {
 		c.JSON(500, "Failed to list")
 		return
 	} else {

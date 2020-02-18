@@ -2,6 +2,7 @@ package web
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -117,34 +118,55 @@ type ProfileData struct {
 }
 
 func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
-	user := &StlDevsUser{}
-	reposByLang := map[string][]stldevs.Repository{}
-	profile := &ProfileData{user, reposByLang}
-	err := db.Get(profile.User, queryProfileForUser, name)
-	if err != nil {
-		log.Println("Error querying profile", name)
-		return nil, err
-	}
-
 	// TODO hide the user when other users try to see them but they are set to "Hide" in db
 
-	repos := []stldevs.Repository{}
-	err = db.Select(&repos, queryRepoForUser, name)
-	if err != nil {
-		log.Println("Error querying repo for user", name)
-		return nil, err
-	}
+	// There are 2 queries to do so run them concurrently
+	userCh := make(chan *StlDevsUser)
+	reposCh := make(chan map[string][]stldevs.Repository)
+	defer close(userCh)
+	defer close(reposCh)
 
-	for _, repo := range repos {
-		lang := *repo.Language
-		if _, ok := reposByLang[lang]; !ok {
-			reposByLang[lang] = []stldevs.Repository{repo}
-			continue
+	go func() {
+		user := &StlDevsUser{}
+		err := db.Get(user, queryProfileForUser, name)
+		if err != nil {
+			log.Println("Error querying profile", name)
+			userCh<-nil
+			return
 		}
-		reposByLang[lang] = append(reposByLang[lang], repo)
+		userCh <- user
+	}()
+
+	go func() {
+		repos := []stldevs.Repository{}
+		err := db.Select(&repos, queryRepoForUser, name)
+		if err != nil {
+			log.Println("Error querying repo for user", name)
+			reposCh <- nil
+			return
+		}
+
+		reposByLang := map[string][]stldevs.Repository{}
+		for _, repo := range repos {
+			lang := *repo.Language
+			if _, ok := reposByLang[lang]; !ok {
+				reposByLang[lang] = []stldevs.Repository{repo}
+				continue
+			}
+			reposByLang[lang] = append(reposByLang[lang], repo)
+		}
+
+		reposCh <- reposByLang
+	}()
+
+	user := <- userCh
+	repos := <- reposCh
+
+	if user == nil || repos == nil {
+		return nil, fmt.Errorf("not found")
 	}
 
-	return profile, nil
+	return &ProfileData{user, repos}, nil
 }
 
 func Search(db *sqlx.DB, term, kind string) interface{} {
