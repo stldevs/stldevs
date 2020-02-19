@@ -83,6 +83,10 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 
 	r.GET("/search", search)
 
+	r.GET("/last-run", func(c *gin.Context) {
+		c.JSON(200, LastRun(db))
+	})
+
 	{
 		devs := DevController{db: db, store: sessionStore}
 		r.GET("/devs", devs.List)
