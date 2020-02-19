@@ -36,11 +36,11 @@ func TestMigrate(t *testing.T) {
 }
 
 func TestLastRun(t *testing.T) {
-	if v := LastRun(db); v == nil || !v.Equal(time.Time{}) {
+	if v := LastRun(db); !v.Equal(time.Time{}) {
 		t.Errorf("Time should have been zero value, got %v", v)
 	}
 	db.MustExec("insert into agg_meta values (CURRENT_TIMESTAMP)")
-	if v := LastRun(db); v == nil || !v.After(time.Time{}) {
+	if v := LastRun(db); !v.After(time.Time{}) {
 		t.Errorf("Time should have been greater than zero value, got %v", v)
 	}
 }
