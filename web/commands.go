@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/google/go-github/github"
@@ -11,21 +12,17 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func LastRun(db *sqlx.DB) *time.Time {
+func LastRun(db *sqlx.DB) time.Time {
 	var lastRun time.Time
 	err := db.Get(&lastRun, queryLastRun)
 	if err == sql.ErrNoRows {
-		return &time.Time{}
+		return lastRun
 	}
 	if err != nil {
 		log.Println(err)
-		return nil
+		return lastRun
 	}
-	if lastRun.Equal(time.Time{}) {
-		log.Println("null time in LastRun call results")
-		return nil
-	}
-	return &lastRun
+	return lastRun
 }
 
 type LanguageCount struct {
@@ -76,7 +73,27 @@ type LanguageResult struct {
 	Count int
 }
 
+var LanguageCache = struct {
+	sync.RWMutex
+	result  map[string][]*LanguageResult
+	total   int
+	lastRun time.Time
+}{
+	result: map[string][]*LanguageResult{},
+}
+
 func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
+	lastRun := LastRun(db)
+	LanguageCache.RLock()
+	result, found := LanguageCache.result[name]
+	if found && lastRun.Equal(LanguageCache.lastRun) {
+		defer LanguageCache.RUnlock()
+		return result, LanguageCache.total
+	}
+	LanguageCache.RUnlock()
+	LanguageCache.Lock()
+	defer LanguageCache.Unlock()
+
 	repos := []struct {
 		stldevs.Repository
 		Count  int
@@ -103,6 +120,9 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 		log.Println(err)
 	}
 
+	LanguageCache.result[name] = results
+	LanguageCache.total = total
+	LanguageCache.lastRun = lastRun
 	return results, total
 }
 
@@ -131,7 +151,7 @@ func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
 		err := db.Get(user, queryProfileForUser, name)
 		if err != nil {
 			log.Println("Error querying profile", name)
-			userCh<-nil
+			userCh <- nil
 			return
 		}
 		userCh <- user
@@ -159,8 +179,8 @@ func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
 		reposCh <- reposByLang
 	}()
 
-	user := <- userCh
-	repos := <- reposCh
+	user := <-userCh
+	repos := <-reposCh
 
 	if user == nil || repos == nil {
 		return nil, fmt.Errorf("not found")
