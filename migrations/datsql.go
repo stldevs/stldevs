@@ -3,7 +3,7 @@ package migrations
 const (
 	createMeta = `
 		CREATE TABLE IF NOT EXISTS agg_meta (
-			created_at TIMESTAMP);`
+			created_at TIMESTAMP WITH TIMEZONE);`
 
 	createUser = `CREATE TABLE IF NOT EXISTS agg_user (
 			login VARCHAR(255) NOT NULL PRIMARY KEY,
@@ -18,8 +18,8 @@ const (
 			public_gists INTEGER,
 			avatar_url TEXT,
 			disk_usage INTEGER,
-			created_at TIMESTAMP,
-			updated_at TIMESTAMP
+			created_at TIMESTAMP WITH TIMEZONE,
+			updated_at TIMESTAMP WITH TIMEZONE
 			);`
 
 	createRepo = `CREATE TABLE IF NOT EXISTS agg_repo (
@@ -38,9 +38,9 @@ const (
 			fork BOOL,
 			default_branch TEXT,
 			master_branch TEXT,
-			created_at TIMESTAMP,
-			pushed_at TIMESTAMP,
-			updated_at TIMESTAMP,
+			created_at TIMESTAMP WITH TIMEZONE,
+			pushed_at TIMESTAMP WITH TIMEZONE,
+			updated_at TIMESTAMP WITH TIMEZONE,
 			primary key (owner, name)
 			);`
 
