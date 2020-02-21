@@ -80,6 +80,7 @@ var LanguageCache = struct {
 	lastRun time.Time
 }{
 	result: map[string][]*LanguageResult{},
+	total: map[string]int{},
 }
 
 func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
