@@ -40,9 +40,31 @@ func profile(c *gin.Context) {
 func language(c *gin.Context) {
 	db := c.MustGet("db").(*sqlx.DB)
 
+	var query struct {
+		Limit  int `form:"limit"`
+		Offset int `form:"offset"`
+	}
+	_ = c.BindQuery(&query)
+	if query.Limit <= 0 {
+		query.Limit = 25
+	}
+	if query.Offset < 0 {
+		query.Offset = 0
+	}
+
 	langs, userCount := Language(db, c.Params.ByName("lang"))
+
+	if query.Limit+query.Offset > len(langs) {
+		query.Limit = len(langs)
+	} else {
+		query.Limit += query.Offset
+	}
+	if query.Offset > len(langs) {
+		query.Limit = 0
+		query.Offset = 0
+	}
 	c.JSON(200, map[string]interface{}{
-		"languages": langs,
+		"languages": langs[query.Offset:query.Limit],
 		"count":     userCount,
 		"language":  c.Params.ByName("lang"),
 	})
