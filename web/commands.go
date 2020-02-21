@@ -76,7 +76,7 @@ type LanguageResult struct {
 var LanguageCache = struct {
 	sync.RWMutex
 	result  map[string][]*LanguageResult
-	total   int
+	total   map[string]int
 	lastRun time.Time
 }{
 	result: map[string][]*LanguageResult{},
@@ -88,7 +88,7 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 	result, found := LanguageCache.result[name]
 	if found && lastRun.Equal(LanguageCache.lastRun) {
 		defer LanguageCache.RUnlock()
-		return result, LanguageCache.total
+		return result, LanguageCache.total[name]
 	}
 	LanguageCache.RUnlock()
 	LanguageCache.Lock()
@@ -121,7 +121,7 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 	}
 
 	LanguageCache.result[name] = results
-	LanguageCache.total = total
+	LanguageCache.total[name] = total
 	LanguageCache.lastRun = lastRun
 	return results, total
 }
