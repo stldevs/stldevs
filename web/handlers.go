@@ -13,27 +13,11 @@ func topLangs(c *gin.Context) {
 	})
 }
 
-func topDevs(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
-	c.JSON(200, map[string]interface{}{
-		"devs":    PopularDevs(db),
-		"lastrun": LastRun(db),
-	})
-}
-
 func topOrgs(c *gin.Context) {
 	db := c.MustGet("db").(*sqlx.DB)
 	c.JSON(200, map[string]interface{}{
 		"devs":    PopularOrgs(db),
 		"lastrun": LastRun(db),
-	})
-}
-
-func profile(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
-	profile, _ := Profile(db, c.Params.ByName("profile"))
-	c.JSON(200, map[string]interface{}{
-		"profile": profile,
 	})
 }
 

@@ -98,9 +98,7 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 
 	// deprecated
 	r.GET("/toplangs", topLangs)
-	r.GET("/topdevs", topDevs)
 	r.GET("/toporgs", topOrgs)
-	r.GET("/profile/:profile", profile)
 
 	log.Println("Serving on http://127.0.0.1:8080")
 	log.Println(http.ListenAndServe("0.0.0.0:8080", r))
