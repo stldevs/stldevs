@@ -148,6 +148,7 @@ func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
 	defer close(reposCh)
 
 	go func() {
+		start := time.Now()
 		user := &StlDevsUser{}
 		err := db.Get(user, queryProfileForUser, name)
 		if err != nil {
@@ -155,10 +156,12 @@ func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
 			userCh <- nil
 			return
 		}
+		log.Println("queryProfileForUser took", time.Now().Sub(start))
 		userCh <- user
 	}()
 
 	go func() {
+		start := time.Now()
 		repos := []stldevs.Repository{}
 		err := db.Select(&repos, queryRepoForUser, name)
 		if err != nil {
@@ -177,6 +180,7 @@ func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
 			reposByLang[lang] = append(reposByLang[lang], repo)
 		}
 
+		log.Println("queryRepoForUser took", time.Now().Sub(start))
 		reposCh <- reposByLang
 	}()
 

@@ -2,6 +2,7 @@ package web
 
 import (
 	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
@@ -22,12 +23,16 @@ func (d *DevController) List(c *gin.Context) {
 }
 
 func (d *DevController) Get(c *gin.Context) {
+	start := time.Now()
 	profile, err := Profile(d.db, c.Params.ByName("login"))
+	log.Println("profile listing took", time.Now().Sub(start))
 	if err != nil {
 		c.JSON(500, "Failed to find user")
 		return
 	}
+	start = time.Now()
 	c.JSON(200, profile)
+	log.Println("marshalling took", time.Now().Sub(start))
 }
 
 type UpdateUser struct {
