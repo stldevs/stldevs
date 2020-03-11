@@ -24,10 +24,9 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 
 	r.Use(func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		log.Println(origin)
 		originUrl, err := url.Parse(origin)
-		if err == nil && originUrl.Host == "localhost" {
-			c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+		if err == nil && originUrl.Hostname() == "localhost" {
+			c.Header("Access-Control-Allow-Origin", origin)
 		}
 		c.Next()
 	})
