@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"log"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/dghubble/gologin/v2"
@@ -21,15 +20,6 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 	sessionStore := NewSessionStore()
 
 	r := gin.Default()
-
-	r.Use(func(c *gin.Context) {
-		origin := c.GetHeader("Origin")
-		originUrl, err := url.Parse(origin)
-		if err == nil && originUrl.Hostname() == "localhost" {
-			c.Header("Access-Control-Allow-Origin", origin)
-		}
-		c.Next()
-	})
 
 	// deprecated, use controller structs instead
 	r.Use(func(c *gin.Context) {
