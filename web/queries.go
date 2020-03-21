@@ -13,7 +13,7 @@ const (
 		where language is not null and fork=false
 		group by language
 		order by count desc
-		limit 100;`
+		limit 50;`
 
 	queryPopularDevs = `
 		select login, name, avatar_url, followers, public_repos, stars, forks
