@@ -94,6 +94,12 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 		authenticated.PATCH("/devs/:login", devs.Patch)
 	}
 
+	{
+		orgs := OrgController{db: db, store: sessionStore}
+		r.GET("/orgs", orgs.List)
+		r.GET("/orgs/:login", orgs.Get)
+	}
+
 	r.GET("/lang/:lang", language)
 
 	// deprecated
@@ -114,14 +120,14 @@ func (s *sessionIssuer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(500)
-		_, _ = w.Write([]byte("\""+err.Error()+"\""))
+		_, _ = w.Write([]byte("\"" + err.Error() + "\""))
 		return
 	}
 
 	log.Println("Login success", *githubUser.Login)
 
 	user := &StlDevsUser{
-		User:    githubUser,
+		User: githubUser,
 	}
 
 	// check if the user is an admin and set that in the session too
