@@ -84,6 +84,7 @@ const (
 			LOWER(bio) like LOWER($1) or
 			LOWER(email) like LOWER($1)
 		)
+		order by stars desc
 		limit 100`
 
 	querySearchRepos = `
@@ -91,8 +92,8 @@ const (
 		from agg_repo
 		where LOWER(name) like LOWER($1)
 			or LOWER(description) like LOWER($1)
-			order by stargazers_count desc
-			limit 100
+		order by stargazers_count desc
+		limit 100
 	`
 
 	countLanguageUsers = `select count(distinct(owner))
