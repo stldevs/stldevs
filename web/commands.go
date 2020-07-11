@@ -134,10 +134,10 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 
 type StlDevsUser struct {
 	*github.User
-	Stars   int  `json:",omitempty"`
-	Forks   int  `json:",omitempty"`
-	Hide    bool `json:",omitempty"`
-	IsAdmin bool `json:",omitempty"`
+	Stars   int  `json:"stars,omitempty"`
+	Forks   int  `json:"forks,omitempty"`
+	Hide    bool `json:"hide,omitempty"`
+	IsAdmin bool `json:"is_admin,omitempty"`
 }
 
 type ProfileData struct {
