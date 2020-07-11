@@ -55,7 +55,7 @@ const (
 		) q where rownum < 4`
 
 	queryProfileForUser = `
-		select login, email, name, bio, blog, followers, public_repos, public_gists, avatar_url, hide, is_admin
+		select login, stars, forks, email, name, bio, blog, followers, public_repos, public_gists, avatar_url, hide, is_admin
 		from agg_user
 		join (
 			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
