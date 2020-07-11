@@ -76,8 +76,7 @@ type LanguageResult struct {
 	Owner string
 	Repos []stldevs.Repository
 	Count int
-	Login string `json:"login"`
-	User  string `json:"user"`
+	Name  string `json:"name"`
 	Type  string `json:"type"`
 }
 
@@ -107,7 +106,6 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 		stldevs.Repository
 		Count  int
 		Rownum int
-		Login  string `json:"login"`
 		User   string `json:"user"`
 		Type   string `json:"type"`
 	}{}
@@ -124,8 +122,7 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 				Owner: *repo.Owner,
 				Repos: []stldevs.Repository{repo.Repository},
 				Count: repo.Count,
-				Login: repo.Login,
-				User:  repo.User,
+				Name:  repo.User,
 				Type:  repo.Type,
 			}
 			results = append(results, cursor)
