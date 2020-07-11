@@ -76,8 +76,8 @@ type LanguageResult struct {
 	Owner string
 	Repos []stldevs.Repository
 	Count int
-	Name  string `json:"name"`
-	Type  string `json:"type"`
+	Name  *string `json:"name"`
+	Type  string  `json:"type"`
 }
 
 var LanguageCache = struct {
@@ -106,9 +106,9 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 		stldevs.Repository
 		Count  int
 		Rownum int
-		Login  string // not used, just here to satisfy sqlx
-		User   string `json:"user"`
-		Type   string `json:"type"`
+		Login  string  // not used, just here to satisfy sqlx
+		User   *string `json:"user"`
+		Type   string  `json:"type"`
 	}{}
 	err := db.Select(&repos, queryLanguage, name)
 	if err != nil {
