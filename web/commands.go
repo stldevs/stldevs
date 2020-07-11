@@ -104,6 +104,9 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 		stldevs.Repository
 		Count  int
 		Rownum int
+		Login  string `json:"login"`
+		Name   string `json:"name"`
+		Type   string `json:"type"`
 	}{}
 	err := db.Select(&repos, queryLanguage, name)
 	if err != nil {

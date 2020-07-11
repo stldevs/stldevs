@@ -49,6 +49,10 @@ const (
 				where lower(language)=lower($1) and fork=false and owner=r1.owner
 			) as count, row_number() over (partition by owner order by stargazers_count desc) as rownum
 			from agg_repo r1
+			join (
+				select login, name, type
+				from agg_user
+			) repo ON (owner=login)
 			where LOWER(r1.language)=LOWER($1) and r1.fork=false
 			group by owner, name
 			order by count desc, owner, stargazers_count desc
