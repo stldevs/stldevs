@@ -1,93 +1,45 @@
 package stldevs
 
 import (
-	"time"
-
 	"fmt"
-
 	"github.com/google/go-github/github"
+	"time"
 )
-
-type User struct {
-	Login             *string `json:",omitempty"`
-	AvatarURL         *string `json:",omitempty"`
-	HTMLURL           *string `json:",omitempty"`
-	GravatarID        *string `json:",omitempty"`
-	Name              *string `json:",omitempty"`
-	Company           *string `json:",omitempty"`
-	Blog              *string `json:",omitempty"`
-	Location          *string `json:",omitempty"`
-	Email             *string `json:",omitempty"`
-	Hireable          *bool `json:",omitempty"`
-	Bio               *string `json:",omitempty"`
-	PublicRepos       *int `json:",omitempty"`
-	PublicGists       *int `json:",omitempty"`
-	Followers         *int `json:",omitempty"`
-	Following         *int `json:",omitempty"`
-	CreatedAt         *time.Time `json:",omitempty"`
-	UpdatedAt         *time.Time `json:",omitempty"`
-	Type              *string `json:",omitempty"`
-	SiteAdmin         *bool `json:",omitempty"`
-	TotalPrivateRepos *int `json:",omitempty"`
-	OwnedPrivateRepos *int `json:",omitempty"`
-	PrivateGists      *int `json:",omitempty"`
-	DiskUsage         *int `json:",omitempty"`
-	Collaborators     *int `json:",omitempty"`
-
-	// API URLs
-	URL               *string `json:",omitempty"`
-	EventsURL         *string `json:",omitempty"`
-	FollowingURL      *string `json:",omitempty"`
-	FollowersURL      *string `json:",omitempty"`
-	GistsURL          *string `json:",omitempty"`
-	OrganizationsURL  *string `json:",omitempty"`
-	ReceivedEventsURL *string `json:",omitempty"`
-	ReposURL          *string `json:",omitempty"`
-	StarredURL        *string `json:",omitempty"`
-	SubscriptionsURL  *string `json:",omitempty"`
-
-	Hide bool `json:",omitempty"`
-	IsAdmin bool `json:",omitempty"`
-}
-
-func (u User) String() string {
-	return fmt.Sprintf("User: %v", *u.Login)
-}
 
 type Repository struct {
 	Owner            *string
 	Name             *string
-	FullName         *string `json:",omitempty"`
-	Description      *string `json:",omitempty"`
-	Homepage         *string `json:",omitempty"`
-	DefaultBranch    *string `json:",omitempty"`
-	MasterBranch     *string `json:",omitempty"`
-	CreatedAt        *time.Time `json:",omitempty"`
-	PushedAt         *time.Time `json:",omitempty"`
-	UpdatedAt        *time.Time `json:",omitempty"`
-	HTMLURL          *string `json:",omitempty"`
-	CloneURL         *string `json:",omitempty"`
-	GitURL           *string `json:",omitempty"`
-	MirrorURL        *string `json:",omitempty"`
-	SSHURL           *string `json:",omitempty"`
-	SVNURL           *string `json:",omitempty"`
-	Language         *string `json:",omitempty"`
-	Fork             *bool `json:",omitempty"`
-	ForksCount       *int `json:",omitempty"`
-	NetworkCount     *int `json:",omitempty"`
-	OpenIssuesCount  *int `db:"open_issues_count" json:",omitempty"`
-	StargazersCount  *int `json:",omitempty"`
-	SubscribersCount *int `json:",omitempty"`
-	WatchersCount    *int `json:",omitempty"`
-	Size             *int `json:",omitempty"`
-	AutoInit         *bool `json:",omitempty"`
+	FullName         *string              `json:",omitempty"`
+	Description      *string              `json:",omitempty"`
+	Homepage         *string              `json:",omitempty"`
+	DefaultBranch    *string              `json:",omitempty"`
+	MasterBranch     *string              `json:",omitempty"`
+	CreatedAt        *time.Time           `json:",omitempty"`
+	PushedAt         *time.Time           `json:",omitempty"`
+	UpdatedAt        *time.Time           `json:",omitempty"`
+	HTMLURL          *string              `json:",omitempty"`
+	CloneURL         *string              `json:",omitempty"`
+	GitURL           *string              `json:",omitempty"`
+	MirrorURL        *string              `json:",omitempty"`
+	SSHURL           *string              `json:",omitempty"`
+	SVNURL           *string              `json:",omitempty"`
+	Language         *string              `json:",omitempty"`
+	Fork             *bool                `json:",omitempty"`
+	ForksCount       *int                 `json:",omitempty"`
+	NetworkCount     *int                 `json:",omitempty"`
+	OpenIssuesCount  *int                 `db:"open_issues_count" json:",omitempty"`
+	StargazersCount  *int                 `json:",omitempty"`
+	SubscribersCount *int                 `json:",omitempty"`
+	WatchersCount    *int                 `json:",omitempty"`
+	Size             *int                 `json:",omitempty"`
+	AutoInit         *bool                `json:",omitempty"`
 	Organization     *github.Organization `json:",omitempty"`
-	Permissions      *map[string]bool `json:",omitempty"`
-	Private          *bool `json:",omitempty"`
-	HasIssues        *bool `json:",omitempty"`
-	HasWiki          *bool `json:",omitempty"`
-	HasDownloads     *bool `json:",omitempty"`
-	TeamID           *int `json:",omitempty"`
+	Permissions      *map[string]bool     `json:",omitempty"`
+	Private          *bool                `json:",omitempty"`
+	HasIssues        *bool                `json:",omitempty"`
+	HasWiki          *bool                `json:",omitempty"`
+	HasDownloads     *bool                `json:",omitempty"`
+	TeamID           *int                 `json:",omitempty"`
 
 	// API URLs
 	URL              *string `json:",omitempty"`

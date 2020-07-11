@@ -42,9 +42,13 @@ func PopularLanguages(db *sqlx.DB) []LanguageCount {
 }
 
 type DevCount struct {
-	Login, AvatarUrl, Followers, PublicRepos string
-	Name                                     *string
-	Stars, Forks                             int
+	Login       string  `json:"login"`
+	AvatarUrl   string  `json:"avatar_url"`
+	Followers   string  `json:"followers"`
+	PublicRepos string  `json:"public_repos"`
+	Name        *string `json:"name"`
+	Stars       int     `json:"stars"`
+	Forks       int     `json:"forks"`
 }
 
 func PopularDevs(db *sqlx.DB) []DevCount {
