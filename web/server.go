@@ -92,6 +92,7 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 		r.GET("/devs", devs.List)
 		r.GET("/devs/:login", devs.Get)
 		authenticated.PATCH("/devs/:login", devs.Patch)
+		authenticated.DELETE("/devs/:login", devs.Delete)
 	}
 
 	{

@@ -63,3 +63,29 @@ func (d *DevController) Patch(c *gin.Context) {
 	}
 	c.JSON(200, profile)
 }
+
+// Delete allows admins to easily expunge old data
+func (d *DevController) Delete(c *gin.Context) {
+	session := c.MustGet("session").(*SessionEntry)
+	if session.User.IsAdmin == false {
+		c.JSON(403, "Only admins can delete users")
+		return
+	}
+
+	login := c.Params.ByName("login")
+	_, err := d.db.Exec("delete from agg_repo where owner=$1", login)
+	if err != nil {
+		log.Println(err)
+		c.JSON(500, err.Error())
+		return
+	}
+
+	_, err = d.db.Exec("delete from agg_user where login=$1", login)
+	if err != nil {
+		log.Println(err)
+		c.JSON(500, err.Error())
+		return
+	}
+
+	c.JSON(200, "deleted")
+}
