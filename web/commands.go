@@ -105,7 +105,7 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 		Count  int
 		Rownum int
 		Login  string `json:"login"`
-		Name   string `json:"name"`
+		User   string `json:"user"`
 		Type   string `json:"type"`
 	}{}
 	err := db.Select(&repos, queryLanguage, name)
