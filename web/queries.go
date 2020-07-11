@@ -72,8 +72,7 @@ const (
 			login like LOWER($1) or 
 			LOWER(name) like LOWER($1) or
 			LOWER(bio) like LOWER($1) or
-			LOWER(email) like LOWER($1) or
-			LOWER(company) like LOWER($1)
+			LOWER(email) like LOWER($1)
 		)
 		limit 100`
 
