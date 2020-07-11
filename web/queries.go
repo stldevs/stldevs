@@ -43,20 +43,21 @@ const (
 
 	queryLanguage = `
 		select * from (
-			select owner, repo.user as user, repo.type as type, name, description, forks_count, stargazers_count, watchers_count, fork, (
+			select owner, name, description, forks_count, stargazers_count, watchers_count, fork, (
 				select sum(stargazers_count)
 				from agg_repo
 				where lower(language)=lower($1) and fork=false and owner=r1.owner
 			) as count, row_number() over (partition by owner order by stargazers_count desc) as rownum
 			from agg_repo r1
-			join (
-				select login, name as user, type
-				from agg_user
-			) repo ON (owner=login)
 			where LOWER(r1.language)=LOWER($1) and r1.fork=false
 			group by owner, name
 			order by count desc, owner, stargazers_count desc
-		) q where rownum < 4`
+		) q 
+		join (
+			select login, name as user, type
+			from agg_user
+		) repo ON (q.owner=login)
+		where rownum < 4`
 
 	queryProfileForUser = `
 		select login, stars, forks, email, name, bio, blog, followers, public_repos, public_gists, avatar_url, hide, is_admin
