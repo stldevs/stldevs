@@ -16,7 +16,7 @@ const (
 		limit 50;`
 
 	queryPopularDevs = `
-		select login, name, avatar_url, followers, public_repos, stars, forks
+		select login, name, avatar_url, followers, public_repos, stars, forks, type
 		from agg_user
 		join (
 			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
