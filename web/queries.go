@@ -57,7 +57,8 @@ const (
 			select login, name as user, type
 			from agg_user
 		) repo ON (q.owner=login)
-		where rownum < 4`
+		where rownum < 4
+		order by count desc, owner, stargazers_count desc`
 
 	queryProfileForUser = `
 		select login, stars, forks, email, name, bio, blog, followers, public_repos, public_gists, avatar_url, hide, is_admin
