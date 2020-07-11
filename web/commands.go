@@ -49,6 +49,7 @@ type DevCount struct {
 	Name        *string `json:"name"`
 	Stars       int     `json:"stars"`
 	Forks       int     `json:"forks"`
+	Type        string  `json:"type"`
 }
 
 func PopularDevs(db *sqlx.DB) []DevCount {

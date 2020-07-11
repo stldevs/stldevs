@@ -29,7 +29,7 @@ const (
 		limit 100;`
 
 	queryPopularOrgs = `
-		select login, name, avatar_url, followers, public_repos, stars, forks
+		select login, name, avatar_url, followers, public_repos, stars, forks, type
 		from agg_user
 		join(
 			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
@@ -71,7 +71,7 @@ const (
 		order by language, stargazers_count desc, name`
 
 	querySearchUsers = `
-		select login, stars, forks, name, followers, public_repos, public_gists, avatar_url, hide, is_admin
+		select login, stars, forks, name, followers, public_repos, public_gists, avatar_url, type, hide, is_admin
 		from agg_user
 		join (
 			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
