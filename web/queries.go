@@ -73,6 +73,11 @@ const (
 	querySearchUsers = `
 		select *
 		from agg_user
+		join (
+			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
+			from agg_repo
+			group by owner
+		) repo ON (repo.owner=agg_user.login)
 		where hide is false and (
 			login like LOWER($1) or 
 			LOWER(name) like LOWER($1) or

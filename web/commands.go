@@ -199,7 +199,7 @@ func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
 func Search(db *sqlx.DB, term, kind string) interface{} {
 	query := "%" + term + "%"
 	if kind == "users" {
-		users := []stldevs.User{}
+		users := []StlDevsUser{}
 		if err := db.Select(&users, querySearchUsers, query); err != nil {
 			log.Println(err)
 			return nil
