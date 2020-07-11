@@ -106,6 +106,7 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 		stldevs.Repository
 		Count  int
 		Rownum int
+		Login  string // not used, just here to satisfy sqlx
 		User   string `json:"user"`
 		Type   string `json:"type"`
 	}{}
