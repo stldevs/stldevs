@@ -76,6 +76,9 @@ type LanguageResult struct {
 	Owner string
 	Repos []stldevs.Repository
 	Count int
+	Login string `json:"login"`
+	User  string `json:"user"`
+	Type  string `json:"type"`
 }
 
 var LanguageCache = struct {
@@ -117,7 +120,14 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 	var cursor *LanguageResult
 	for _, repo := range repos {
 		if cursor == nil || cursor.Owner != *repo.Owner {
-			cursor = &LanguageResult{Owner: *repo.Owner, Repos: []stldevs.Repository{repo.Repository}, Count: repo.Count}
+			cursor = &LanguageResult{
+				Owner: *repo.Owner,
+				Repos: []stldevs.Repository{repo.Repository},
+				Count: repo.Count,
+				Login: repo.Login,
+				User:  repo.User,
+				Type:  repo.Type,
+			}
 			results = append(results, cursor)
 		} else {
 			cursor.Repos = append(cursor.Repos, repo.Repository)
