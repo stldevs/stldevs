@@ -80,7 +80,7 @@ var LanguageCache = struct {
 	lastRun time.Time
 }{
 	result: map[string][]*LanguageResult{},
-	total: map[string]int{},
+	total:  map[string]int{},
 }
 
 func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
@@ -129,6 +129,8 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 
 type StlDevsUser struct {
 	*github.User
+	Stars   int  `json:",omitempty"`
+	Forks   int  `json:",omitempty"`
 	Hide    bool `json:",omitempty"`
 	IsAdmin bool `json:",omitempty"`
 }
