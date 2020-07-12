@@ -24,7 +24,7 @@ func (d *DevController) List(c *gin.Context) {
 func (d *DevController) Get(c *gin.Context) {
 	profile, err := Profile(d.db, c.Params.ByName("login"))
 	if err != nil {
-		c.JSON(500, "Failed to find user")
+		c.JSON(404, "Failed to find user")
 		return
 	}
 	c.JSON(200, profile)
@@ -38,7 +38,7 @@ type UpdateUser struct {
 func (d *DevController) Patch(c *gin.Context) {
 	profile, err := Profile(d.db, c.Params.ByName("login"))
 	if err != nil {
-		c.JSON(500, "Failed to find user")
+		c.JSON(404, "Failed to find user")
 		return
 	}
 	var cmd UpdateUser
