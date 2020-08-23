@@ -46,10 +46,10 @@ const (
 			select owner, name, description, forks_count, stargazers_count, watchers_count, fork, (
 				select sum(stargazers_count)
 				from agg_repo
-				where lower(language)=lower($1) and fork=false and owner=r1.owner
+				where lower(language)=lower($1) and owner=r1.owner
 			) as count, row_number() over (partition by owner order by stargazers_count desc) as rownum
 			from agg_repo r1
-			where LOWER(r1.language)=LOWER($1) and r1.fork=false
+			where LOWER(r1.language)=LOWER($1)
 			group by owner, name
 			order by count desc, owner, stargazers_count desc
 		) q 
