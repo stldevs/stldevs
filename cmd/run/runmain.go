@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
+	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jakecoffman/stldevs/aggregator"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/migrations"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/jackc/pgx/stdlib"
 	"os"
 )
 
@@ -30,6 +30,7 @@ func main() {
 	}
 	db.MapperFunc(config.CamelToSnake)
 
+	log.Println("MIGRATE")
 	if err = migrations.Migrate(db); err != nil {
 		log.Fatal("Could not migrate schema")
 	}

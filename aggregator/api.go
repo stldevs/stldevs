@@ -23,14 +23,17 @@ func New(db *sqlx.DB, githubKey string) *Aggregator {
 
 func (a *Aggregator) Run() {
 	if a.running {
+		log.Println("Already running, aborting run.")
 		return
 	}
+	log.Println("Run started")
 	a.running = true
 	defer func() { a.running = false }()
 	if err := a.insertRunLog(); err != nil {
 		log.Println(err)
 		return
 	}
+	log.Println("Run log inserted")
 	users, err := FindInStl(a.client, "user")
 	if err != nil {
 		log.Println(err)

@@ -90,5 +90,15 @@ func userEnhancements(db *sqlx.DB) error {
 		log.Println(err)
 		return err
 	}
+	_, err = db.Exec(`ALTER TABLE agg_user ADD COLUMN IF NOT EXISTS refreshed_at TIMESTAMPTZ`)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	_, err = db.Exec(`ALTER TABLE agg_repo ADD COLUMN IF NOT EXISTS refreshed_at TIMESTAMPTZ`)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 	return nil
 }
