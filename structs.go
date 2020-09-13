@@ -40,6 +40,7 @@ type Repository struct {
 	HasWiki          *bool                `json:",omitempty"`
 	HasDownloads     *bool                `json:",omitempty"`
 	TeamID           *int                 `json:",omitempty"`
+	RefreshedAt      *time.Time           `json:",omitempty"`
 
 	// API URLs
 	URL              *string `json:",omitempty"`
