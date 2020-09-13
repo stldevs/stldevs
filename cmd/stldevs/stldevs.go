@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "github.com/jackc/pgx/stdlib"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/migrations"
 	"github.com/jakecoffman/stldevs/web"

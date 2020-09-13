@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/go-github/v29/github"
+	"github.com/google/go-github/v32/github"
 )
 
 func (a *Aggregator) updateUsersRepos(user string) error {
