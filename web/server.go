@@ -20,7 +20,7 @@ import (
 func Run(cfg *config.Config) {
 	r := gin.Default()
 
-	r.Static("/docs", "./swagger-ui")
+	r.Static("/docs/", "./swagger-ui")
 	r.GET("/swagger.json", func(context *gin.Context) {
 		context.File("swagger.json")
 	})
