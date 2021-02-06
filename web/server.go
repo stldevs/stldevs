@@ -22,7 +22,7 @@ func Run(cfg *config.Config) {
 
 	r.Static("/docs", "./swagger-ui")
 	r.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusFound, "/docs")
+		c.Redirect(http.StatusFound, "docs")
 	})
 	r.GET("/swagger.json", func(context *gin.Context) {
 		context.File("swagger.json")
