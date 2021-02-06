@@ -7,7 +7,7 @@ import (
 
 type Config struct {
 	GithubKey,
-	PostgresPw,
+	Postgres,
 	GithubClientID,
 	GithubClientSecret,
 	SessionSecret string

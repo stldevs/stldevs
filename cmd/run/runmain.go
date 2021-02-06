@@ -24,7 +24,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := sqlx.Connect("pgx", "postgres://postgres:"+cfg.PostgresPw+"@localhost:5432/stldevs")
+	db, err := sqlx.Connect("pgx", cfg.Postgres)
 	if err != nil {
 		log.Fatal(err)
 	}

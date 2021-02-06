@@ -1,4 +1,4 @@
-package web
+package db
 
 import (
 	"database/sql"
@@ -9,10 +9,9 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/jakecoffman/stldevs"
-	"github.com/jmoiron/sqlx"
 )
 
-func LastRun(db *sqlx.DB) time.Time {
+func LastRun() time.Time {
 	var lastRun time.Time
 	err := db.Get(&lastRun, queryLastRun)
 	if err == sql.ErrNoRows {
@@ -31,7 +30,7 @@ type LanguageCount struct {
 	Users    int
 }
 
-func PopularLanguages(db *sqlx.DB) []LanguageCount {
+func PopularLanguages() []LanguageCount {
 	langs := []LanguageCount{}
 	err := db.Select(&langs, queryPopularLanguages)
 	if err != nil {
@@ -52,7 +51,7 @@ type DevCount struct {
 	Type        string  `json:"type"`
 }
 
-func PopularDevs(db *sqlx.DB) []DevCount {
+func PopularDevs() []DevCount {
 	devs := []DevCount{}
 	err := db.Select(&devs, queryPopularDevs)
 	if err != nil {
@@ -62,7 +61,7 @@ func PopularDevs(db *sqlx.DB) []DevCount {
 	return devs
 }
 
-func PopularOrgs(db *sqlx.DB) []DevCount {
+func PopularOrgs() []DevCount {
 	devs := []DevCount{}
 	err := db.Select(&devs, queryPopularOrgs)
 	if err != nil {
@@ -90,8 +89,8 @@ var LanguageCache = struct {
 	total:  map[string]int{},
 }
 
-func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
-	lastRun := LastRun(db)
+func Language(name string) ([]*LanguageResult, int) {
+	lastRun := LastRun()
 	LanguageCache.RLock()
 	result, found := LanguageCache.result[name]
 	if found && lastRun.Equal(LanguageCache.lastRun) {
@@ -102,14 +101,14 @@ func Language(db *sqlx.DB, name string) ([]*LanguageResult, int) {
 	LanguageCache.Lock()
 	defer LanguageCache.Unlock()
 
-	repos := []struct {
+	var repos []struct {
 		stldevs.Repository
 		Count  int
 		Rownum int
 		Login  string  // not used, just here to satisfy sqlx
 		User   *string `json:"user"`
 		Type   string  `json:"type"`
-	}{}
+	}
 	err := db.Select(&repos, queryLanguage, name)
 	if err != nil {
 		log.Println(err)
@@ -156,7 +155,7 @@ type ProfileData struct {
 	Repos map[string][]stldevs.Repository
 }
 
-func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
+func Profile(name string) (*ProfileData, error) {
 	// TODO hide the user when other users try to see them but they are set to "Hide" in db
 
 	// There are 2 queries to do so run them concurrently
@@ -212,7 +211,7 @@ func Profile(db *sqlx.DB, name string) (*ProfileData, error) {
 	return &ProfileData{user, repos}, nil
 }
 
-func Search(db *sqlx.DB, term, kind string) interface{} {
+func Search(term, kind string) interface{} {
 	query := "%" + term + "%"
 	if kind == "users" {
 		users := []StlDevsUser{}
@@ -231,4 +230,46 @@ func Search(db *sqlx.DB, term, kind string) interface{} {
 	}
 	log.Println("Unknown search kind", kind)
 	return nil
+}
+
+func HideUser(hide bool, login string) error {
+	result, err := db.Exec("update agg_user set hide=$1 where login=$2", hide, login)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	affected, _ := result.RowsAffected()
+	if affected != 1 {
+		return fmt.Errorf("affected no users")
+	}
+	return nil
+}
+
+func Delete(login string) error {
+	_, err := db.Exec("delete from agg_repo where owner=$1", login)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	_, err = db.Exec("delete from agg_user where login=$1", login)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return err
+}
+
+func IsAdmin(login string) bool {
+	rows, err := db.Query("select is_admin from agg_user where login=$1", login)
+	if err != nil {
+		log.Println(err)
+	}
+
+	var isAdmin bool
+	if err == nil && rows.Next() && rows.Scan(&isAdmin) == nil && isAdmin == true {
+		return true
+	}
+	return false
 }

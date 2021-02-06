@@ -1,12 +1,13 @@
 package web
 
 import (
+	"github.com/jakecoffman/stldevs/db"
 	"sync"
 	"time"
 )
 
 const (
-	cookieName      = "stldevs-session"
+	cookieName = "stldevs-session"
 )
 
 type SessionStore struct {
@@ -21,7 +22,7 @@ func NewSessionStore() *SessionStore {
 }
 
 type SessionEntry struct {
-	User *StlDevsUser
+	User    *db.StlDevsUser
 	Created time.Time
 }
 
@@ -32,7 +33,7 @@ func (s *SessionStore) Get(cookie string) (*SessionEntry, bool) {
 	return session, ok
 }
 
-func (s *SessionStore) Add(user *StlDevsUser) string {
+func (s *SessionStore) Add(user *db.StlDevsUser) string {
 	s.Lock()
 	defer s.Unlock()
 	for k, v := range s.store {

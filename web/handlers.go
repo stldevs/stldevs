@@ -2,28 +2,24 @@ package web
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
+	"github.com/jakecoffman/stldevs/db"
 )
 
 func topLangs(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
 	c.JSON(200, map[string]interface{}{
-		"langs":   PopularLanguages(db),
-		"lastrun": LastRun(db),
+		"langs":   db.PopularLanguages(),
+		"lastrun": db.LastRun(),
 	})
 }
 
 func topOrgs(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
 	c.JSON(200, map[string]interface{}{
-		"devs":    PopularOrgs(db),
-		"lastrun": LastRun(db),
+		"devs":    db.PopularOrgs(),
+		"lastrun": db.LastRun(),
 	})
 }
 
 func language(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
-
 	var query struct {
 		Limit  int `form:"limit"`
 		Offset int `form:"offset"`
@@ -36,7 +32,7 @@ func language(c *gin.Context) {
 		query.Offset = 0
 	}
 
-	langs, userCount := Language(db, c.Params.ByName("lang"))
+	langs, userCount := db.Language(c.Params.ByName("lang"))
 
 	if query.Limit+query.Offset > len(langs) {
 		query.Limit = len(langs)
@@ -55,7 +51,6 @@ func language(c *gin.Context) {
 }
 
 func search(c *gin.Context) {
-	db := c.MustGet("db").(*sqlx.DB)
 	q := c.Request.URL.Query().Get("q")
 	kind := c.Request.URL.Query().Get("type")
 
@@ -65,6 +60,6 @@ func search(c *gin.Context) {
 	}
 
 	c.JSON(200, map[string]interface{}{
-		"results": Search(db, q, kind),
+		"results": db.Search(q, kind),
 	})
 }

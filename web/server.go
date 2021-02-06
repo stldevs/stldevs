@@ -3,6 +3,7 @@ package web
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"github.com/jakecoffman/stldevs/db"
 	"log"
 	"net/http"
 	"time"
@@ -11,21 +12,14 @@ import (
 	"github.com/dghubble/gologin/v2/github"
 	"github.com/gin-gonic/gin"
 	"github.com/jakecoffman/stldevs/config"
-	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
 	oa2gh "golang.org/x/oauth2/github"
 )
 
-func Run(cfg *config.Config, db *sqlx.DB) {
+func Run(cfg *config.Config) {
 	sessionStore := NewSessionStore()
 
 	r := gin.Default()
-
-	// deprecated, use controller structs instead
-	r.Use(func(c *gin.Context) {
-		c.Set("db", db)
-		c.Next()
-	})
 
 	oauth2Config := &oauth2.Config{
 		ClientID:     cfg.GithubClientID,
@@ -48,7 +42,7 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 		stateConfig = gologin.DebugOnlyCookieConfig
 	}
 
-	success := &sessionIssuer{db: db, store: sessionStore}
+	success := &sessionIssuer{store: sessionStore}
 	r.GET("/login", gin.WrapH(github.StateHandler(stateConfig, github.LoginHandler(oauth2Config, nil))))
 	r.GET("/callback", gin.WrapH(github.StateHandler(stateConfig, github.CallbackHandler(oauth2Config, success, nil))))
 	r.GET("/logout", func(c *gin.Context) {
@@ -84,11 +78,11 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 	r.GET("/search", search)
 
 	r.GET("/last-run", func(c *gin.Context) {
-		c.JSON(200, LastRun(db))
+		c.JSON(200, db.LastRun())
 	})
 
 	{
-		devs := DevController{db: db, store: sessionStore}
+		devs := DevController{store: sessionStore}
 		r.GET("/devs", devs.List)
 		r.GET("/devs/:login", devs.Get)
 		authenticated.PATCH("/devs/:login", devs.Patch)
@@ -96,7 +90,7 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 	}
 
 	{
-		orgs := OrgController{db: db, store: sessionStore}
+		orgs := OrgController{store: sessionStore}
 		r.GET("/orgs", orgs.List)
 		r.GET("/orgs/:login", orgs.Get)
 	}
@@ -112,7 +106,6 @@ func Run(cfg *config.Config, db *sqlx.DB) {
 }
 
 type sessionIssuer struct {
-	db    *sqlx.DB
 	store *SessionStore
 }
 
@@ -127,16 +120,12 @@ func (s *sessionIssuer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Login success", *githubUser.Login)
 
-	user := &StlDevsUser{
+	user := &db.StlDevsUser{
 		User: githubUser,
 	}
 
 	// check if the user is an admin and set that in the session too
-	rows, err := s.db.Query("select is_admin from agg_user where login=$1", *githubUser.Login)
-	var isAdmin bool
-	if err == nil && rows.Next() && rows.Scan(&isAdmin) == nil && isAdmin == true {
-		user.IsAdmin = true
-	}
+	user.IsAdmin = db.IsAdmin(*githubUser.Login)
 
 	expire := time.Now().AddDate(0, 0, 1)
 	cookie := http.Cookie{
