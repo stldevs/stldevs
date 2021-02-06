@@ -5,10 +5,10 @@ import (
 	"github.com/dghubble/gologin/v2/github"
 	"github.com/gin-gonic/gin"
 	"github.com/jakecoffman/stldevs/config"
-	"github.com/jakecoffman/stldevs/db"
 	"github.com/jakecoffman/stldevs/sessions"
 	"github.com/jakecoffman/stldevs/web/dev"
 	"github.com/jakecoffman/stldevs/web/org"
+	"github.com/jakecoffman/stldevs/web/run"
 	"golang.org/x/oauth2"
 	oa2gh "golang.org/x/oauth2/github"
 	"log"
@@ -72,10 +72,7 @@ func Run(cfg *config.Config) {
 	})
 
 	r.GET("/search", search)
-
-	r.GET("/last-run", func(c *gin.Context) {
-		c.JSON(200, db.LastRun())
-	})
+	r.GET("/runs", run.List)
 
 	{
 		r.GET("/devs", dev.List)
