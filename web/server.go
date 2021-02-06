@@ -9,6 +9,7 @@ import (
 	"github.com/jakecoffman/stldevs/web/dev"
 	"github.com/jakecoffman/stldevs/web/lang"
 	"github.com/jakecoffman/stldevs/web/org"
+	"github.com/jakecoffman/stldevs/web/repo"
 	"github.com/jakecoffman/stldevs/web/run"
 	"golang.org/x/oauth2"
 	oa2gh "golang.org/x/oauth2/github"
@@ -72,7 +73,7 @@ func Run(cfg *config.Config) {
 		c.JSON(200, sessions.GetEntry(c).User)
 	})
 
-	r.GET("/search", search)
+	r.GET("/repos", repo.List)
 	r.GET("/runs", run.List)
 
 	r.GET("/devs", dev.List)

@@ -7,12 +7,17 @@ import (
 )
 
 func List(c *gin.Context) {
-	if listing := db.PopularDevs(); listing == nil {
-		c.JSON(500, "Failed to list")
+	q := c.Query("q")
+	if q == "" {
+		if listing := db.PopularDevs(); listing == nil {
+			c.JSON(500, "Failed to list")
+		} else {
+			c.JSON(200, listing)
+		}
 		return
-	} else {
-		c.JSON(200, listing)
 	}
+
+	c.JSON(200, db.SearchUsers(q))
 }
 
 func Get(c *gin.Context) {

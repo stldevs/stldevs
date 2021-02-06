@@ -207,25 +207,24 @@ func Profile(name string) (*ProfileData, error) {
 	return &ProfileData{user, repos}, nil
 }
 
-func Search(term, kind string) interface{} {
+func SearchUsers(term string) []StlDevsUser {
 	query := "%" + term + "%"
-	if kind == "users" {
-		users := []StlDevsUser{}
-		if err := db.Select(&users, querySearchUsers, query); err != nil {
-			log.Println(err)
-			return nil
-		}
-		return users
-	} else if kind == "repos" {
-		repos := []stldevs.Repository{}
-		if err := db.Select(&repos, querySearchRepos, query); err != nil {
-			log.Println(err)
-			return nil
-		}
-		return repos
+	users := []StlDevsUser{}
+	if err := db.Select(&users, querySearchUsers, query); err != nil {
+		log.Println(err)
+		return nil
 	}
-	log.Println("Unknown search kind", kind)
-	return nil
+	return users
+}
+
+func SearchRepos(term string) []stldevs.Repository {
+	query := "%" + term + "%"
+	repos := []stldevs.Repository{}
+	if err := db.Select(&repos, querySearchRepos, query); err != nil {
+		log.Println(err)
+		return nil
+	}
+	return repos
 }
 
 func HideUser(hide bool, login string) error {
