@@ -7,6 +7,7 @@ import (
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/sessions"
 	"github.com/jakecoffman/stldevs/web/dev"
+	"github.com/jakecoffman/stldevs/web/lang"
 	"github.com/jakecoffman/stldevs/web/org"
 	"github.com/jakecoffman/stldevs/web/run"
 	"golang.org/x/oauth2"
@@ -74,23 +75,16 @@ func Run(cfg *config.Config) {
 	r.GET("/search", search)
 	r.GET("/runs", run.List)
 
-	{
-		r.GET("/devs", dev.List)
-		r.GET("/devs/:login", dev.Get)
-		authenticated.PATCH("/devs/:login", dev.Patch)
-		authenticated.DELETE("/devs/:login", dev.Delete)
-	}
+	r.GET("/devs", dev.List)
+	r.GET("/devs/:login", dev.Get)
+	authenticated.PATCH("/devs/:login", dev.Patch)
+	authenticated.DELETE("/devs/:login", dev.Delete)
 
-	{
-		r.GET("/orgs", org.List)
-		r.GET("/orgs/:login", org.Get)
-	}
+	r.GET("/orgs", org.List)
+	r.GET("/orgs/:login", org.Get)
 
-	r.GET("/lang/:lang", language)
-
-	// deprecated
-	r.GET("/toplangs", topLangs)
-	r.GET("/toporgs", topOrgs)
+	r.GET("/langs", lang.List)
+	r.GET("/langs/:lang", lang.Get)
 
 	log.Println("Serving on http://127.0.0.1:8080")
 	log.Println(http.ListenAndServe("0.0.0.0:8080", r))

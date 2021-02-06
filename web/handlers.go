@@ -5,51 +5,6 @@ import (
 	"github.com/jakecoffman/stldevs/db"
 )
 
-func topLangs(c *gin.Context) {
-	c.JSON(200, map[string]interface{}{
-		"langs":   db.PopularLanguages(),
-		"lastrun": db.LastRun(),
-	})
-}
-
-func topOrgs(c *gin.Context) {
-	c.JSON(200, map[string]interface{}{
-		"devs":    db.PopularOrgs(),
-		"lastrun": db.LastRun(),
-	})
-}
-
-func language(c *gin.Context) {
-	var query struct {
-		Limit  int `form:"limit"`
-		Offset int `form:"offset"`
-	}
-	_ = c.BindQuery(&query)
-	if query.Limit <= 0 {
-		query.Limit = 25
-	}
-	if query.Offset < 0 {
-		query.Offset = 0
-	}
-
-	langs, userCount := db.Language(c.Params.ByName("lang"))
-
-	if query.Limit+query.Offset > len(langs) {
-		query.Limit = len(langs)
-	} else {
-		query.Limit += query.Offset
-	}
-	if query.Offset > len(langs) {
-		query.Limit = 0
-		query.Offset = 0
-	}
-	c.JSON(200, map[string]interface{}{
-		"languages": langs[query.Offset:query.Limit],
-		"count":     userCount,
-		"language":  c.Params.ByName("lang"),
-	})
-}
-
 func search(c *gin.Context) {
 	q := c.Request.URL.Query().Get("q")
 	kind := c.Request.URL.Query().Get("type")
