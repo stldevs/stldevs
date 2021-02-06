@@ -1,6 +1,6 @@
 *.db
 *.csv
-*.json
+config.json
 .idea
 bower_components
 *.iml

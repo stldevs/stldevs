@@ -1,0 +1,24 @@
+{
+  "swagger": "2.0",
+  "basePath": "/",
+  "info": {
+    "title": "STLDevs API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/devs": {
+      "get": {
+        "tags": ["Developers"],
+        "parameters": [],
+        "responses": {
+          "default": {
+            "schema": {
+              "type": "string"
+            },
+            "description": "Successful"
+          }
+        }
+      }
+    }
+  }
+}

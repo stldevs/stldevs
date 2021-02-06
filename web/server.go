@@ -20,6 +20,14 @@ import (
 func Run(cfg *config.Config) {
 	r := gin.Default()
 
+	r.Static("/docs", "./swagger-ui")
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/docs")
+	})
+	r.GET("/swagger.json", func(context *gin.Context) {
+		context.File("swagger.json")
+	})
+
 	oauth2Config := &oauth2.Config{
 		ClientID:     cfg.GithubClientID,
 		ClientSecret: cfg.GithubClientSecret,
