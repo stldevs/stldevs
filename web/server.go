@@ -57,11 +57,12 @@ func Run(cfg *config.Config) {
 			c.AbortWithStatusJSON(401, "Not logged in")
 			return
 		}
-		_, ok := sessions.Store.Get(cookie)
+		session, ok := sessions.Store.Get(cookie)
 		if !ok {
 			c.AbortWithStatusJSON(401, "Not logged in")
 			return
 		}
+		c.Set(sessions.KeySession, session)
 	})
 
 	authenticated.GET("/me", func(c *gin.Context) {

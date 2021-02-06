@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	Cookie = "stldevs-session"
+	Cookie     = "stldevs-session"
+	KeySession = "session"
 )
 
 // Store is the global session store.
@@ -17,7 +18,7 @@ var Store = &SessionStore{
 }
 
 func GetEntry(ctx *gin.Context) *Entry {
-	sess, ok := ctx.Get("session")
+	sess, ok := ctx.Get(KeySession)
 	if ok {
 		return sess.(*Entry)
 	}
