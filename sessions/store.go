@@ -1,32 +1,40 @@
-package web
+package sessions
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/jakecoffman/stldevs/db"
 	"sync"
 	"time"
 )
 
 const (
-	cookieName = "stldevs-session"
+	Cookie = "stldevs-session"
 )
+
+// Store is the global session store.
+var Store = &SessionStore{
+	store: map[string]*Entry{},
+}
+
+func GetEntry(ctx *gin.Context) *Entry {
+	sess, ok := ctx.Get("session")
+	if ok {
+		return sess.(*Entry)
+	}
+	return nil
+}
 
 type SessionStore struct {
 	sync.RWMutex
-	store map[string]*SessionEntry
+	store map[string]*Entry
 }
 
-func NewSessionStore() *SessionStore {
-	return &SessionStore{
-		store: map[string]*SessionEntry{},
-	}
-}
-
-type SessionEntry struct {
+type Entry struct {
 	User    *db.StlDevsUser
 	Created time.Time
 }
 
-func (s *SessionStore) Get(cookie string) (*SessionEntry, bool) {
+func (s *SessionStore) Get(cookie string) (*Entry, bool) {
 	s.RLock()
 	defer s.RUnlock()
 	session, ok := s.store[cookie]
@@ -42,7 +50,7 @@ func (s *SessionStore) Add(user *db.StlDevsUser) string {
 		}
 	}
 	cookie := GenerateSessionCookie()
-	s.store[cookie] = &SessionEntry{
+	s.store[cookie] = &Entry{
 		User:    user,
 		Created: time.Time{},
 	}

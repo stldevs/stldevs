@@ -3,11 +3,10 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jakecoffman/stldevs/db"
+	"github.com/jakecoffman/stldevs/sessions"
 )
 
-type DevController struct {
-	store *SessionStore
-}
+type DevController struct{}
 
 func (d *DevController) List(c *gin.Context) {
 	if listing := db.PopularDevs(); listing == nil {
@@ -43,7 +42,7 @@ func (d *DevController) Patch(c *gin.Context) {
 		c.JSON(400, "Failed to bind command object. Are you sending JSON?")
 		return
 	}
-	session := c.MustGet("session").(*SessionEntry)
+	session := sessions.GetEntry(c)
 	if session.User.IsAdmin == false && *session.User.Login != *profile.User.Login {
 		c.JSON(403, "Users can only modify themselves")
 		return
@@ -58,7 +57,7 @@ func (d *DevController) Patch(c *gin.Context) {
 
 // Delete allows admins to easily expunge old data
 func (d *DevController) Delete(c *gin.Context) {
-	session := c.MustGet("session").(*SessionEntry)
+	session := sessions.GetEntry(c)
 	if session.User.IsAdmin == false {
 		c.JSON(403, "Only admins can delete users")
 		return

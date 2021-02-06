@@ -5,9 +5,7 @@ import (
 	"github.com/jakecoffman/stldevs/db"
 )
 
-type OrgController struct {
-	store *SessionStore
-}
+type OrgController struct{}
 
 func (d *OrgController) List(c *gin.Context) {
 	if listing := db.PopularOrgs(); listing == nil {
