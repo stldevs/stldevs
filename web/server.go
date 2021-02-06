@@ -7,6 +7,8 @@ import (
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/db"
 	"github.com/jakecoffman/stldevs/sessions"
+	"github.com/jakecoffman/stldevs/web/dev"
+	"github.com/jakecoffman/stldevs/web/org"
 	"golang.org/x/oauth2"
 	oa2gh "golang.org/x/oauth2/github"
 	"log"
@@ -76,17 +78,15 @@ func Run(cfg *config.Config) {
 	})
 
 	{
-		devs := DevController{}
-		r.GET("/devs", devs.List)
-		r.GET("/devs/:login", devs.Get)
-		authenticated.PATCH("/devs/:login", devs.Patch)
-		authenticated.DELETE("/devs/:login", devs.Delete)
+		r.GET("/devs", dev.List)
+		r.GET("/devs/:login", dev.Get)
+		authenticated.PATCH("/devs/:login", dev.Patch)
+		authenticated.DELETE("/devs/:login", dev.Delete)
 	}
 
 	{
-		orgs := OrgController{}
-		r.GET("/orgs", orgs.List)
-		r.GET("/orgs/:login", orgs.Get)
+		r.GET("/orgs", org.List)
+		r.GET("/orgs/:login", org.Get)
 	}
 
 	r.GET("/lang/:lang", language)

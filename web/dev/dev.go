@@ -1,4 +1,4 @@
-package web
+package dev
 
 import (
 	"github.com/gin-gonic/gin"
@@ -6,9 +6,7 @@ import (
 	"github.com/jakecoffman/stldevs/sessions"
 )
 
-type DevController struct{}
-
-func (d *DevController) List(c *gin.Context) {
+func List(c *gin.Context) {
 	if listing := db.PopularDevs(); listing == nil {
 		c.JSON(500, "Failed to list")
 		return
@@ -17,7 +15,7 @@ func (d *DevController) List(c *gin.Context) {
 	}
 }
 
-func (d *DevController) Get(c *gin.Context) {
+func Get(c *gin.Context) {
 	profile, err := db.Profile(c.Params.ByName("login"))
 	if err != nil {
 		c.JSON(404, "Failed to find user")
@@ -31,7 +29,7 @@ type UpdateUser struct {
 }
 
 // Patch allows users and admins show or hide themselves in the site
-func (d *DevController) Patch(c *gin.Context) {
+func Patch(c *gin.Context) {
 	profile, err := db.Profile(c.Params.ByName("login"))
 	if err != nil {
 		c.JSON(404, "Failed to find user")
@@ -56,7 +54,7 @@ func (d *DevController) Patch(c *gin.Context) {
 }
 
 // Delete allows admins to easily expunge old data
-func (d *DevController) Delete(c *gin.Context) {
+func Delete(c *gin.Context) {
 	session := sessions.GetEntry(c)
 	if session.User.IsAdmin == false {
 		c.JSON(403, "Only admins can delete users")
