@@ -22,7 +22,7 @@ func GetEntry(ctx *gin.Context) *Entry {
 	if ok {
 		return sess.(*Entry)
 	}
-	return nil
+	panic("No session found")
 }
 
 type SessionStore struct {

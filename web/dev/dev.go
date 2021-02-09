@@ -8,16 +8,16 @@ import (
 
 func List(c *gin.Context) {
 	q := c.Query("q")
-	if q == "" {
-		if listing := db.PopularDevs(); listing == nil {
-			c.JSON(500, "Failed to list")
-		} else {
-			c.JSON(200, listing)
-		}
+	if q != "" {
+		c.JSON(200, db.SearchUsers(q))
 		return
 	}
 
-	c.JSON(200, db.SearchUsers(q))
+	if listing := db.PopularDevs(); listing == nil {
+		c.JSON(500, "Failed to list")
+	} else {
+		c.JSON(200, listing)
+	}
 }
 
 func Get(c *gin.Context) {
@@ -30,24 +30,26 @@ func Get(c *gin.Context) {
 }
 
 type UpdateUser struct {
-	Hide bool
+	Hide bool `binding:"required"`
 }
 
 // Patch allows users and admins show or hide themselves in the site
 func Patch(c *gin.Context) {
-	profile, err := db.Profile(c.Params.ByName("login"))
-	if err != nil {
+	login := c.Params.ByName("login")
+	session := sessions.GetEntry(c)
+	if session.User.IsAdmin == false && *session.User.Login != login {
+		c.JSON(403, "Users can only modify themselves")
+		return
+	}
+
+	profile, err := db.Profile(login)
+	if err != nil || profile == nil {
 		c.JSON(404, "Failed to find user")
 		return
 	}
 	var cmd UpdateUser
 	if err = c.BindJSON(&cmd); err != nil {
 		c.JSON(400, "Failed to bind command object. Are you sending JSON?")
-		return
-	}
-	session := sessions.GetEntry(c)
-	if session.User.IsAdmin == false && *session.User.Login != *profile.User.Login {
-		c.JSON(403, "Users can only modify themselves")
 		return
 	}
 	err = db.HideUser(cmd.Hide, *profile.User.Login)

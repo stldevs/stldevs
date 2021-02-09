@@ -11,7 +11,22 @@ import (
 	"github.com/jakecoffman/stldevs"
 )
 
-func LastRun() time.Time {
+var (
+	// LastRun returns the last time github was scraped
+	LastRun          = lastRun
+	PopularLanguages = popularLanguages
+	PopularDevs      = popularDevs
+	PopularOrgs      = popularOrgs
+	Language         = language
+	Profile          = profile
+	SearchUsers      = searchUsers
+	SearchRepos      = searchRepos
+	HideUser         = hideUser
+	Delete           = deleteUser
+	IsAdmin          = isAdmin
+)
+
+func lastRun() time.Time {
 	var lastRun time.Time
 	err := db.Get(&lastRun, queryLastRun)
 	if err == sql.ErrNoRows {
@@ -30,7 +45,7 @@ type LanguageCount struct {
 	Users    int
 }
 
-func PopularLanguages() []LanguageCount {
+func popularLanguages() []LanguageCount {
 	langs := []LanguageCount{}
 	err := db.Select(&langs, queryPopularLanguages)
 	if err != nil {
@@ -51,7 +66,7 @@ type DevCount struct {
 	Type        string  `json:"type"`
 }
 
-func PopularDevs() []DevCount {
+func popularDevs() []DevCount {
 	devs := []DevCount{}
 	err := db.Select(&devs, queryPopularDevs)
 	if err != nil {
@@ -61,7 +76,7 @@ func PopularDevs() []DevCount {
 	return devs
 }
 
-func PopularOrgs() []DevCount {
+func popularOrgs() []DevCount {
 	devs := []DevCount{}
 	err := db.Select(&devs, queryPopularOrgs)
 	if err != nil {
@@ -79,7 +94,7 @@ type LanguageResult struct {
 	Type  string  `json:"type"`
 }
 
-var LanguageCache = struct {
+var languageCache = struct {
 	sync.RWMutex
 	result  map[string][]*LanguageResult
 	total   map[string]int
@@ -89,17 +104,17 @@ var LanguageCache = struct {
 	total:  map[string]int{},
 }
 
-func Language(name string) ([]*LanguageResult, int) {
-	lastRun := LastRun()
-	LanguageCache.RLock()
-	result, found := LanguageCache.result[name]
-	if found && lastRun.Equal(LanguageCache.lastRun) {
-		defer LanguageCache.RUnlock()
-		return result, LanguageCache.total[name]
+func language(name string) ([]*LanguageResult, int) {
+	lastRun := lastRun()
+	languageCache.RLock()
+	result, found := languageCache.result[name]
+	if found && lastRun.Equal(languageCache.lastRun) {
+		defer languageCache.RUnlock()
+		return result, languageCache.total[name]
 	}
-	LanguageCache.RUnlock()
-	LanguageCache.Lock()
-	defer LanguageCache.Unlock()
+	languageCache.RUnlock()
+	languageCache.Lock()
+	defer languageCache.Unlock()
 
 	var repos []struct {
 		stldevs.Repository
@@ -136,9 +151,9 @@ func Language(name string) ([]*LanguageResult, int) {
 		log.Println(err)
 	}
 
-	LanguageCache.result[name] = results
-	LanguageCache.total[name] = total
-	LanguageCache.lastRun = lastRun
+	languageCache.result[name] = results
+	languageCache.total[name] = total
+	languageCache.lastRun = lastRun
 	return results, total
 }
 
@@ -155,7 +170,7 @@ type ProfileData struct {
 	Repos map[string][]stldevs.Repository
 }
 
-func Profile(name string) (*ProfileData, error) {
+func profile(name string) (*ProfileData, error) {
 	// TODO hide the user when other users try to see them but they are set to "Hide" in db
 
 	// There are 2 queries to do so run them concurrently
@@ -168,7 +183,7 @@ func Profile(name string) (*ProfileData, error) {
 		user := &StlDevsUser{}
 		err := db.Get(user, queryProfileForUser, name)
 		if err != nil {
-			log.Println("Error querying profile", name)
+			log.Println("Error querying profile", name, err)
 			userCh <- nil
 			return
 		}
@@ -198,16 +213,23 @@ func Profile(name string) (*ProfileData, error) {
 	}()
 
 	user := <-userCh
-	repos := <-reposCh
+	repoMap := <-reposCh
 
-	if user == nil || repos == nil {
+	if user == nil || repoMap == nil {
 		return nil, fmt.Errorf("not found")
 	}
 
-	return &ProfileData{user, repos}, nil
+	for _, repos := range repoMap {
+		for _, repo := range repos {
+			user.Stars += *repo.StargazersCount
+			user.Forks += *repo.ForksCount
+		}
+	}
+
+	return &ProfileData{user, repoMap}, nil
 }
 
-func SearchUsers(term string) []StlDevsUser {
+func searchUsers(term string) []StlDevsUser {
 	query := "%" + term + "%"
 	users := []StlDevsUser{}
 	if err := db.Select(&users, querySearchUsers, query); err != nil {
@@ -217,7 +239,7 @@ func SearchUsers(term string) []StlDevsUser {
 	return users
 }
 
-func SearchRepos(term string) []stldevs.Repository {
+func searchRepos(term string) []stldevs.Repository {
 	query := "%" + term + "%"
 	repos := []stldevs.Repository{}
 	if err := db.Select(&repos, querySearchRepos, query); err != nil {
@@ -227,7 +249,7 @@ func SearchRepos(term string) []stldevs.Repository {
 	return repos
 }
 
-func HideUser(hide bool, login string) error {
+func hideUser(hide bool, login string) error {
 	result, err := db.Exec("update agg_user set hide=$1 where login=$2", hide, login)
 	if err != nil {
 		log.Println(err)
@@ -240,7 +262,7 @@ func HideUser(hide bool, login string) error {
 	return nil
 }
 
-func Delete(login string) error {
+func deleteUser(login string) error {
 	_, err := db.Exec("delete from agg_repo where owner=$1", login)
 	if err != nil {
 		log.Println(err)
@@ -256,7 +278,7 @@ func Delete(login string) error {
 	return err
 }
 
-func IsAdmin(login string) bool {
+func isAdmin(login string) bool {
 	rows, err := db.Query("select is_admin from agg_user where login=$1", login)
 	if err != nil {
 		log.Println(err)

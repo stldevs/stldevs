@@ -61,13 +61,8 @@ const (
 		order by count desc, owner, stargazers_count desc`
 
 	queryProfileForUser = `
-		select login, stars, forks, email, name, bio, blog, followers, public_repos, public_gists, avatar_url, hide, is_admin
+		select login, email, name, bio, blog, followers, public_repos, public_gists, avatar_url, hide, is_admin
 		from agg_user
-		join (
-			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
-			from agg_repo
-			group by owner
-		) repo ON (repo.owner=agg_user.login)
 		where login=$1`
 
 	queryRepoForUser = `
