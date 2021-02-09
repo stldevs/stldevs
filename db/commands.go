@@ -201,7 +201,10 @@ func profile(name string) (*ProfileData, error) {
 
 		reposByLang := map[string][]stldevs.Repository{}
 		for _, repo := range repos {
-			lang := *repo.Language
+			var lang string
+			if repo.Language != nil {
+				lang = *repo.Language
+			}
 			if _, ok := reposByLang[lang]; !ok {
 				reposByLang[lang] = []stldevs.Repository{repo}
 				continue
