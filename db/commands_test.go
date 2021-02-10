@@ -60,3 +60,10 @@ func TestHideUser(t *testing.T) {
 		t.Fatal("expected shown, was not")
 	}
 }
+
+func TestPopularDevs(t *testing.T) {
+	result := popularDevs("User")
+	if len(result) != 0 {
+		t.Error(len(result))
+	}
+}

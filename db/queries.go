@@ -23,7 +23,7 @@ const (
 			from agg_repo
 			group by owner
 		) repo ON (repo.owner=agg_user.login)
-		where type='$1'
+		where type=$1
 		and hide is false
 		order by stars desc
 		limit 100;`
