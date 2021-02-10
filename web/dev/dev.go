@@ -4,16 +4,29 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jakecoffman/stldevs/db"
 	"github.com/jakecoffman/stldevs/sessions"
+	"log"
 )
 
+type ListQuery struct {
+	Q    string `form:"q" binding:"required_without=Type"`
+	Type string `form:"type" binding:"required_without=Q,omitempty,oneof=User Organization"`
+}
+
 func List(c *gin.Context) {
-	q := c.Query("q")
-	if q != "" {
-		c.JSON(200, db.SearchUsers(q))
+	var query ListQuery
+	err := c.BindQuery(&query)
+	if err != nil {
+		log.Println(err)
+		c.JSON(400, err.Error())
 		return
 	}
 
-	if listing := db.PopularDevs(); listing == nil {
+	if query.Q != "" {
+		c.JSON(200, db.SearchUsers(query.Q))
+		return
+	}
+
+	if listing := db.PopularDevs(query.Type); listing == nil {
 		c.JSON(500, "Failed to list")
 	} else {
 		c.JSON(200, listing)

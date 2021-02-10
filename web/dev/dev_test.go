@@ -14,14 +14,17 @@ import (
 
 func TestList(t *testing.T) {
 	var called bool
-	db.PopularDevs = func() []db.DevCount {
+	db.PopularDevs = func(devType string) []db.DevCount {
 		called = true
+		if devType != "User" {
+			t.Error()
+		}
 		return []db.DevCount{}
 	}
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest("GET", "http://example.com", nil)
+	c.Request = httptest.NewRequest("GET", "http://example.com?type=User", nil)
 	List(c)
 
 	if !called {
@@ -34,14 +37,14 @@ func TestList(t *testing.T) {
 
 func TestListFailure(t *testing.T) {
 	var called bool
-	db.PopularDevs = func() []db.DevCount {
+	db.PopularDevs = func(devType string) []db.DevCount {
 		called = true
 		return nil
 	}
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest("GET", "http://example.com", nil)
+	c.Request = httptest.NewRequest("GET", "http://example.com?type=User", nil)
 	List(c)
 
 	if !called {

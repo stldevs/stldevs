@@ -16,7 +16,6 @@ var (
 	LastRun          = lastRun
 	PopularLanguages = popularLanguages
 	PopularDevs      = popularDevs
-	PopularOrgs      = popularOrgs
 	Language         = language
 	Profile          = profile
 	SearchUsers      = searchUsers
@@ -66,19 +65,14 @@ type DevCount struct {
 	Type        string  `json:"type"`
 }
 
-func popularDevs() []DevCount {
-	devs := []DevCount{}
-	err := db.Select(&devs, queryPopularDevs)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	return devs
-}
+const (
+	DevUser = "User"
+	DevOrg  = "Organization"
+)
 
-func popularOrgs() []DevCount {
+func popularDevs(devType string) []DevCount {
 	devs := []DevCount{}
-	err := db.Select(&devs, queryPopularOrgs)
+	err := db.Select(&devs, queryPopularDev, devType)
 	if err != nil {
 		log.Println(err)
 		return nil

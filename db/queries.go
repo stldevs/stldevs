@@ -15,7 +15,7 @@ const (
 		order by count desc
 		limit 50;`
 
-	queryPopularDevs = `
+	queryPopularDev = `
 		select login, name, avatar_url, followers, public_repos, stars, forks, type
 		from agg_user
 		join (
@@ -23,20 +23,7 @@ const (
 			from agg_repo
 			group by owner
 		) repo ON (repo.owner=agg_user.login)
-		where type='User'
-		and hide is false
-		order by stars desc
-		limit 100;`
-
-	queryPopularOrgs = `
-		select login, name, avatar_url, followers, public_repos, stars, forks, type
-		from agg_user
-		join(
-			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
-			from agg_repo
-			group by owner
-		) repo ON (repo.owner=agg_user.login)
-		where type='Organization'
+		where type='$1'
 		and hide is false
 		order by stars desc
 		limit 100;`
