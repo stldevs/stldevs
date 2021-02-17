@@ -1,6 +1,6 @@
 module github.com/jakecoffman/stldevs
 
-go 1.13
+go 1.16
 
 require (
 	github.com/dghubble/gologin/v2 v2.2.0

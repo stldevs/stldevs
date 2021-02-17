@@ -9,7 +9,16 @@
     "/devs": {
       "get": {
         "tags": ["Developers"],
-        "parameters": [],
+        "parameters": [{
+          "in": "query",
+          "name": "q",
+          "type": "string"
+        },{
+          "in": "query",
+          "name": "type",
+          "type": "string",
+          "enum": ["User", "Organization"]
+        }],
         "responses": {
           "default": {
             "schema": {

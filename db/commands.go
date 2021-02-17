@@ -65,11 +65,6 @@ type DevCount struct {
 	Type        string  `json:"type"`
 }
 
-const (
-	DevUser = "User"
-	DevOrg  = "Organization"
-)
-
 func popularDevs(devType string) []DevCount {
 	devs := []DevCount{}
 	err := db.Select(&devs, queryPopularDev, devType)
@@ -99,10 +94,10 @@ var languageCache = struct {
 }
 
 func language(name string) ([]*LanguageResult, int) {
-	lastRun := lastRun()
+	run := lastRun()
 	languageCache.RLock()
 	result, found := languageCache.result[name]
-	if found && lastRun.Equal(languageCache.lastRun) {
+	if found && run.Equal(languageCache.lastRun) {
 		defer languageCache.RUnlock()
 		return result, languageCache.total[name]
 	}
@@ -147,7 +142,7 @@ func language(name string) ([]*LanguageResult, int) {
 
 	languageCache.result[name] = results
 	languageCache.total[name] = total
-	languageCache.lastRun = lastRun
+	languageCache.lastRun = run
 	return results, total
 }
 

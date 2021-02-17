@@ -62,7 +62,7 @@ func TestHideUser(t *testing.T) {
 }
 
 func TestPopularDevs(t *testing.T) {
-	result := popularDevs("User")
+	result := popularDevs("Butt")
 	if len(result) != 0 {
 		t.Error(len(result))
 	}

@@ -4,6 +4,7 @@ import (
 	"github.com/dghubble/gologin/v2"
 	"github.com/dghubble/gologin/v2/github"
 	"github.com/gin-gonic/gin"
+	"github.com/jakecoffman/stldevs"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/sessions"
 	"github.com/jakecoffman/stldevs/web/dev"
@@ -19,9 +20,14 @@ import (
 func Run(cfg *config.Config) {
 	r := gin.Default()
 
-	r.Static("/docs/", "./swagger-ui")
+	fs := http.FS(stldevs.SwaggerUI)
+	r.GET("/docs/*path", func(context *gin.Context) {
+		path := context.Param("path")
+		context.FileFromFS("swagger-ui/"+path, fs)
+	})
 	r.GET("/swagger.json", func(context *gin.Context) {
-		context.File("swagger.json")
+		context.Header("content-type", "application/json")
+		_, _ = context.Writer.Write(stldevs.SwaggerDoc)
 	})
 
 	oauth2Config := &oauth2.Config{
