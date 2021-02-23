@@ -14,7 +14,9 @@ func Get(c *gin.Context) {
 		Limit  int `form:"limit"`
 		Offset int `form:"offset"`
 	}
-	_ = c.BindQuery(&query)
+	if err := c.BindQuery(&query); err != nil {
+		return
+	}
 	if query.Limit <= 0 {
 		query.Limit = 25
 	}
@@ -22,7 +24,7 @@ func Get(c *gin.Context) {
 		query.Offset = 0
 	}
 
-	langs, userCount := db.Language(c.Params.ByName("lang"))
+	langs := db.Language(c.Params.ByName("lang"))
 
 	if query.Limit+query.Offset > len(langs) {
 		query.Limit = len(langs)
@@ -35,7 +37,7 @@ func Get(c *gin.Context) {
 	}
 	c.JSON(200, map[string]interface{}{
 		"languages": langs[query.Offset:query.Limit],
-		"count":     userCount,
+		"count":     len(langs),
 		"language":  c.Params.ByName("lang"),
 	})
 }

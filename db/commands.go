@@ -86,20 +86,18 @@ type LanguageResult struct {
 var languageCache = struct {
 	sync.RWMutex
 	result  map[string][]*LanguageResult
-	total   map[string]int
 	lastRun time.Time
 }{
 	result: map[string][]*LanguageResult{},
-	total:  map[string]int{},
 }
 
-func language(name string) ([]*LanguageResult, int) {
+func language(name string) []*LanguageResult {
 	run := lastRun()
 	languageCache.RLock()
 	result, found := languageCache.result[name]
 	if found && run.Equal(languageCache.lastRun) {
 		defer languageCache.RUnlock()
-		return result, languageCache.total[name]
+		return result
 	}
 	languageCache.RUnlock()
 	languageCache.Lock()
@@ -116,7 +114,7 @@ func language(name string) ([]*LanguageResult, int) {
 	err := db.Select(&repos, queryLanguage, name)
 	if err != nil {
 		log.Println(err)
-		return nil, 0
+		return nil
 	}
 	results := []*LanguageResult{}
 	var cursor *LanguageResult
@@ -135,15 +133,9 @@ func language(name string) ([]*LanguageResult, int) {
 		}
 	}
 
-	var total int
-	if err = db.Get(&total, countLanguageUsers, name); err != nil {
-		log.Println(err)
-	}
-
 	languageCache.result[name] = results
-	languageCache.total[name] = total
 	languageCache.lastRun = run
-	return results, total
+	return results
 }
 
 type StlDevsUser struct {

@@ -83,8 +83,4 @@ const (
 		order by stargazers_count desc
 		limit 100
 	`
-
-	countLanguageUsers = `select count(distinct(owner))
-			from agg_repo
-			where lower(language)=lower($1) and fork=false;`
 )
