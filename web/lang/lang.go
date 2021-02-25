@@ -25,7 +25,7 @@ var Routes = []crud.Spec{{
 			"offset": crud.Number().Min(0).Description("Number of entries to skip"),
 		},
 		Path: map[string]crud.Field{
-			"langs": crud.String().Required().Description("The language name"),
+			"lang": crud.String().Required().Description("The language name"),
 		},
 	},
 }}
