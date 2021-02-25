@@ -24,6 +24,9 @@ var Routes = []crud.Spec{{
 			"limit":  crud.Number().Min(1).Max(25).Description("Maximum number of items to return"),
 			"offset": crud.Number().Min(0).Description("Number of entries to skip"),
 		},
+		Path: map[string]crud.Field{
+			"langs": crud.String().Required().Description("The language name"),
+		},
 	},
 }}
 
