@@ -2,8 +2,30 @@ package lang
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/stldevs/db"
 )
+
+var Routes = []crud.Spec{{
+	Method:      "GET",
+	Path:        "/langs",
+	Handler:     List,
+	Description: "List languages",
+	Tags:        []string{"Languages"},
+	Validate:    crud.Validate{},
+}, {
+	Method:      "GET",
+	Path:        "/langs/{lang}",
+	Handler:     Get,
+	Description: "Gets a language and displays repo information",
+	Tags:        []string{"Languages"},
+	Validate: crud.Validate{
+		Query: map[string]crud.Field{
+			"limit":  crud.Number().Min(1).Max(25).Description("Maximum number of items to return"),
+			"offset": crud.Number().Min(0).Description("Number of entries to skip"),
+		},
+	},
+}}
 
 func List(c *gin.Context) {
 	c.JSON(200, db.PopularLanguages())
