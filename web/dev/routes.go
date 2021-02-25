@@ -36,7 +36,7 @@ var Routes = []crud.Spec{{
 			"login": crud.String().Required(),
 		},
 		Body: map[string]crud.Field{
-			"hide": crud.Boolean().Required(),
+			"Hide": crud.Boolean().Required(),
 		},
 	},
 }, {
