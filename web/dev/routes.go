@@ -9,10 +9,10 @@ var Routes = []crud.Spec{{
 	Description: "List developers",
 	Tags:        []string{"Developers"},
 	Validate: crud.Validate{
-		Query: map[string]crud.Field{
+		Query: crud.Object(map[string]crud.Field{
 			"type": crud.String().Enum("User", "Organization").Description("List users or organizations. Required unless 'q' is provided."),
 			"q":    crud.String().Description("Query string. Required unless 'type' is provided."),
-		},
+		}),
 	},
 }, {
 	Method:      "GET",
@@ -21,9 +21,9 @@ var Routes = []crud.Spec{{
 	Description: "Get a developer by their GitHub username",
 	Tags:        []string{"Developers"},
 	Validate: crud.Validate{
-		Path: map[string]crud.Field{
+		Path: crud.Object(map[string]crud.Field{
 			"login": crud.String().Required(),
-		},
+		}),
 	},
 }, {
 	Method:      "PATCH",
@@ -32,12 +32,12 @@ var Routes = []crud.Spec{{
 	Description: "Allows users and admins show or hide themselves in the site",
 	Tags:        []string{"Developers"},
 	Validate: crud.Validate{
-		Path: map[string]crud.Field{
+		Path: crud.Object(map[string]crud.Field{
 			"login": crud.String().Required(),
-		},
-		Body: map[string]crud.Field{
+		}),
+		Body: crud.Object(map[string]crud.Field{
 			"Hide": crud.Boolean().Required(),
-		},
+		}),
 	},
 }, {
 	Method:      "DELETE",
@@ -46,8 +46,8 @@ var Routes = []crud.Spec{{
 	Description: "Admins can expunge data until next run",
 	Tags:        []string{"Developers"},
 	Validate: crud.Validate{
-		Path: map[string]crud.Field{
+		Path: crud.Object(map[string]crud.Field{
 			"login": crud.String().Required(),
-		},
+		}),
 	},
 }}

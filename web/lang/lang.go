@@ -20,13 +20,13 @@ var Routes = []crud.Spec{{
 	Description: "Gets a language and displays repo information",
 	Tags:        []string{"Languages"},
 	Validate: crud.Validate{
-		Query: map[string]crud.Field{
+		Query: crud.Object(map[string]crud.Field{
 			"limit":  crud.Number().Min(1).Max(25).Description("Maximum number of items to return"),
 			"offset": crud.Number().Min(0).Description("Number of entries to skip"),
-		},
-		Path: map[string]crud.Field{
+		}),
+		Path: crud.Object(map[string]crud.Field{
 			"lang": crud.String().Required().Description("The language name"),
-		},
+		}),
 	},
 }}
 

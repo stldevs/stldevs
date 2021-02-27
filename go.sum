@@ -134,6 +134,10 @@ github.com/jakecoffman/crud v0.0.0-20210225025603-a103fdd7b5a3 h1:zXr3TqTPthy1x0
 github.com/jakecoffman/crud v0.0.0-20210225025603-a103fdd7b5a3/go.mod h1:3bbapgOJ8s1qbwnAghRHPYN2A5UQrA1C2zHGj/CcvMM=
 github.com/jakecoffman/crud v0.0.0-20210225031304-ce1660c27f8f h1:YX9c/KdtO8tugo/owT91G1bZU3S5KcHTBgJyfDPKyAo=
 github.com/jakecoffman/crud v0.0.0-20210225031304-ce1660c27f8f/go.mod h1:3bbapgOJ8s1qbwnAghRHPYN2A5UQrA1C2zHGj/CcvMM=
+github.com/jakecoffman/crud v0.0.0-20210225211841-ea49e9867d86 h1:K4NU9Y5eirb5GLrtGByutB6zbDjII2XaBPQoJFYMn7s=
+github.com/jakecoffman/crud v0.0.0-20210225211841-ea49e9867d86/go.mod h1:3bbapgOJ8s1qbwnAghRHPYN2A5UQrA1C2zHGj/CcvMM=
+github.com/jakecoffman/crud v0.0.0-20210227003432-a131da60d804 h1:65BLDkaIiNZkvVriDAQMG/EESajWCsKLLwHsOG1eKMI=
+github.com/jakecoffman/crud v0.0.0-20210227003432-a131da60d804/go.mod h1:3bbapgOJ8s1qbwnAghRHPYN2A5UQrA1C2zHGj/CcvMM=
 github.com/jmoiron/sqlx v1.2.0 h1:41Ip0zITnmWNR/vHV+S4m+VoUivnWY5E4OJfLZjCJMA=
 github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhBSsks=
 github.com/json-iterator/go v1.1.9/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=

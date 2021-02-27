@@ -13,9 +13,9 @@ var Routes = []crud.Spec{{
 	Description: "Lists repositories",
 	Tags:        []string{"Repos"},
 	Validate: crud.Validate{
-		Query: map[string]crud.Field{
+		Query: crud.Object(map[string]crud.Field{
 			"q": crud.String().Required().Description("Query string"),
-		},
+		}),
 	},
 }}
 
