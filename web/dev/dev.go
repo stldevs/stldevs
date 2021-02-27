@@ -4,20 +4,21 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jakecoffman/stldevs/db"
 	"github.com/jakecoffman/stldevs/sessions"
-	"log"
 )
 
 type ListQuery struct {
-	Q    string `form:"q" binding:"required_without=Type"`
-	Type string `form:"type" binding:"required_without=Q,omitempty,oneof=User Organization"`
+	Q    string `form:"q"`
+	Type string `form:"type"`
 }
 
 func List(c *gin.Context) {
 	var query ListQuery
-	err := c.BindQuery(&query)
-	if err != nil {
-		log.Println(err)
-		c.JSON(400, err.Error())
+	if err := c.BindQuery(&query); err != nil {
+		return
+	}
+
+	if (query.Q == "" && query.Type == "") || (query.Q != "" && query.Type != "") {
+		c.AbortWithStatusJSON(400, "provide either the type query parameter or the q query parameter")
 		return
 	}
 
