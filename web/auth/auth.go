@@ -57,14 +57,14 @@ func New(cfg *config.Config) []crud.Spec {
 	}, {
 		Method:      "GET",
 		Path:        "/me",
-		PreHandlers: []gin.HandlerFunc{authenticated},
+		PreHandlers: []gin.HandlerFunc{Authenticated},
 		Handler:     me,
 		Description: "Get info about the logged in user",
 		Tags:        loginTags,
 	}}
 }
 
-func authenticated(c *gin.Context) {
+func Authenticated(c *gin.Context) {
 	cookie, err := c.Cookie(sessions.Cookie)
 	if err != nil || cookie == "" {
 		c.AbortWithStatusJSON(401, "Not logged in")

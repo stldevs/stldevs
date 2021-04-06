@@ -1,6 +1,10 @@
 package dev
 
-import "github.com/jakecoffman/crud"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/jakecoffman/crud"
+	"github.com/jakecoffman/stldevs/web/auth"
+)
 
 var Routes = []crud.Spec{{
 	Method:      "GET",
@@ -28,6 +32,7 @@ var Routes = []crud.Spec{{
 }, {
 	Method:      "PATCH",
 	Path:        "/devs/{login}",
+	PreHandlers: []gin.HandlerFunc{auth.Authenticated},
 	Handler:     Patch,
 	Description: "Allows users and admins show or hide themselves in the site",
 	Tags:        []string{"Developers"},
@@ -42,6 +47,7 @@ var Routes = []crud.Spec{{
 }, {
 	Method:      "DELETE",
 	Path:        "/devs/{login}",
+	PreHandlers: []gin.HandlerFunc{auth.Authenticated},
 	Handler:     Delete,
 	Description: "Admins can expunge data until next run",
 	Tags:        []string{"Developers"},
