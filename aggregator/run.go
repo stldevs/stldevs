@@ -10,6 +10,8 @@ import (
 )
 
 func (a *Aggregator) updateUsersRepos(user string) error {
+	now := time.Now()
+
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
 	for {
 		result, resp, err := a.client.Repositories.List(context.Background(), user, opts)
@@ -48,7 +50,7 @@ set owner = $1,
 where owner=$1 and name=$2`, repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage,
 				repo.ForksCount, repo.NetworkCount, repo.OpenIssuesCount, repo.StargazersCount, repo.SubscribersCount,
 				repo.WatchersCount, repo.Size, *repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
-				pushedAt, repo.UpdatedAt.Time, time.Now())
+				pushedAt, repo.UpdatedAt.Time, now)
 			if err != nil {
 				log.Println(err)
 				return err
@@ -61,7 +63,7 @@ where owner=$1 and name=$2`, repo.Owner.Login, repo.Name, repo.Description, repo
 					repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage,
 					repo.ForksCount, repo.NetworkCount, repo.OpenIssuesCount, repo.StargazersCount, repo.SubscribersCount,
 					repo.WatchersCount, repo.Size, *repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
-					pushedAt, repo.UpdatedAt.Time, time.Now())
+					pushedAt, repo.UpdatedAt.Time, now)
 				if err != nil {
 					log.Println("Error executing replace into agg_repo", err)
 					return err
@@ -73,6 +75,13 @@ where owner=$1 and name=$2`, repo.Owner.Login, repo.Name, repo.Description, repo
 		}
 		opts.Page = resp.NextPage
 	}
+	result, err := a.db.Exec(`DELETE FROM agg_repo WHERE owner=$1 and updated_at < ?`, user, now)
+	if err != nil {
+		log.Printf("Error deleting out of date repos for user %v: %v", user, err)
+		return err
+	}
+	num, _ := result.RowsAffected()
+	log.Printf("Deleted %v repos that user %v was missing", num, user)
 	return nil
 }
 
