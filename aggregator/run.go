@@ -75,7 +75,7 @@ where owner=$1 and name=$2`, repo.Owner.Login, repo.Name, repo.Description, repo
 		}
 		opts.Page = resp.NextPage
 	}
-	result, err := a.db.Exec(`DELETE FROM agg_repo WHERE owner=$1 and updated_at < $2`, user, now)
+	result, err := a.db.Exec(`DELETE FROM agg_repo WHERE owner=$1 and refreshed_at < $2`, user, now)
 	if err != nil {
 		log.Printf("Error deleting out of date repos for user %v: %v", user, err)
 		return err
