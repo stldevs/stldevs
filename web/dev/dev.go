@@ -63,7 +63,7 @@ func Patch(c *gin.Context) {
 	}
 	var cmd UpdateUser
 	if err = c.BindJSON(&cmd); err != nil {
-		c.JSON(400, "Failed to bind command object. Are you sending JSON?")
+		c.JSON(400, "Failed to bind command object. Are you sending JSON? " + err.Error())
 		return
 	}
 	err = db.HideUser(cmd.Hide, *profile.User.Login)
