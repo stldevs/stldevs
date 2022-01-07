@@ -216,42 +216,6 @@ func TestPatchAdmin404(t *testing.T) {
 	}
 }
 
-func TestPatchBindFailed(t *testing.T) {
-	login := "bob"
-	user := &db.StlDevsUser{
-		User:    &github.User{Login: &login},
-		IsAdmin: true,
-	}
-
-	db.Profile = func(name string) (*db.ProfileData, error) {
-		if name != "alice" {
-			t.Error()
-		}
-		return &db.ProfileData{
-			User: user,
-		}, nil
-	}
-	db.HideUser = func(hide bool, login string) error {
-		t.Errorf("should not have got here")
-		return fmt.Errorf("")
-	}
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	buf := bytes.NewBufferString(`{}`)
-	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
-	c.Params = gin.Params{{Key: "login", Value: "alice"}} // bob != alice
-	c.Set(sessions.KeySession, &sessions.Entry{
-		User:    user,
-		Created: time.Now(),
-	})
-	Patch(c)
-
-	if w.Result().StatusCode != 400 {
-		t.Error(w.Result().StatusCode)
-	}
-}
-
 func TestDelete(t *testing.T) {
 	login := "bob"
 	user := &db.StlDevsUser{
