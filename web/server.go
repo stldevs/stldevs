@@ -14,6 +14,7 @@ import (
 
 func Run(cfg *config.Config) {
 	r := crud.NewRouter("StL Devs API", "1.0.0", adapter.New())
+	r.Swagger.BasePath = "https://stldevs.com/stldevs-api/"
 
 	must(r.Add(auth.New(cfg)...))
 	must(r.Add(repo.Routes...))

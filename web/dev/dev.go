@@ -44,7 +44,7 @@ func Get(c *gin.Context) {
 }
 
 type UpdateUser struct {
-	Hide bool `binding:"required"`
+	Hide bool
 }
 
 // Patch allows users and admins show or hide themselves in the site
@@ -63,7 +63,7 @@ func Patch(c *gin.Context) {
 	}
 	var cmd UpdateUser
 	if err = c.BindJSON(&cmd); err != nil {
-		c.JSON(400, "Failed to bind command object. Are you sending JSON? " + err.Error())
+		c.JSON(400, "Failed to bind command object. Are you sending JSON? "+err.Error())
 		return
 	}
 	err = db.HideUser(cmd.Hide, *profile.User.Login)
