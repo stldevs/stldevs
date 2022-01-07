@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/jakecoffman/crud"
+	adapter "github.com/jakecoffman/crud/adapters/gin-adapter"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/web/auth"
 	"github.com/jakecoffman/stldevs/web/dev"
@@ -12,7 +13,7 @@ import (
 )
 
 func Run(cfg *config.Config) {
-	r := crud.NewRouter("StL Devs API", "1.0.0")
+	r := crud.NewRouter("StL Devs API", "1.0.0", adapter.New())
 
 	must(r.Add(auth.New(cfg)...))
 	must(r.Add(repo.Routes...))
