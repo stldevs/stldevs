@@ -22,7 +22,6 @@ var (
 	SearchRepos      = searchRepos
 	HideUser         = hideUser
 	Delete           = deleteUser
-	IsAdmin          = isAdmin
 )
 
 func lastRun() time.Time {
@@ -146,6 +145,16 @@ type StlDevsUser struct {
 	IsAdmin bool `json:"is_admin,omitempty"`
 }
 
+func GetUser(login string) (*StlDevsUser, error) {
+	user := &StlDevsUser{}
+	err := db.Get(user, queryUser, login)
+	if err != nil {
+		log.Println("Error querying profile", login, err)
+		return nil, err
+	}
+	return user, err
+}
+
 type ProfileData struct {
 	User  *StlDevsUser
 	Repos map[string][]stldevs.Repository
@@ -162,7 +171,7 @@ func profile(name string) (*ProfileData, error) {
 
 	go func() {
 		user := &StlDevsUser{}
-		err := db.Get(user, queryProfileForUser, name)
+		err := db.Get(user, queryUser, name)
 		if err != nil {
 			log.Println("Error querying profile", name, err)
 			userCh <- nil
@@ -260,17 +269,4 @@ func deleteUser(login string) error {
 	}
 
 	return err
-}
-
-func isAdmin(login string) bool {
-	rows, err := db.Query("select is_admin from agg_user where login=$1", login)
-	if err != nil {
-		log.Println(err)
-	}
-
-	var isAdmin bool
-	if err == nil && rows.Next() && rows.Scan(&isAdmin) == nil && isAdmin == true {
-		return true
-	}
-	return false
 }

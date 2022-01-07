@@ -23,12 +23,13 @@ func (s *Issuer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Login success", *githubUser.Login)
 
-	user := &db.StlDevsUser{
-		User: githubUser,
+	user, err := db.GetUser(*githubUser.Login)
+	if err != nil {
+		// user not found or something?
+		user = &db.StlDevsUser{
+			User: githubUser,
+		}
 	}
-
-	// check if the user is an admin and set that in the session too
-	user.IsAdmin = db.IsAdmin(*githubUser.Login)
 
 	expire := time.Now().AddDate(0, 0, 1)
 	cookie := http.Cookie{

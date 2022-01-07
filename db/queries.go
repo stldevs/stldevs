@@ -47,7 +47,7 @@ const (
 		where rownum < 4
 		order by count desc, owner, stargazers_count desc`
 
-	queryProfileForUser = `
+	queryUser = `
 		select login, email, name, bio, blog, followers, public_repos, public_gists, avatar_url, hide, is_admin
 		from agg_user
 		where login=$1`
