@@ -150,7 +150,7 @@ func TestPatchByUser(t *testing.T) {
 	buf := bytes.NewBufferString(`{"hide":true}`)
 	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
 	c.Params = gin.Params{{Key: "login", Value: "bob"}}
-	c.Set(sessions.KeySession, &sessions.Entry{
+	c.Set(sessions.KeySession, sessions.Entry{
 		User:    user,
 		Created: time.Now(),
 	})
@@ -175,7 +175,7 @@ func TestPatch403(t *testing.T) {
 	buf := bytes.NewBufferString(`{"hide":true}`)
 	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
 	c.Params = gin.Params{{Key: "login", Value: "alice"}} // bob != alice
-	c.Set(sessions.KeySession, &sessions.Entry{
+	c.Set(sessions.KeySession, sessions.Entry{
 		User:    user,
 		Created: time.Now(),
 	})
@@ -205,7 +205,7 @@ func TestPatchAdmin404(t *testing.T) {
 	buf := bytes.NewBufferString(`{"hide":true}`)
 	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
 	c.Params = gin.Params{{Key: "login", Value: "alice"}} // bob != alice
-	c.Set(sessions.KeySession, &sessions.Entry{
+	c.Set(sessions.KeySession, sessions.Entry{
 		User:    user,
 		Created: time.Now(),
 	})
@@ -235,7 +235,7 @@ func TestDelete(t *testing.T) {
 	buf := bytes.NewBufferString(`{}`)
 	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
 	c.Params = gin.Params{{Key: "login", Value: "alice"}} // bob != alice
-	c.Set(sessions.KeySession, &sessions.Entry{
+	c.Set(sessions.KeySession, sessions.Entry{
 		User:    user,
 		Created: time.Now(),
 	})
@@ -265,7 +265,7 @@ func TestDeleteAccessDenied(t *testing.T) {
 	buf := bytes.NewBufferString(`{}`)
 	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
 	c.Params = gin.Params{{Key: "login", Value: "alice"}} // bob != alice
-	c.Set(sessions.KeySession, &sessions.Entry{
+	c.Set(sessions.KeySession, sessions.Entry{
 		User:    user,
 		Created: time.Now(),
 	})
