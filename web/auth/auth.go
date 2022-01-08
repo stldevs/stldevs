@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/stldevs/config"
+	"github.com/jakecoffman/stldevs/db"
 	"github.com/jakecoffman/stldevs/sessions"
 	"golang.org/x/oauth2"
 	oa2gh "golang.org/x/oauth2/github"
@@ -61,6 +62,18 @@ func New(cfg *config.Config) []crud.Spec {
 		Handler:     me,
 		Description: "Get info about the logged in user",
 		Tags:        loginTags,
+	}, {
+		Method:      "PATCH",
+		Path:        "/me",
+		PreHandlers: []gin.HandlerFunc{Authenticated},
+		Handler:     updateMe,
+		Description: "Get info about the logged in user",
+		Tags:        loginTags,
+		Validate: crud.Validate{
+			Body: crud.Object(map[string]crud.Field{
+				"Hide": crud.Boolean().Required(),
+			}),
+		},
 	}}
 }
 
@@ -80,6 +93,29 @@ func Authenticated(c *gin.Context) {
 
 func me(c *gin.Context) {
 	c.JSON(200, sessions.GetEntry(c).User)
+}
+
+type UpdateUser struct {
+	Hide bool
+}
+
+// Patch allows users to show or hide themselves in the site.
+// This is specifically for the /you page because it sends the same response back.
+func updateMe(c *gin.Context) {
+	session := sessions.GetEntry(c)
+
+	var cmd UpdateUser
+	if err := c.BindJSON(&cmd); err != nil {
+		c.JSON(400, "Failed to bind command object. Are you sending JSON? "+err.Error())
+		return
+	}
+	err := db.HideUser(cmd.Hide, *session.User.Login)
+	if err != nil {
+		c.JSON(500, err.Error())
+		return
+	}
+	session.User.Hide = cmd.Hide
+	c.JSON(200, session.User)
 }
 
 func logout(c *gin.Context) {
