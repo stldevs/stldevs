@@ -149,7 +149,7 @@ func GetUser(login string) (*StlDevsUser, error) {
 	user := &StlDevsUser{}
 	err := db.Get(user, queryUser, login)
 	if err != nil {
-		log.Println("Error querying profile", login, err)
+		log.Println("Error querying user", login, err)
 		return nil, err
 	}
 	return user, err

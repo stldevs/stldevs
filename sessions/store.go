@@ -17,10 +17,10 @@ var Store = &SessionStore{
 	store: map[string]*Entry{},
 }
 
-func GetEntry(ctx *gin.Context) *Entry {
+func GetEntry(ctx *gin.Context) Entry {
 	sess, ok := ctx.Get(KeySession)
 	if ok {
-		return sess.(*Entry)
+		return *sess.(*Entry)
 	}
 	panic("No session found")
 }
@@ -35,18 +35,18 @@ type Entry struct {
 	Created time.Time
 }
 
-func (s *SessionStore) Get(cookie string) (*Entry, bool) {
+func (s *SessionStore) Get(cookie string) (Entry, bool) {
 	s.RLock()
 	defer s.RUnlock()
 	session, ok := s.store[cookie]
-	return session, ok
+	return *session, ok
 }
 
 func (s *SessionStore) Add(user *db.StlDevsUser) string {
 	s.Lock()
 	defer s.Unlock()
 	for k, v := range s.store {
-		if *v.User.ID == *user.ID {
+		if v.User != nil && user != nil && *v.User.ID == *user.ID {
 			delete(s.store, k)
 		}
 	}

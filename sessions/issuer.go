@@ -24,7 +24,7 @@ func (s *Issuer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println("Login success", *githubUser.Login)
 
 	user, err := db.GetUser(*githubUser.Login)
-	if err != nil {
+	if err != nil || user == nil {
 		// user not found or something?
 		user = &db.StlDevsUser{
 			User: githubUser,
