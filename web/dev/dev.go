@@ -71,6 +71,8 @@ func Patch(c *gin.Context) {
 		c.JSON(500, err.Error())
 		return
 	}
+	profile.User.Hide = cmd.Hide
+	session.User.Hide = cmd.Hide
 	c.JSON(200, profile)
 }
 
