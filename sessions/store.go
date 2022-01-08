@@ -20,7 +20,8 @@ var Store = &SessionStore{
 func GetEntry(ctx *gin.Context) Entry {
 	sess, ok := ctx.Get(KeySession)
 	if ok {
-		return *sess.(*Entry)
+		entry := sess.(Entry)
+		return entry
 	}
 	panic("No session found")
 }
@@ -39,6 +40,9 @@ func (s *SessionStore) Get(cookie string) (Entry, bool) {
 	s.RLock()
 	defer s.RUnlock()
 	session, ok := s.store[cookie]
+	if !ok {
+		return Entry{}, false
+	}
 	return *session, ok
 }
 
