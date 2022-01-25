@@ -27,21 +27,21 @@ func TestMigrate(t *testing.T) {
 }
 
 func TestLastRun(t *testing.T) {
-	if v := lastRun(); !v.Equal(time.Time{}) {
+	if v := LastRun(); !v.Equal(time.Time{}) {
 		t.Errorf("Time should have been zero value, got %v", v)
 	}
 	db.MustExec("insert into agg_meta values (CURRENT_TIMESTAMP)")
-	if v := lastRun(); !v.After(time.Time{}) {
+	if v := LastRun(); !v.After(time.Time{}) {
 		t.Errorf("Time should have been greater than zero value, got %v", v)
 	}
 }
 
 func TestHideUser(t *testing.T) {
 	db.MustExec("insert into agg_user (login, hide) values ('bob', false) on conflict do nothing")
-	if err := hideUser(true, "bob"); err != nil {
+	if err := HideUser(true, "bob"); err != nil {
 		t.Fatal(err)
 	}
-	user, err := profile("bob")
+	user, err := Profile("bob")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,10 +49,10 @@ func TestHideUser(t *testing.T) {
 		t.Fatal("expected hidden, was not")
 	}
 
-	if err = hideUser(false, "bob"); err != nil {
+	if err = HideUser(false, "bob"); err != nil {
 		t.Fatal(err)
 	}
-	user, err = profile("bob")
+	user, err = Profile("bob")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func TestHideUser(t *testing.T) {
 }
 
 func TestPopularDevs(t *testing.T) {
-	result := popularDevs("Butt")
+	result := PopularDevs("Butt")
 	if len(result) != 0 {
 		t.Error(len(result))
 	}

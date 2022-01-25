@@ -11,20 +11,8 @@ import (
 	"github.com/jakecoffman/stldevs"
 )
 
-var (
-	// LastRun returns the last time github was scraped
-	LastRun          = lastRun
-	PopularLanguages = popularLanguages
-	PopularDevs      = popularDevs
-	Language         = language
-	Profile          = profile
-	SearchUsers      = searchUsers
-	SearchRepos      = searchRepos
-	HideUser         = hideUser
-	Delete           = deleteUser
-)
-
-func lastRun() time.Time {
+// LastRun returns the last time github was scraped
+var LastRun = func() time.Time {
 	var lastRun time.Time
 	err := db.Get(&lastRun, queryLastRun)
 	if err == sql.ErrNoRows {
@@ -43,7 +31,7 @@ type LanguageCount struct {
 	Users    int
 }
 
-func popularLanguages() []LanguageCount {
+var PopularLanguages = func() []LanguageCount {
 	langs := []LanguageCount{}
 	err := db.Select(&langs, queryPopularLanguages)
 	if err != nil {
@@ -64,7 +52,7 @@ type DevCount struct {
 	Type        string  `json:"type"`
 }
 
-func popularDevs(devType string) []DevCount {
+var PopularDevs = func(devType string) []DevCount {
 	devs := []DevCount{}
 	err := db.Select(&devs, queryPopularDev, devType)
 	if err != nil {
@@ -90,8 +78,8 @@ var languageCache = struct {
 	result: map[string][]*LanguageResult{},
 }
 
-func language(name string) []*LanguageResult {
-	run := lastRun()
+var Language = func(name string) []*LanguageResult {
+	run := LastRun()
 	languageCache.RLock()
 	result, found := languageCache.result[name]
 	if found && run.Equal(languageCache.lastRun) {
@@ -160,7 +148,7 @@ type ProfileData struct {
 	Repos map[string][]stldevs.Repository
 }
 
-func profile(name string) (*ProfileData, error) {
+var Profile = func(name string) (*ProfileData, error) {
 	// TODO hide the user when other users try to see them but they are set to "Hide" in db
 
 	// There are 2 queries to do so run them concurrently
@@ -222,7 +210,7 @@ func profile(name string) (*ProfileData, error) {
 	return &ProfileData{user, repoMap}, nil
 }
 
-func searchUsers(term string) []StlDevsUser {
+var SearchUsers = func(term string) []StlDevsUser {
 	query := "%" + term + "%"
 	users := []StlDevsUser{}
 	if err := db.Select(&users, querySearchUsers, query); err != nil {
@@ -232,7 +220,7 @@ func searchUsers(term string) []StlDevsUser {
 	return users
 }
 
-func searchRepos(term string) []stldevs.Repository {
+var SearchRepos = func(term string) []stldevs.Repository {
 	query := "%" + term + "%"
 	repos := []stldevs.Repository{}
 	if err := db.Select(&repos, querySearchRepos, query); err != nil {
@@ -242,7 +230,7 @@ func searchRepos(term string) []stldevs.Repository {
 	return repos
 }
 
-func hideUser(hide bool, login string) error {
+var HideUser = func(hide bool, login string) error {
 	result, err := db.Exec("update agg_user set hide=$1 where login=$2", hide, login)
 	if err != nil {
 		log.Println(err)
@@ -255,7 +243,7 @@ func hideUser(hide bool, login string) error {
 	return nil
 }
 
-func deleteUser(login string) error {
+var Delete = func(login string) error {
 	_, err := db.Exec("delete from agg_repo where owner=$1", login)
 	if err != nil {
 		log.Println(err)
