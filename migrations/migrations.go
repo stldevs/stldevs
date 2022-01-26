@@ -100,5 +100,10 @@ func userEnhancements(db *sqlx.DB) error {
 		log.Println(err)
 		return err
 	}
+	_, err = db.Exec(`ALTER TABLE agg_user ADD COLUMN IF NOT EXISTS company text not null`)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 	return nil
 }

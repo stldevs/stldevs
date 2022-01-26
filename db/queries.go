@@ -15,19 +15,6 @@ const (
 		order by count desc
 		limit 50;`
 
-	queryPopularDev = `
-		select login, name, avatar_url, followers, public_repos, stars, forks, type
-		from agg_user
-		join (
-			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
-			from agg_repo
-			group by owner
-		) repo ON (repo.owner=agg_user.login)
-		where type=$1
-		and hide is false
-		order by stars desc
-		limit 100;`
-
 	queryLanguage = `
 		select * from (
 			select owner, name, description, forks_count, stargazers_count, watchers_count, fork, (

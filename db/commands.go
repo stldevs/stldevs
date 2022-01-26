@@ -43,6 +43,7 @@ var PopularLanguages = func() []LanguageCount {
 
 type DevCount struct {
 	Login       string  `json:"login"`
+	Company     string  `json:"company"`
 	AvatarUrl   string  `json:"avatar_url"`
 	Followers   string  `json:"followers"`
 	PublicRepos string  `json:"public_repos"`
@@ -52,9 +53,29 @@ type DevCount struct {
 	Type        string  `json:"type"`
 }
 
-var PopularDevs = func(devType string) []DevCount {
+var PopularDevs = func(devType, company string) []DevCount {
 	devs := []DevCount{}
-	err := db.Select(&devs, queryPopularDev, devType)
+	arguments := []interface{}{devType}
+
+	query := `select login, name, company, avatar_url, followers, public_repos, stars, forks, type
+		from agg_user
+		join (
+			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
+			from agg_repo
+			group by owner
+		) repo ON (repo.owner=agg_user.login)
+		where type=$1
+		and hide is false
+		`
+
+	if company != "" {
+		query += "and LOWER(company) like LOWER($2)\n"
+		arguments = append(arguments, "%"+company+"%")
+	}
+
+	query += `order by stars desc limit 100`
+
+	err := db.Select(&devs, query, arguments...)
 	if err != nil {
 		log.Println(err)
 		return nil

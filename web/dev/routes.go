@@ -14,8 +14,9 @@ var Routes = []crud.Spec{{
 	Tags:        []string{"Developers"},
 	Validate: crud.Validate{
 		Query: crud.Object(map[string]crud.Field{
-			"type": crud.String().Enum("User", "Organization").Description("List users or organizations. Required unless 'q' is provided."),
-			"q":    crud.String().Description("Query string. Required unless 'type' is provided."),
+			"type":    crud.String().Enum("User", "Organization").Description("List users or organizations. Required unless 'q' is provided."),
+			"q":       crud.String().Description("Query string. Required unless 'type' is provided."),
+			"company": crud.String().Description("Filter by company"),
 		}),
 	},
 }, {

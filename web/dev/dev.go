@@ -7,8 +7,9 @@ import (
 )
 
 type ListQuery struct {
-	Q    string `form:"q"`
-	Type string `form:"type"`
+	Q       string `form:"q"`
+	Type    string `form:"type"`
+	Company string `form:"company"`
 }
 
 func List(c *gin.Context) {
@@ -27,7 +28,7 @@ func List(c *gin.Context) {
 		return
 	}
 
-	if listing := db.PopularDevs(query.Type); listing == nil {
+	if listing := db.PopularDevs(query.Type, query.Company); listing == nil {
 		c.JSON(500, "Failed to list")
 	} else {
 		c.JSON(200, listing)
