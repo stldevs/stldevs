@@ -13,10 +13,10 @@ func init() {
 	Connect(&config.Config{
 		Postgres: "postgres://postgres:pw@127.0.0.1:5432/postgres",
 	})
-	db.MustExec("drop table agg_meta")
-	db.MustExec("drop table agg_repo")
-	db.MustExec("drop table agg_user")
-	db.MustExec("drop table migrations")
+	db.MustExec("drop table if exists agg_meta")
+	db.MustExec("drop table if exists agg_repo")
+	db.MustExec("drop table if exists agg_user")
+	db.MustExec("drop table if exists migrations")
 	Migrate()
 }
 
