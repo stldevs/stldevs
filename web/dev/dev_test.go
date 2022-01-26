@@ -14,7 +14,7 @@ import (
 
 func TestList(t *testing.T) {
 	var called bool
-	db.PopularDevs = func(devType string) []db.DevCount {
+	db.PopularDevs = func(devType, company string) []db.DevCount {
 		called = true
 		if devType != "User" {
 			t.Error()
@@ -37,7 +37,7 @@ func TestList(t *testing.T) {
 
 func TestListFailure(t *testing.T) {
 	var called bool
-	db.PopularDevs = func(devType string) []db.DevCount {
+	db.PopularDevs = func(devType, company string) []db.DevCount {
 		called = true
 		return nil
 	}

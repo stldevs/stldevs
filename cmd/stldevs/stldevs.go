@@ -21,5 +21,6 @@ func main() {
 	}
 
 	db.Connect(cfg)
+	db.Migrate()
 	web.Run(cfg)
 }

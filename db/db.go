@@ -30,8 +30,10 @@ func Connect(cfg *config.Config) {
 		}
 	}
 	db.MapperFunc(config.CamelToSnake)
+}
 
-	if err = migrations.Migrate(db); err != nil {
+func Migrate() {
+	if err := migrations.Migrate(db); err != nil {
 		log.Fatal("Could not migrate schema")
 	}
 }

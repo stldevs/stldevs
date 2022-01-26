@@ -17,6 +17,7 @@ func init() {
 	db.MustExec("drop table agg_repo")
 	db.MustExec("drop table agg_user")
 	db.MustExec("drop table migrations")
+	Migrate()
 }
 
 func TestMigrate(t *testing.T) {
@@ -37,7 +38,7 @@ func TestLastRun(t *testing.T) {
 }
 
 func TestHideUser(t *testing.T) {
-	db.MustExec("insert into agg_user (login, hide) values ('bob', false) on conflict do nothing")
+	db.MustExec("insert into agg_user (login, company, hide) values ('bob', '', false) on conflict do nothing")
 	if err := HideUser(true, "bob"); err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +63,7 @@ func TestHideUser(t *testing.T) {
 }
 
 func TestPopularDevs(t *testing.T) {
-	result := PopularDevs("Butt")
+	result := PopularDevs("User", "company")
 	if len(result) != 0 {
 		t.Error(len(result))
 	}
