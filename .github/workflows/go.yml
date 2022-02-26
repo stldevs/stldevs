@@ -27,6 +27,11 @@ jobs:
     - name: Test
       run: sh test.sh
 
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
     - name: Deploy
       uses: appleboy/scp-action@master
       with:
