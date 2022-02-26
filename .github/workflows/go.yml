@@ -18,8 +18,21 @@ jobs:
       with:
         go-version: 1.17
 
-    - name: Build
-      run: go build -v ./...
+    - name: Build stldevs
+      run: go build cmd/stldevs/stldevs.go
+
+    - name: Build runner
+      run: go build cmd/run/run.go
 
     - name: Test
       run: sh test.sh
+
+    - name: Deploy
+      uses: appleboy/scp-action@master
+      with:
+        host: stldevs.com
+        username: deploy
+        key: ${{ secrets.KEY }}
+        port: 22
+        source: "stldevs,run"
+        target: "~"
