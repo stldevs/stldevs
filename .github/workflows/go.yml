@@ -36,3 +36,19 @@ jobs:
         port: 22
         source: "stldevs,run"
         target: "~"
+
+    - name: Restart
+      uses: appleboy/ssh-action@master
+      with:
+        host: stldevs.com
+        username: deploy
+        key: ${{ secrets.KEY }}
+        port: 22
+        script: |
+          sudo service stldevs stop
+          mv -f ~/stldevs /opt/stldevs
+          mv -f ~/run /opt/stldevs
+          cd /opt/stldevs
+          chmod +x stldevs
+          chmod +x run
+          sudo service stldevs start
