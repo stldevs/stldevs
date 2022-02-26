@@ -19,7 +19,10 @@ jobs:
         go-version: 1.17
 
     - name: Build stldevs
-      run: go build cmd/stldevs/stldevs.go && go build cmd/run/run.go
+      run: go build cmd/stldevs/stldevs.go
+
+    - name: Build runner
+      run: go build cmd/run/run.go
 
     - name: Test
       run: sh test.sh
