@@ -27,11 +27,21 @@ jobs:
     - name: Test
       run: sh test.sh
 
+    - uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: |
+          stldevs
+          run
+
   deploy:
     if: github.event_name != 'pull_request'
     needs: [build]
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: dist
     - name: Deploy
       uses: appleboy/scp-action@master
       with:
