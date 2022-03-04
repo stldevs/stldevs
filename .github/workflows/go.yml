@@ -24,15 +24,17 @@ jobs:
     - name: Build runner
       run: go build cmd/run/run.go
 
-    - name: Test
-      run: sh test.sh
-
     - uses: actions/upload-artifact@v2
       with:
         name: dist
         path: |
           stldevs
           run
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sh test.sh
 
   deploy:
     if: github.event_name != 'pull_request'
