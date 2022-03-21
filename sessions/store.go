@@ -49,11 +49,6 @@ func (s *SessionStore) Get(cookie string) (Entry, bool) {
 func (s *SessionStore) Add(user *db.StlDevsUser) string {
 	s.Lock()
 	defer s.Unlock()
-	for k, v := range s.store {
-		if v.User != nil && user != nil && *v.User.ID == *user.ID {
-			delete(s.store, k)
-		}
-	}
 	cookie := GenerateSessionCookie()
 	s.store[cookie] = &Entry{
 		User:    user,
