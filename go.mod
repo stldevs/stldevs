@@ -3,7 +3,7 @@ module github.com/jakecoffman/stldevs
 go 1.16
 
 require (
-	github.com/dghubble/gologin/v2 v2.2.0
+	github.com/dghubble/gologin/v2 v2.3.0
 	github.com/gin-gonic/gin v1.7.2
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-github v17.0.0+incompatible
