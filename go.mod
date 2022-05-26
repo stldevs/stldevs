@@ -10,7 +10,7 @@ require (
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jackc/pgx/v4 v4.16.1
 	github.com/jakecoffman/crud v1.3.0
-	github.com/jmoiron/sqlx v1.3.4
+	github.com/jmoiron/sqlx v1.3.5
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )
 
