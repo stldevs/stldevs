@@ -3,11 +3,11 @@ module github.com/jakecoffman/stldevs
 go 1.19
 
 require (
-	github.com/dghubble/gologin/v2 v2.3.1
+	github.com/dghubble/gologin/v2 v2.4.0
 	github.com/gin-gonic/gin v1.9.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v32 v32.1.0
-	github.com/google/go-github/v48 v48.1.0
+	github.com/google/go-github/v48 v48.2.0
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jackc/pgx/v4 v4.18.0
 	github.com/jakecoffman/crud v1.3.0
