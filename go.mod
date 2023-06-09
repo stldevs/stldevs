@@ -9,7 +9,7 @@ require (
 	github.com/google/go-github/v32 v32.1.0
 	github.com/google/go-github/v48 v48.2.0
 	github.com/jackc/pgx v3.6.2+incompatible
-	github.com/jackc/pgx/v4 v4.18.0
+	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jakecoffman/crud v1.4.0
 	github.com/jmoiron/sqlx v1.3.5
 	golang.org/x/oauth2 v0.6.0
