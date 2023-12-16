@@ -72,8 +72,8 @@ jobs:
         script: |
           sudo service stldevs stop
           mv -f ~/stldevs /opt/stldevs
-          mv -f ~/run /opt/stldevs
+          mv -f ~/gather /opt/stldevs
           cd /opt/stldevs
           chmod +x stldevs
-          chmod +x run
+          chmod +x gather
           sudo service stldevs start
