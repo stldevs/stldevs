@@ -19,10 +19,10 @@ jobs:
         go-version-file: ./go.mod
 
     - name: Build stldevs
-      run: go build cmd/stldevs/stldevs.go
+      run: CGO_ENABLED=0 go build cmd/stldevs/stldevs.go
 
     - name: Build gatherer
-      run: go build cmd/gather/gather.go
+      run: CGO_ENABLED=0 go build cmd/gather/gather.go
 
     - uses: actions/upload-artifact@v4
       with:
