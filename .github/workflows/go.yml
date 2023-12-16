@@ -21,8 +21,8 @@ jobs:
     - name: Build stldevs
       run: go build cmd/stldevs/stldevs.go
 
-    - name: Build runner
-      run: go build cmd/run/run.go
+    - name: Build gatherer
+      run: go build cmd/gather/gather.go
 
     - uses: actions/upload-artifact@v2
       with:
