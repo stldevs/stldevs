@@ -84,3 +84,4 @@ type Repository struct {
 func (u Repository) String() string {
 	return fmt.Sprintf("Repo: %v/%v", *u.Owner, *u.Name)
 }
+
