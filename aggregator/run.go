@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v52/github"
 )
 
 func (a *Aggregator) updateUsersRepos(user string) error {
@@ -143,7 +143,7 @@ start:
 		log.Println("Failed getting user details for", user, ":", err)
 		return err
 	}
-	r, err := a.db.Exec(`UPDATE agg_user 
+	r, err := a.db.Exec(`UPDATE agg_user
 set login = $1,
 	email = $2,
 	name = $3,
@@ -174,7 +174,7 @@ where login=$1`, u.Login, u.Email, u.Name, u.Location, u.Hireable, u.Blog, u.Bio
 		return err
 	} else if n == 0 {
 		_, err = a.db.Exec(`INSERT INTO agg_user (
-login, email, name, location, hireable, blog, bio, followers, following, public_repos, public_gists, avatar_url, type, 
+login, email, name, location, hireable, blog, bio, followers, following, public_repos, public_gists, avatar_url, type,
                       disk_usage, created_at, updated_at, refreshed_at, company)
 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`, u.Login, u.Email, u.Name, u.Location, u.Hireable,
 			u.Blog, u.Bio, u.Followers, u.Following, u.PublicRepos, u.PublicGists, u.AvatarURL, u.Type, u.DiskUsage,

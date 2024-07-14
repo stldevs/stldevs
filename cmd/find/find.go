@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v52/github"
 	"golang.org/x/oauth2"
 	"log"
 	"os"
