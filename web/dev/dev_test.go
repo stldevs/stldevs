@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/google/go-github/v48/github"
+	"github.com/google/go-github/v52/github"
 	"github.com/jakecoffman/stldevs/db"
 	"github.com/jakecoffman/stldevs/sessions"
 	"net/http/httptest"
