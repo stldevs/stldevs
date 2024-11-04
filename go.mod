@@ -8,7 +8,7 @@ require (
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v52 v52.0.0
 	github.com/jackc/pgx/v5 v5.7.1
-	github.com/jakecoffman/crud v1.5.0
+	github.com/jakecoffman/crud v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
 	golang.org/x/oauth2 v0.23.0
 )
