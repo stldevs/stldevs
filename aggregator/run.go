@@ -98,7 +98,12 @@ func FindInStl(client *github.Client, typ string) (map[string]struct{}, error) {
 		"created:2017-01-01..2018-01-01",
 		"created:2018-01-01..2019-01-01",
 		"created:2019-01-01..2020-01-01",
-		"created:>2020-01-01",
+		"created:2020-01-01..2021-01-01",
+		"created:2021-01-01..2022-01-01",
+		"created:2022-01-01..2023-01-01",
+		"created:2023-01-01..2024-01-01",
+		"created:2024-01-01..2025-01-01",
+		"created:>2025-01-01",
 	} {
 		const locations = `location:"St. Louis" location:"STL" location:"St Louis" location:"Saint Louis"`
 		searchString := fmt.Sprintf(`%v %v repos:>1 type:"%v"`, locations, date, typ)
