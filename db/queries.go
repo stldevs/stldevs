@@ -54,7 +54,7 @@ const (
 			group by owner
 		) repo ON (repo.owner=agg_user.login)
 		where hide is false and (
-			login like LOWER($1) or 
+			LOWER(login) like LOWER($1) or 
 			LOWER(name) like LOWER($1) or
 			LOWER(bio) like LOWER($1) or
 			LOWER(email) like LOWER($1)
