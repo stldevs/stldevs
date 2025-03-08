@@ -6,8 +6,10 @@ on:
   pull_request:
     branches: [ master ]
 
-jobs:
+permissions:
+  contents: read
 
+jobs:
   build:
     runs-on: ubuntu-latest
     steps:
@@ -17,13 +19,10 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version-file: ./go.mod
-
     - name: Build stldevs
       run: CGO_ENABLED=0 go build cmd/stldevs/stldevs.go
-
     - name: Build gatherer
       run: CGO_ENABLED=0 go build cmd/gather/gather.go
-
     - uses: actions/upload-artifact@v4
       with:
         name: dist
@@ -35,12 +34,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version-file: ./go.mod
-
       - name: Test
         run: sh test.sh
 
