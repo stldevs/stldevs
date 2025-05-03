@@ -1,16 +1,18 @@
 module github.com/jakecoffman/stldevs
 
-go 1.22.3
+go 1.23.0
+
+toolchain go1.24.1
 
 require (
 	github.com/dghubble/gologin/v2 v2.5.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v52 v52.0.0
-	github.com/jackc/pgx/v5 v5.7.1
+	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jakecoffman/crud v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
-	golang.org/x/oauth2 v0.24.0
+	golang.org/x/oauth2 v0.29.0
 )
 
 require (
