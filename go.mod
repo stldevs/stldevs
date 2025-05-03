@@ -12,7 +12,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jakecoffman/crud v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
-	golang.org/x/oauth2 v0.29.0
+	golang.org/x/oauth2 v0.24.0
 )
 
 require (
