@@ -2,12 +2,17 @@ package aggregator
 
 import (
 	"context"
+	_ "embed"
 	"log"
+	"strings"
 
 	"github.com/google/go-github/v52/github"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
 )
+
+//go:embed orgs.txt
+var orgList string
 
 type Aggregator struct {
 	client  *github.Client
@@ -39,13 +44,8 @@ func (a *Aggregator) Run() {
 		log.Println(err)
 		return
 	}
-	orgs, err := FindInStl(a.client, "org")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	for o := range orgs {
-		users[o] = struct{}{}
+	for _, org := range strings.Split(orgList, "\n") {
+		users[org] = struct{}{}
 	}
 	for user := range users {
 		log.Println("Adding/Updating", user)

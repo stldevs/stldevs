@@ -1,0 +1,13 @@
+name: Ensure orgs.txt is sorted
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sort --check aggregator/orgs.txt
