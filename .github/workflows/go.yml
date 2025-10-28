@@ -15,17 +15,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version-file: ./go.mod
     - name: Build stldevs
       run: CGO_ENABLED=0 go build cmd/stldevs/stldevs.go
     - name: Build gatherer
       run: CGO_ENABLED=0 go build cmd/gather/gather.go
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: dist
         path: |
@@ -35,9 +35,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: ./go.mod
       - name: Test
@@ -48,7 +48,7 @@ jobs:
     needs: [build,test]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v6
       with:
         name: dist
     - name: Deploy
