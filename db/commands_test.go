@@ -1,11 +1,12 @@
 package db
 
 import (
-	"github.com/jakecoffman/stldevs/config"
-	"github.com/jakecoffman/stldevs/migrations"
 	"log"
 	"testing"
 	"time"
+
+	"github.com/jakecoffman/stldevs/config"
+	"github.com/jakecoffman/stldevs/migrations"
 )
 
 func init() {
@@ -66,5 +67,41 @@ func TestPopularDevs(t *testing.T) {
 	result := PopularDevs("User", "company")
 	if len(result) != 0 {
 		t.Error(len(result))
+	}
+}
+
+func TestPopularDevsCompanyFilter(t *testing.T) {
+	resetTables(t)
+	const (
+		login   = "popular-dev"
+		company = "Acme Corp"
+	)
+	db.MustExec(`
+		INSERT INTO agg_user (login, company, hide, type)
+		VALUES ($1, $2, false, 'User')
+	`, login, company)
+	db.MustExec(`
+		INSERT INTO agg_repo (owner, name, fork, stargazers_count, forks_count, language)
+		VALUES ($1, 'repo', false, 5, 1, 'Go')
+	`, login)
+
+	if got := PopularDevs("User", ""); len(got) != 1 {
+		t.Fatalf("expected 1 dev without company filter, got %d", len(got))
+	}
+	if got := PopularDevs("User", "acme"); len(got) != 1 {
+		t.Fatalf("expected 1 dev with matching company filter, got %d", len(got))
+	}
+	if got := PopularDevs("User", "nonexistent"); len(got) != 0 {
+		t.Fatalf("expected 0 devs with non-matching filter, got %d", len(got))
+	}
+}
+
+func resetTables(t *testing.T) {
+	t.Helper()
+	if _, err := db.Exec("DELETE FROM agg_repo"); err != nil {
+		t.Fatalf("failed to reset agg_repo: %v", err)
+	}
+	if _, err := db.Exec("DELETE FROM agg_user"); err != nil {
+		t.Fatalf("failed to reset agg_user: %v", err)
 	}
 }

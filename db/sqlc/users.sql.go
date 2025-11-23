@@ -204,8 +204,8 @@ JOIN (
 WHERE agg_user.type = $1
     AND agg_user.hide IS FALSE
     AND (
-        $2 IS NULL OR
-        LOWER(agg_user.company) LIKE LOWER($2)
+        $2::text IS NULL OR
+        LOWER(agg_user.company) LIKE LOWER($2::text)
     )
 ORDER BY repo.stars DESC
 LIMIT 100
@@ -213,7 +213,7 @@ LIMIT 100
 
 type PopularDevsParams struct {
 	DevType        sql.NullString
-	CompanyPattern interface{}
+	CompanyPattern sql.NullString
 }
 
 type PopularDevsRow struct {

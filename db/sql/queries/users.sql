@@ -18,8 +18,8 @@ JOIN (
 WHERE agg_user.type = sqlc.arg(dev_type)
     AND agg_user.hide IS FALSE
     AND (
-        sqlc.narg(company_pattern) IS NULL OR
-        LOWER(agg_user.company) LIKE LOWER(sqlc.narg(company_pattern))
+        sqlc.narg(company_pattern)::text IS NULL OR
+        LOWER(agg_user.company) LIKE LOWER(sqlc.narg(company_pattern)::text)
     )
 ORDER BY repo.stars DESC
 LIMIT 100;
