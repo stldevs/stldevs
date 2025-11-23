@@ -1,0 +1,13 @@
+version: "2"
+sql:
+  - engine: postgresql
+    schema:
+      - db/sql/schema.sql
+    queries:
+      - db/sql/queries
+    gen:
+      go:
+        package: sqlc
+        out: db/sqlc
+        sql_package: database/sql
+        emit_pointers_for_null_types: true

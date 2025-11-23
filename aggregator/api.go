@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v52/github"
+	"github.com/jakecoffman/stldevs/db/sqlc"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
 )
@@ -16,14 +17,14 @@ var orgList string
 
 type Aggregator struct {
 	client  *github.Client
-	db      *sqlx.DB
+	queries *sqlc.Queries
 	running bool
 }
 
 func New(db *sqlx.DB, githubKey string) *Aggregator {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: githubKey})
 	client := oauth2.NewClient(context.Background(), ts)
-	return &Aggregator{db: db, client: github.NewClient(client)}
+	return &Aggregator{client: github.NewClient(client), queries: sqlc.New(db)}
 }
 
 func (a *Aggregator) Run() {

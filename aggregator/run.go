@@ -2,19 +2,22 @@ package aggregator
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/google/go-github/v52/github"
+	"github.com/jakecoffman/stldevs/db/sqlc"
 )
 
 func (a *Aggregator) updateUsersRepos(user string) error {
+	ctx := context.Background()
 	now := time.Now()
 
 	opts := &github.RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc", ListOptions: github.ListOptions{PerPage: 100}}
 	for {
-		result, resp, err := a.client.Repositories.List(context.Background(), user, opts)
+		result, resp, err := a.client.Repositories.List(ctx, user, opts)
 		if shouldTryAgain(resp) {
 			continue
 		}
@@ -23,48 +26,18 @@ func (a *Aggregator) updateUsersRepos(user string) error {
 			return err
 		}
 		for _, repo := range result {
-			var pushedAt *time.Time
-			if repo.PushedAt != nil {
-				pushedAt = &repo.PushedAt.Time
+			params, err := buildRepoParams(repo, now)
+			if err != nil {
+				log.Println(err)
+				continue
 			}
-			r, err := a.db.Exec(`UPDATE agg_repo
-set owner = $1,
-	name = $2,
-	description = $3,
-	language = $4,
-	homepage = $5,
-	forks_count = $6,
-	network_count = $7,
-	open_issues_count = $8,
-	stargazers_count = $9,
-	subscribers_count = $10,
-	watchers_count = $11,
-	size = $12,
-	fork = $13,
-	default_branch = $14,
-	master_branch = $15,
-	created_at = $16,
-	pushed_at=$17,
-	updated_at = $18,
-	refreshed_at = $19
-where owner=$1 and name=$2`, repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage,
-				repo.ForksCount, repo.NetworkCount, repo.OpenIssuesCount, repo.StargazersCount, repo.SubscribersCount,
-				repo.WatchersCount, repo.Size, *repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
-				pushedAt, repo.UpdatedAt.Time, now)
+			updated, err := a.queries.UpdateRepo(ctx, toUpdateRepoParams(params))
 			if err != nil {
 				log.Println(err)
 				return err
 			}
-			if n, err := r.RowsAffected(); err != nil {
-				log.Println(err)
-				return err
-			} else if n == 0 {
-				_, err = a.db.Exec(`INSERT INTO agg_repo VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
-					repo.Owner.Login, repo.Name, repo.Description, repo.Language, repo.Homepage,
-					repo.ForksCount, repo.NetworkCount, repo.OpenIssuesCount, repo.StargazersCount, repo.SubscribersCount,
-					repo.WatchersCount, repo.Size, *repo.Fork, repo.DefaultBranch, repo.MasterBranch, repo.CreatedAt.Time,
-					pushedAt, repo.UpdatedAt.Time, now)
-				if err != nil {
+			if updated == 0 {
+				if err := a.queries.InsertRepo(ctx, params); err != nil {
 					log.Println("Error executing replace into agg_repo", err)
 					return err
 				}
@@ -75,13 +48,15 @@ where owner=$1 and name=$2`, repo.Owner.Login, repo.Name, repo.Description, repo
 		}
 		opts.Page = resp.NextPage
 	}
-	result, err := a.db.Exec(`DELETE FROM agg_repo WHERE owner=$1 and refreshed_at < $2`, user, now)
+	deleted, err := a.queries.DeleteReposByOwnerBefore(ctx, sqlc.DeleteReposByOwnerBeforeParams{
+		Owner:       user,
+		RefreshedAt: sql.NullTime{Time: now, Valid: true},
+	})
 	if err != nil {
 		log.Printf("Error deleting out of date repos for user %v: %v", user, err)
 		return err
 	}
-	num, _ := result.RowsAffected()
-	log.Printf("Deleted %v repos that user %v was missing", num, user)
+	log.Printf("Deleted %v repos that user %v was missing", deleted, user)
 	return nil
 }
 
@@ -148,56 +123,31 @@ start:
 		log.Println("Failed getting user details for", user, ":", err)
 		return err
 	}
-	r, err := a.db.Exec(`UPDATE agg_user
-set login = $1,
-	email = $2,
-	name = $3,
-	location = $4,
-	hireable = $5,
-	blog = $6,
-	bio = $7,
-	followers = $8,
-	following = $9,
-	public_repos = $10,
-	public_gists = $11,
-	avatar_url = $12,
-	type = $13,
-	disk_usage = $14,
-	created_at = $15,
-	updated_at = $16,
-	refreshed_at = $17,
-    company = $18
-where login=$1`, u.Login, u.Email, u.Name, u.Location, u.Hireable, u.Blog, u.Bio, u.Followers, u.Following,
-		u.PublicRepos, u.PublicGists, u.AvatarURL, u.Type, u.DiskUsage, u.CreatedAt.Time, u.UpdatedAt.Time, time.Now(),
-		u.GetCompany())
+	updateParams, insertParams, err := buildUserParams(u, time.Now())
 	if err != nil {
 		log.Println(err)
 		return err
 	}
-	if n, err := r.RowsAffected(); err != nil {
+	updated, err := a.queries.UpdateUser(context.Background(), updateParams)
+	if err != nil {
 		log.Println(err)
 		return err
-	} else if n == 0 {
-		_, err = a.db.Exec(`INSERT INTO agg_user (
-login, email, name, location, hireable, blog, bio, followers, following, public_repos, public_gists, avatar_url, type,
-                      disk_usage, created_at, updated_at, refreshed_at, company)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`, u.Login, u.Email, u.Name, u.Location, u.Hireable,
-			u.Blog, u.Bio, u.Followers, u.Following, u.PublicRepos, u.PublicGists, u.AvatarURL, u.Type, u.DiskUsage,
-			u.CreatedAt.Time, u.UpdatedAt.Time, time.Now(), u.GetCompany())
-		if err != nil {
+	}
+	if updated == 0 {
+		if err := a.queries.InsertUser(context.Background(), insertParams); err != nil {
 			log.Println(err)
 			return err
 		}
 	}
-	return err
+	return nil
 }
 
 func (a *Aggregator) insertRunLog() error {
-	_, err := a.db.Exec(`INSERT INTO agg_meta VALUES ($1)`, time.Now())
-	if err != nil {
+	if err := a.queries.InsertRunLog(context.Background(), time.Now()); err != nil {
 		log.Println("Error executing insert", err)
+		return err
 	}
-	return err
+	return nil
 }
 
 func shouldTryAgain(r *github.Response) bool {
@@ -208,4 +158,133 @@ func shouldTryAgain(r *github.Response) bool {
 		return true
 	}
 	return false
+}
+
+func buildRepoParams(repo *github.Repository, refreshedAt time.Time) (sqlc.InsertRepoParams, error) {
+	if repo.Owner == nil || repo.Owner.Login == nil || *repo.Owner.Login == "" {
+		return sqlc.InsertRepoParams{}, fmt.Errorf("repo missing owner")
+	}
+	if repo.Name == nil || *repo.Name == "" {
+		return sqlc.InsertRepoParams{}, fmt.Errorf("repo missing name")
+	}
+	return sqlc.InsertRepoParams{
+		Owner:            repo.GetOwner().GetLogin(),
+		Name:             repo.GetName(),
+		Description:      nullStringFromPtr(repo.Description),
+		Language:         nullStringFromPtr(repo.Language),
+		Homepage:         nullStringFromPtr(repo.Homepage),
+		ForksCount:       nullInt32FromPtr(repo.ForksCount),
+		NetworkCount:     nullInt32FromPtr(repo.NetworkCount),
+		OpenIssuesCount:  nullInt32FromPtr(repo.OpenIssuesCount),
+		StargazersCount:  nullInt32FromPtr(repo.StargazersCount),
+		SubscribersCount: nullInt32FromPtr(repo.SubscribersCount),
+		WatchersCount:    nullInt32FromPtr(repo.WatchersCount),
+		Size:             nullInt32FromPtr(repo.Size),
+		Fork:             nullBoolFromPtr(repo.Fork),
+		DefaultBranch:    nullStringFromPtr(repo.DefaultBranch),
+		MasterBranch:     nullStringFromPtr(repo.MasterBranch),
+		CreatedAt:        nullTimeFromTimestamp(repo.CreatedAt),
+		PushedAt:         nullTimeFromTimestamp(repo.PushedAt),
+		UpdatedAt:        nullTimeFromTimestamp(repo.UpdatedAt),
+		RefreshedAt:      sql.NullTime{Time: refreshedAt, Valid: true},
+	}, nil
+}
+
+func toUpdateRepoParams(p sqlc.InsertRepoParams) sqlc.UpdateRepoParams {
+	return sqlc.UpdateRepoParams{
+		Owner:            p.Owner,
+		Name:             p.Name,
+		Description:      p.Description,
+		Language:         p.Language,
+		Homepage:         p.Homepage,
+		ForksCount:       p.ForksCount,
+		NetworkCount:     p.NetworkCount,
+		OpenIssuesCount:  p.OpenIssuesCount,
+		StargazersCount:  p.StargazersCount,
+		SubscribersCount: p.SubscribersCount,
+		WatchersCount:    p.WatchersCount,
+		Size:             p.Size,
+		Fork:             p.Fork,
+		DefaultBranch:    p.DefaultBranch,
+		MasterBranch:     p.MasterBranch,
+		CreatedAt:        p.CreatedAt,
+		PushedAt:         p.PushedAt,
+		UpdatedAt:        p.UpdatedAt,
+		RefreshedAt:      p.RefreshedAt,
+	}
+}
+
+func buildUserParams(u *github.User, refreshedAt time.Time) (sqlc.UpdateUserParams, sqlc.InsertUserParams, error) {
+	if u.Login == nil || *u.Login == "" {
+		return sqlc.UpdateUserParams{}, sqlc.InsertUserParams{}, fmt.Errorf("user missing login")
+	}
+	update := sqlc.UpdateUserParams{
+		Login:       u.GetLogin(),
+		Email:       nullStringFromPtr(u.Email),
+		Name:        nullStringFromPtr(u.Name),
+		Location:    nullStringFromPtr(u.Location),
+		Hireable:    nullBoolFromPtr(u.Hireable),
+		Blog:        nullStringFromPtr(u.Blog),
+		Bio:         nullStringFromPtr(u.Bio),
+		Followers:   nullInt32FromPtr(u.Followers),
+		Following:   nullInt32FromPtr(u.Following),
+		PublicRepos: nullInt32FromPtr(u.PublicRepos),
+		PublicGists: nullInt32FromPtr(u.PublicGists),
+		AvatarUrl:   nullStringFromPtr(u.AvatarURL),
+		Type:        nullStringFromPtr(u.Type),
+		DiskUsage:   nullInt32FromPtr(u.DiskUsage),
+		CreatedAt:   nullTimeFromTimestamp(u.CreatedAt),
+		UpdatedAt:   nullTimeFromTimestamp(u.UpdatedAt),
+		RefreshedAt: sql.NullTime{Time: refreshedAt, Valid: true},
+		Company:     u.GetCompany(),
+	}
+	insert := sqlc.InsertUserParams{
+		Login:       update.Login,
+		Email:       update.Email,
+		Name:        update.Name,
+		Location:    update.Location,
+		Hireable:    update.Hireable,
+		Blog:        update.Blog,
+		Bio:         update.Bio,
+		Followers:   update.Followers,
+		Following:   update.Following,
+		PublicRepos: update.PublicRepos,
+		PublicGists: update.PublicGists,
+		AvatarUrl:   update.AvatarUrl,
+		Type:        update.Type,
+		DiskUsage:   update.DiskUsage,
+		CreatedAt:   update.CreatedAt,
+		UpdatedAt:   update.UpdatedAt,
+		RefreshedAt: update.RefreshedAt,
+		Company:     update.Company,
+	}
+	return update, insert, nil
+}
+
+func nullStringFromPtr(value *string) sql.NullString {
+	if value == nil {
+		return sql.NullString{}
+	}
+	return sql.NullString{String: *value, Valid: true}
+}
+
+func nullInt32FromPtr(value *int) sql.NullInt32 {
+	if value == nil {
+		return sql.NullInt32{}
+	}
+	return sql.NullInt32{Int32: int32(*value), Valid: true}
+}
+
+func nullBoolFromPtr(value *bool) sql.NullBool {
+	if value == nil {
+		return sql.NullBool{}
+	}
+	return sql.NullBool{Bool: *value, Valid: true}
+}
+
+func nullTimeFromTimestamp(ts *github.Timestamp) sql.NullTime {
+	if ts == nil {
+		return sql.NullTime{}
+	}
+	return sql.NullTime{Time: ts.Time, Valid: true}
 }

@@ -1,26 +1,31 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/google/go-github/v52/github"
 	"github.com/jakecoffman/stldevs"
+	"github.com/jakecoffman/stldevs/db/sqlc"
 )
 
-// LastRun returns the last time github was scraped
+// LastRun returns the last time github was scraped.
 var LastRun = func() time.Time {
-	var lastRun time.Time
-	err := db.Get(&lastRun, queryLastRun)
+	if queries == nil {
+		return time.Time{}
+	}
+	lastRun, err := queries.LastRun(context.Background())
 	if err == sql.ErrNoRows {
-		return lastRun
+		return time.Time{}
 	}
 	if err != nil {
-		log.Println(err)
-		return lastRun
+		log.Println("LastRun query failed:", err)
+		return time.Time{}
 	}
 	return lastRun
 }
@@ -32,13 +37,26 @@ type LanguageCount struct {
 }
 
 var PopularLanguages = func() []LanguageCount {
-	langs := []LanguageCount{}
-	err := db.Select(&langs, queryPopularLanguages)
-	if err != nil {
-		log.Println(err)
+	if queries == nil {
 		return nil
 	}
-	return langs
+	rows, err := queries.PopularLanguages(context.Background())
+	if err != nil {
+		log.Println("PopularLanguages query failed:", err)
+		return nil
+	}
+	counts := make([]LanguageCount, 0, len(rows))
+	for _, row := range rows {
+		if !row.Language.Valid {
+			continue
+		}
+		counts = append(counts, LanguageCount{
+			Language: row.Language.String,
+			Count:    int(row.RepoCount),
+			Users:    int(row.UserCount),
+		})
+	}
+	return counts
 }
 
 type DevCount struct {
@@ -54,31 +72,35 @@ type DevCount struct {
 }
 
 var PopularDevs = func(devType, company string) []DevCount {
-	devs := []DevCount{}
-	arguments := []interface{}{devType}
-
-	query := `select login, name, company, avatar_url, followers, public_repos, stars, forks, type
-		from agg_user
-		join (
-			select owner, sum(stargazers_count) as stars, sum(forks_count) as forks
-			from agg_repo
-			group by owner
-		) repo ON (repo.owner=agg_user.login)
-		where type=$1
-		and hide is false
-		`
-
-	if company != "" {
-		query += "and LOWER(company) like LOWER($2)\n"
-		arguments = append(arguments, "%"+company+"%")
-	}
-
-	query += `order by stars desc limit 100`
-
-	err := db.Select(&devs, query, arguments...)
-	if err != nil {
-		log.Println(err)
+	if queries == nil {
 		return nil
+	}
+	params := sqlc.PopularDevsParams{
+		DevType: sql.NullString{String: devType, Valid: devType != ""},
+	}
+	if company != "" {
+		params.CompanyPattern = sql.NullString{String: "%" + company + "%", Valid: true}
+	} else {
+		params.CompanyPattern = sql.NullString{Valid: false}
+	}
+	rows, err := queries.PopularDevs(context.Background(), params)
+	if err != nil {
+		log.Println("PopularDevs query failed:", err)
+		return nil
+	}
+	devs := make([]DevCount, 0, len(rows))
+	for _, row := range rows {
+		devs = append(devs, DevCount{
+			Login:       row.Login,
+			Company:     row.Company,
+			AvatarUrl:   nullStringValue(row.AvatarUrl),
+			Followers:   formatInt(row.Followers),
+			PublicRepos: formatInt(row.PublicRepos),
+			Name:        nullStringPtr(row.Name),
+			Stars:       int(row.Stars),
+			Forks:       int(row.Forks),
+			Type:        row.Type.String,
+		})
 	}
 	return devs
 }
@@ -100,47 +122,42 @@ var languageCache = struct {
 }
 
 var Language = func(name string) []*LanguageResult {
+	if queries == nil {
+		return nil
+	}
 	run := LastRun()
 	languageCache.RLock()
 	result, found := languageCache.result[name]
 	if found && run.Equal(languageCache.lastRun) {
-		defer languageCache.RUnlock()
+		languageCache.RUnlock()
 		return result
 	}
 	languageCache.RUnlock()
 	languageCache.Lock()
 	defer languageCache.Unlock()
 
-	var repos []struct {
-		stldevs.Repository
-		Count  int
-		Rownum int
-		Login  string  // not used, just here to satisfy sqlx
-		User   *string `json:"user"`
-		Type   string  `json:"type"`
-	}
-	err := db.Select(&repos, queryLanguage, name)
+	rows, err := queries.LanguageLeaders(context.Background(), name)
 	if err != nil {
-		log.Println(err)
+		log.Println("LanguageLeaders query failed:", err)
 		return nil
 	}
-	results := []*LanguageResult{}
 	var cursor *LanguageResult
-	for _, repo := range repos {
-		if cursor == nil || cursor.Owner != *repo.Owner {
+	results := make([]*LanguageResult, 0, len(rows))
+	for _, row := range rows {
+		repo := repoFromLanguageRow(row)
+		if cursor == nil || cursor.Owner != row.Owner {
 			cursor = &LanguageResult{
-				Owner: *repo.Owner,
-				Repos: []stldevs.Repository{repo.Repository},
-				Count: repo.Count,
-				Name:  repo.User,
-				Type:  repo.Type,
+				Owner: row.Owner,
+				Repos: []stldevs.Repository{repo},
+				Count: int(row.TotalStars),
+				Name:  nullStringPtr(row.DisplayName),
+				Type:  row.Type.String,
 			}
 			results = append(results, cursor)
-		} else {
-			cursor.Repos = append(cursor.Repos, repo.Repository)
+			continue
 		}
+		cursor.Repos = append(cursor.Repos, repo)
 	}
-
 	languageCache.result[name] = results
 	languageCache.lastRun = run
 	return results
@@ -155,13 +172,15 @@ type StlDevsUser struct {
 }
 
 func GetUser(login string) (*StlDevsUser, error) {
-	user := &StlDevsUser{}
-	err := db.Get(user, queryUser, login)
+	if queries == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+	row, err := queries.GetUser(context.Background(), login)
 	if err != nil {
 		log.Println("Error querying user", login, err)
 		return nil, err
 	}
-	return user, err
+	return userFromRow(row), nil
 }
 
 type ProfileData struct {
@@ -170,19 +189,17 @@ type ProfileData struct {
 }
 
 var Profile = func(name string) (*ProfileData, error) {
-	// TODO hide the user when other users try to see them but they are set to "Hide" in db
-
-	// There are 2 queries to do so run them concurrently
+	if queries == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
 	userCh := make(chan *StlDevsUser)
 	reposCh := make(chan map[string][]stldevs.Repository)
 	defer close(userCh)
 	defer close(reposCh)
 
 	go func() {
-		user := &StlDevsUser{}
-		err := db.Get(user, queryUser, name)
+		user, err := GetUser(name)
 		if err != nil {
-			log.Println("Error querying profile", name, err)
 			userCh <- nil
 			return
 		}
@@ -190,74 +207,97 @@ var Profile = func(name string) (*ProfileData, error) {
 	}()
 
 	go func() {
-		repos := []stldevs.Repository{}
-		err := db.Select(&repos, queryRepoForUser, name)
+		rows, err := queries.ReposForUser(context.Background(), name)
 		if err != nil {
-			log.Println("Error querying repo for user", name)
+			log.Println("Error querying repo for user", name, err)
 			reposCh <- nil
 			return
 		}
-
-		reposByLang := map[string][]stldevs.Repository{}
-		for _, repo := range repos {
-			var lang string
+		repos := map[string][]stldevs.Repository{}
+		for _, repo := range convertAggRepos(rows) {
+			lang := ""
 			if repo.Language != nil {
 				lang = *repo.Language
 			}
-			if _, ok := reposByLang[lang]; !ok {
-				reposByLang[lang] = []stldevs.Repository{repo}
-				continue
-			}
-			reposByLang[lang] = append(reposByLang[lang], repo)
+			repos[lang] = append(repos[lang], repo)
 		}
-
-		reposCh <- reposByLang
+		reposCh <- repos
 	}()
 
 	user := <-userCh
 	repoMap := <-reposCh
-
 	if user == nil || repoMap == nil {
 		return nil, fmt.Errorf("not found")
 	}
 
 	for _, repos := range repoMap {
 		for _, repo := range repos {
-			user.Stars += *repo.StargazersCount
-			user.Forks += *repo.ForksCount
+			if repo.StargazersCount != nil {
+				user.Stars += *repo.StargazersCount
+			}
+			if repo.ForksCount != nil {
+				user.Forks += *repo.ForksCount
+			}
 		}
 	}
 
-	return &ProfileData{user, repoMap}, nil
+	return &ProfileData{User: user, Repos: repoMap}, nil
 }
 
 var SearchUsers = func(term string) []StlDevsUser {
-	query := "%" + term + "%"
-	users := []StlDevsUser{}
-	if err := db.Select(&users, querySearchUsers, query); err != nil {
-		log.Println(err)
+	if queries == nil {
 		return nil
+	}
+	pattern := "%" + term + "%"
+	rows, err := queries.SearchUsers(context.Background(), pattern)
+	if err != nil {
+		log.Println("SearchUsers query failed:", err)
+		return nil
+	}
+	users := make([]StlDevsUser, 0, len(rows))
+	for _, row := range rows {
+		user := &StlDevsUser{
+			User: &github.User{
+				Login:       stringPtr(row.Login),
+				Name:        nullStringPtr(row.Name),
+				Followers:   nullIntPtr(row.Followers),
+				PublicRepos: nullIntPtr(row.PublicRepos),
+				PublicGists: nullIntPtr(row.PublicGists),
+				AvatarURL:   nullStringPtr(row.AvatarUrl),
+				Type:        nullStringPtr(row.Type),
+			},
+			Hide:    row.Hide,
+			IsAdmin: row.IsAdmin,
+			Stars:   int(row.Stars),
+			Forks:   int(row.Forks),
+		}
+		users = append(users, *user)
 	}
 	return users
 }
 
 var SearchRepos = func(term string) []stldevs.Repository {
-	query := "%" + term + "%"
-	repos := []stldevs.Repository{}
-	if err := db.Select(&repos, querySearchRepos, query); err != nil {
-		log.Println(err)
+	if queries == nil {
 		return nil
 	}
-	return repos
+	pattern := "%" + term + "%"
+	rows, err := queries.SearchRepos(context.Background(), pattern)
+	if err != nil {
+		log.Println("SearchRepos query failed:", err)
+		return nil
+	}
+	return convertAggRepos(rows)
 }
 
 var HideUser = func(hide bool, login string) error {
-	result, err := db.Exec("update agg_user set hide=$1 where login=$2", hide, login)
+	if queries == nil {
+		return fmt.Errorf("database not initialized")
+	}
+	affected, err := queries.HideUser(context.Background(), sqlc.HideUserParams{Hide: hide, Login: login})
 	if err != nil {
-		log.Println(err)
+		log.Println("HideUser update failed:", err)
 		return err
 	}
-	affected, _ := result.RowsAffected()
 	if affected != 1 {
 		return fmt.Errorf("affected no users")
 	}
@@ -265,17 +305,147 @@ var HideUser = func(hide bool, login string) error {
 }
 
 var Delete = func(login string) error {
-	_, err := db.Exec("delete from agg_repo where owner=$1", login)
-	if err != nil {
-		log.Println(err)
+	if queries == nil {
+		return fmt.Errorf("database not initialized")
+	}
+	if err := queries.DeleteReposByOwner(context.Background(), login); err != nil {
+		log.Println("Failed deleting repos for", login, err)
 		return err
 	}
-
-	_, err = db.Exec("delete from agg_user where login=$1", login)
-	if err != nil {
-		log.Println(err)
+	if err := queries.DeleteUser(context.Background(), login); err != nil {
+		log.Println("Failed deleting user", login, err)
 		return err
 	}
+	return nil
+}
 
-	return err
+func userFromRow(row sqlc.GetUserRow) *StlDevsUser {
+	company := row.Company
+	ghUser := &github.User{
+		Login:       stringPtr(row.Login),
+		Email:       nullStringPtr(row.Email),
+		Name:        nullStringPtr(row.Name),
+		Location:    nullStringPtr(row.Location),
+		Hireable:    nullBoolPtr(row.Hireable),
+		Blog:        nullStringPtr(row.Blog),
+		Bio:         nullStringPtr(row.Bio),
+		Followers:   nullIntPtr(row.Followers),
+		Following:   nullIntPtr(row.Following),
+		PublicRepos: nullIntPtr(row.PublicRepos),
+		PublicGists: nullIntPtr(row.PublicGists),
+		AvatarURL:   nullStringPtr(row.AvatarUrl),
+		Type:        nullStringPtr(row.Type),
+		DiskUsage:   nullIntPtr(row.DiskUsage),
+		CreatedAt:   githubTimestampPtr(row.CreatedAt),
+		UpdatedAt:   githubTimestampPtr(row.UpdatedAt),
+		Company:     &company,
+	}
+	return &StlDevsUser{
+		User:    ghUser,
+		Hide:    row.Hide,
+		IsAdmin: row.IsAdmin,
+	}
+}
+
+func convertAggRepos(rows []sqlc.AggRepo) []stldevs.Repository {
+	repos := make([]stldevs.Repository, 0, len(rows))
+	for _, row := range rows {
+		repos = append(repos, repoFromAggRow(row))
+	}
+	return repos
+}
+
+func repoFromAggRow(row sqlc.AggRepo) stldevs.Repository {
+	return stldevs.Repository{
+		Owner:            stringPtr(row.Owner),
+		Name:             stringPtr(row.Name),
+		Description:      nullStringPtr(row.Description),
+		Language:         nullStringPtr(row.Language),
+		Homepage:         nullStringPtr(row.Homepage),
+		ForksCount:       nullIntPtr(row.ForksCount),
+		NetworkCount:     nullIntPtr(row.NetworkCount),
+		OpenIssuesCount:  nullIntPtr(row.OpenIssuesCount),
+		StargazersCount:  nullIntPtr(row.StargazersCount),
+		SubscribersCount: nullIntPtr(row.SubscribersCount),
+		WatchersCount:    nullIntPtr(row.WatchersCount),
+		Size:             nullIntPtr(row.Size),
+		Fork:             nullBoolPtr(row.Fork),
+		DefaultBranch:    nullStringPtr(row.DefaultBranch),
+		MasterBranch:     nullStringPtr(row.MasterBranch),
+		CreatedAt:        nullTimePtr(row.CreatedAt),
+		PushedAt:         nullTimePtr(row.PushedAt),
+		UpdatedAt:        nullTimePtr(row.UpdatedAt),
+		RefreshedAt:      nullTimePtr(row.RefreshedAt),
+	}
+}
+
+func repoFromLanguageRow(row sqlc.LanguageLeadersRow) stldevs.Repository {
+	return stldevs.Repository{
+		Owner:           stringPtr(row.Owner),
+		Name:            stringPtr(row.Name),
+		Description:     nullStringPtr(row.Description),
+		ForksCount:      nullIntPtr(row.ForksCount),
+		StargazersCount: nullIntPtr(row.StargazersCount),
+		WatchersCount:   nullIntPtr(row.WatchersCount),
+		Fork:            nullBoolPtr(row.Fork),
+	}
+}
+
+func nullStringPtr(ns sql.NullString) *string {
+	if !ns.Valid {
+		return nil
+	}
+	value := ns.String
+	return &value
+}
+
+func nullStringValue(ns sql.NullString) string {
+	if !ns.Valid {
+		return ""
+	}
+	return ns.String
+}
+
+func nullBoolPtr(nb sql.NullBool) *bool {
+	if !nb.Valid {
+		return nil
+	}
+	value := nb.Bool
+	return &value
+}
+
+func nullIntPtr(ni sql.NullInt32) *int {
+	if !ni.Valid {
+		return nil
+	}
+	value := int(ni.Int32)
+	return &value
+}
+
+func nullTimePtr(nt sql.NullTime) *time.Time {
+	if !nt.Valid {
+		return nil
+	}
+	return &nt.Time
+}
+
+func githubTimestampPtr(nt sql.NullTime) *github.Timestamp {
+	if !nt.Valid {
+		return nil
+	}
+	return &github.Timestamp{Time: nt.Time}
+}
+
+func stringPtr(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func formatInt(ni sql.NullInt32) string {
+	if !ni.Valid {
+		return ""
+	}
+	return strconv.FormatInt(int64(ni.Int32), 10)
 }
