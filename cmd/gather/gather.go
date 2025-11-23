@@ -1,14 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"log"
+	"os"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jakecoffman/stldevs/aggregator"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/migrations"
-	"github.com/jmoiron/sqlx"
-	"os"
 )
 
 func main() {
@@ -24,11 +24,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := sqlx.Connect("pgx", cfg.Postgres)
+	db, err := sql.Open("pgx", cfg.Postgres)
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.MapperFunc(config.CamelToSnake)
+	defer db.Close()
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
 
 	log.Println("MIGRATE")
 	if err = migrations.Migrate(db); err != nil {

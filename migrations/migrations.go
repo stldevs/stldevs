@@ -1,12 +1,11 @@
 package migrations
 
 import (
+	"database/sql"
 	"log"
-
-	"github.com/jmoiron/sqlx"
 )
 
-type migration func(*sqlx.DB) error
+type migration func(*sql.DB) error
 
 var migrations []migration
 
@@ -18,7 +17,7 @@ func init() {
 	}
 }
 
-func Migrate(db *sqlx.DB) error {
+func Migrate(db *sql.DB) error {
 	for _, migration := range migrations {
 		if err := migration(db); err != nil {
 			return err
@@ -31,7 +30,7 @@ type migrationRecord struct {
 	Name string
 }
 
-func genesis(db *sqlx.DB) error {
+func genesis(db *sql.DB) error {
 	tables := []string{
 		createMeta,
 		createUser,
@@ -49,25 +48,27 @@ func genesis(db *sqlx.DB) error {
 	return nil
 }
 
-func organizations(db *sqlx.DB) error {
-	m := []migrationRecord{}
-	if err := db.Select(&m, selectMigrations, "organizations"); err != nil {
-		log.Println(err)
-		return err
-	}
-	if len(m) == 1 {
-		return nil
-	}
-	tx, err := db.Beginx()
+func organizations(db *sql.DB) error {
+	const name = "organizations"
+	apply, err := shouldApply(db, name)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
+	if !apply {
+		return nil
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	defer tx.Rollback()
 	if _, err := tx.Exec(migrationOrganizations); err != nil {
 		log.Println(err)
 		return err
 	}
-	if _, err := tx.Exec(insertMigration, "organizations"); err != nil {
+	if _, err := tx.Exec(insertMigration, name); err != nil {
 		log.Println(err)
 		return err
 	}
@@ -79,7 +80,7 @@ func organizations(db *sqlx.DB) error {
 	return nil
 }
 
-func userEnhancements(db *sqlx.DB) error {
+func userEnhancements(db *sql.DB) error {
 	_, err := db.Exec("alter table agg_user add column if not exists hide boolean default false")
 	if err != nil {
 		log.Println(err)
@@ -111,4 +112,16 @@ func userEnhancements(db *sqlx.DB) error {
 		return err
 	}
 	return nil
+}
+
+func shouldApply(db *sql.DB, name string) (bool, error) {
+	var existing migrationRecord
+	err := db.QueryRow(selectMigrations, name).Scan(&existing.Name)
+	if err == sql.ErrNoRows {
+		return true, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return false, nil
 }

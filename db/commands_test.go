@@ -14,10 +14,10 @@ func init() {
 	Connect(&config.Config{
 		Postgres: "postgres://postgres:pw@127.0.0.1:5432/postgres",
 	})
-	db.MustExec("drop table if exists agg_meta")
-	db.MustExec("drop table if exists agg_repo")
-	db.MustExec("drop table if exists agg_user")
-	db.MustExec("drop table if exists migrations")
+	mustExec("drop table if exists agg_meta")
+	mustExec("drop table if exists agg_repo")
+	mustExec("drop table if exists agg_user")
+	mustExec("drop table if exists migrations")
 	Migrate()
 }
 
@@ -32,14 +32,14 @@ func TestLastRun(t *testing.T) {
 	if v := LastRun(); !v.Equal(time.Time{}) {
 		t.Errorf("Time should have been zero value, got %v", v)
 	}
-	db.MustExec("insert into agg_meta values (CURRENT_TIMESTAMP)")
+	mustExec("insert into agg_meta values (CURRENT_TIMESTAMP)")
 	if v := LastRun(); !v.After(time.Time{}) {
 		t.Errorf("Time should have been greater than zero value, got %v", v)
 	}
 }
 
 func TestHideUser(t *testing.T) {
-	db.MustExec("insert into agg_user (login, company, hide) values ('bob', '', false) on conflict do nothing")
+	mustExec("insert into agg_user (login, company, hide) values ('bob', '', false) on conflict do nothing")
 	if err := HideUser(true, "bob"); err != nil {
 		t.Fatal(err)
 	}
@@ -76,11 +76,11 @@ func TestPopularDevsCompanyFilter(t *testing.T) {
 		login   = "popular-dev"
 		company = "Acme Corp"
 	)
-	db.MustExec(`
+	mustExec(`
 		INSERT INTO agg_user (login, company, hide, type)
 		VALUES ($1, $2, false, 'User')
 	`, login, company)
-	db.MustExec(`
+	mustExec(`
 		INSERT INTO agg_repo (owner, name, fork, stargazers_count, forks_count, language)
 		VALUES ($1, 'repo', false, 5, 1, 'Go')
 	`, login)
@@ -103,5 +103,11 @@ func resetTables(t *testing.T) {
 	}
 	if _, err := db.Exec("DELETE FROM agg_user"); err != nil {
 		t.Fatalf("failed to reset agg_user: %v", err)
+	}
+}
+
+func mustExec(query string, args ...any) {
+	if _, err := db.Exec(query, args...); err != nil {
+		panic(err)
 	}
 }

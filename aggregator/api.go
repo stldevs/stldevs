@@ -2,13 +2,13 @@ package aggregator
 
 import (
 	"context"
+	"database/sql"
 	_ "embed"
 	"log"
 	"strings"
 
 	"github.com/google/go-github/v52/github"
 	"github.com/jakecoffman/stldevs/db/sqlc"
-	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
 )
 
@@ -21,7 +21,7 @@ type Aggregator struct {
 	running bool
 }
 
-func New(db *sqlx.DB, githubKey string) *Aggregator {
+func New(db *sql.DB, githubKey string) *Aggregator {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: githubKey})
 	client := oauth2.NewClient(context.Background(), ts)
 	return &Aggregator{client: github.NewClient(client), queries: sqlc.New(db)}
