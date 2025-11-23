@@ -1,8 +1,6 @@
 module github.com/jakecoffman/stldevs
 
-go 1.23.0
-
-toolchain go1.24.1
+go 1.25.4
 
 require (
 	github.com/dghubble/gologin/v2 v2.5.0

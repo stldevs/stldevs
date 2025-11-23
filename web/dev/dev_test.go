@@ -225,7 +225,7 @@ func TestDelete(t *testing.T) {
 
 	db.Delete = func(login string) error {
 		if login != "alice" {
-			t.Errorf(login)
+			t.Errorf("%s", login)
 		}
 		return nil
 	}
@@ -255,7 +255,7 @@ func TestDeleteAccessDenied(t *testing.T) {
 
 	db.Delete = func(login string) error {
 		if login != "alice" {
-			t.Errorf(login)
+			t.Errorf("%s", login)
 		}
 		return nil
 	}
