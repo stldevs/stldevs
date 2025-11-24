@@ -39,12 +39,28 @@ var PopularLanguages = func() []sqlc.PopularLanguagesRow {
 	return rows
 }
 
-var PopularDevs = func(devType, company string) []sqlc.PopularDevsRow {
+var PopularDevs = func(devType, company, sortBy string) []sqlc.PopularDevsRow {
 	if queries == nil {
 		return nil
 	}
+	// Default to stars if sortBy is empty or invalid
+	if sortBy == "" {
+		sortBy = "stars"
+	}
+	// Validate sortBy parameter
+	validSorts := map[string]bool{
+		"stars":        true,
+		"forks":        true,
+		"followers":    true,
+		"public_repos": true,
+	}
+	if !validSorts[sortBy] {
+		sortBy = "stars"
+	}
+	
 	params := sqlc.PopularDevsParams{
 		DevType: sql.NullString{String: devType, Valid: devType != ""},
+		SortBy:  sortBy,
 	}
 	if company != "" {
 		params.CompanyPattern = sql.NullString{String: "%" + company + "%", Valid: true}

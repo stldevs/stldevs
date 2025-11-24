@@ -218,13 +218,18 @@ WHERE agg_user.type = $1
         $2::text IS NULL OR
         LOWER(agg_user.company) LIKE LOWER($2::text)
     )
-ORDER BY repo.stars DESC
+ORDER BY
+    CASE WHEN $3 = 'stars' THEN repo.stars END DESC,
+    CASE WHEN $3 = 'forks' THEN repo.forks END DESC,
+    CASE WHEN $3 = 'followers' THEN agg_user.followers END DESC,
+    CASE WHEN $3 = 'public_repos' THEN agg_user.public_repos END DESC
 LIMIT 100
 `
 
 type PopularDevsParams struct {
 	DevType        sql.NullString `json:"dev_type"`
 	CompanyPattern sql.NullString `json:"company_pattern"`
+	SortBy         interface{}    `json:"sort_by"`
 }
 
 type PopularDevsRow struct {
@@ -240,7 +245,7 @@ type PopularDevsRow struct {
 }
 
 func (q *Queries) PopularDevs(ctx context.Context, arg PopularDevsParams) ([]PopularDevsRow, error) {
-	rows, err := q.db.QueryContext(ctx, popularDevs, arg.DevType, arg.CompanyPattern)
+	rows, err := q.db.QueryContext(ctx, popularDevs, arg.DevType, arg.CompanyPattern, arg.SortBy)
 	if err != nil {
 		return nil, err
 	}
