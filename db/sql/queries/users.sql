@@ -21,7 +21,12 @@ WHERE agg_user.type = sqlc.arg(dev_type)
         sqlc.narg(company_pattern)::text IS NULL OR
         LOWER(agg_user.company) LIKE LOWER(sqlc.narg(company_pattern)::text)
     )
-ORDER BY repo.stars DESC
+ORDER BY
+    CASE WHEN sqlc.arg(sort_by)::text = 'stars' THEN repo.stars END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'forks' THEN repo.forks END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'followers' THEN agg_user.followers END DESC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'public_repos' THEN agg_user.public_repos END DESC,
+    repo.stars DESC
 LIMIT 100;
 
 

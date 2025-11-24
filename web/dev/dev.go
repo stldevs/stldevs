@@ -21,6 +21,7 @@ var Routes = []crud.Spec{{
 			"q":       crud.String().Description("Search query"),
 			"type":    crud.String().Description("Type of dev"),
 			"company": crud.String().Description("Company"),
+			"sort":    crud.String().Description("Sort by: stars (default), forks, followers, or public_repos"),
 		}),
 	},
 }, {
@@ -67,12 +68,14 @@ type ListQuery struct {
 	Q       string `form:"q"`
 	Type    string `form:"type"`
 	Company string `form:"company"`
+	Sort    string `form:"sort"`
 }
 
 func List(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	typ := r.URL.Query().Get("type")
 	company := r.URL.Query().Get("company")
+	sort := r.URL.Query().Get("sort")
 
 	if (q == "" && typ == "") || (q != "" && typ != "") {
 		http.Error(w, "provide either the type query parameter or the q query parameter", 400)
@@ -84,7 +87,7 @@ func List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if listing := db.PopularDevs(typ, company); listing == nil {
+	if listing := db.PopularDevs(typ, company, sort); listing == nil {
 		http.Error(w, "Failed to list", 500)
 	} else {
 		jsonResponse(w, 200, listing)
