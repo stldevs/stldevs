@@ -219,17 +219,18 @@ WHERE agg_user.type = $1
         LOWER(agg_user.company) LIKE LOWER($2::text)
     )
 ORDER BY
-    CASE WHEN $3 = 'stars' THEN repo.stars END DESC,
-    CASE WHEN $3 = 'forks' THEN repo.forks END DESC,
-    CASE WHEN $3 = 'followers' THEN agg_user.followers END DESC,
-    CASE WHEN $3 = 'public_repos' THEN agg_user.public_repos END DESC
+    CASE WHEN $3::text = 'stars' THEN repo.stars END DESC,
+    CASE WHEN $3::text = 'forks' THEN repo.forks END DESC,
+    CASE WHEN $3::text = 'followers' THEN agg_user.followers END DESC,
+    CASE WHEN $3::text = 'public_repos' THEN agg_user.public_repos END DESC,
+    repo.stars DESC
 LIMIT 100
 `
 
 type PopularDevsParams struct {
 	DevType        sql.NullString `json:"dev_type"`
 	CompanyPattern sql.NullString `json:"company_pattern"`
-	SortBy         interface{}    `json:"sort_by"`
+	SortBy         string         `json:"sort_by"`
 }
 
 type PopularDevsRow struct {
