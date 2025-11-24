@@ -11,6 +11,8 @@ import (
 	"github.com/jakecoffman/stldevs/db"
 	"github.com/jakecoffman/stldevs/db/sqlc"
 	"github.com/jakecoffman/stldevs/sessions"
+
+	"github.com/jakecoffman/crud"
 )
 
 func TestList(t *testing.T) {
@@ -264,5 +266,32 @@ func TestDeleteAccessDenied(t *testing.T) {
 
 	if w.Result().StatusCode != 403 {
 		t.Error(w.Result().StatusCode)
+	}
+}
+
+func TestRoutes_NoSession(t *testing.T) {
+	adapter := crud.NewServeMuxAdapter()
+	r := crud.NewRouter("test", "1.0.0", adapter)
+	if err := r.Add(Routes...); err != nil {
+		t.Fatal(err)
+	}
+
+	// Test PATCH
+	w := httptest.NewRecorder()
+	body := bytes.NewBufferString(`{"Hide": true}`)
+	req := httptest.NewRequest("PATCH", "/devs/bob", body)
+	adapter.Engine.ServeHTTP(w, req)
+
+	if w.Code != 401 {
+		t.Errorf("Expected 401, got %d", w.Code)
+	}
+
+	// Test DELETE
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest("DELETE", "/devs/bob", nil)
+	adapter.Engine.ServeHTTP(w, req)
+
+	if w.Code != 401 {
+		t.Errorf("Expected 401, got %d", w.Code)
 	}
 }

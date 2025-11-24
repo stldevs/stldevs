@@ -7,6 +7,7 @@ import (
 	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/stldevs/db"
 	"github.com/jakecoffman/stldevs/sessions"
+	"github.com/jakecoffman/stldevs/web/auth"
 )
 
 var Routes = []crud.Spec{{
@@ -36,6 +37,7 @@ var Routes = []crud.Spec{{
 }, {
 	Method:      "PATCH",
 	Path:        "/devs/{login}",
+	PreHandlers: auth.Authenticated,
 	Handler:     Patch,
 	Description: "Update a dev profile",
 	Tags:        []string{"Devs"},
@@ -50,6 +52,7 @@ var Routes = []crud.Spec{{
 }, {
 	Method:      "DELETE",
 	Path:        "/devs/{login}",
+	PreHandlers: auth.Authenticated,
 	Handler:     Delete,
 	Description: "Delete a dev profile",
 	Tags:        []string{"Devs"},
