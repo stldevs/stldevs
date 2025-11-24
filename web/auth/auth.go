@@ -61,14 +61,14 @@ func New(cfg *config.Config) []crud.Spec {
 	}, {
 		Method:      "GET",
 		Path:        "/me",
-		PreHandlers: []interface{}{Authenticated},
+		PreHandlers: Authenticated,
 		Handler:     me,
 		Description: "Get info about the logged in user",
 		Tags:        loginTags,
 	}, {
 		Method:      "PATCH",
 		Path:        "/me",
-		PreHandlers: []interface{}{Authenticated},
+		PreHandlers: Authenticated,
 		Handler:     updateMe,
 		Description: "Get info about the logged in user",
 		Tags:        loginTags,
