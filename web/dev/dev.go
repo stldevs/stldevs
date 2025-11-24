@@ -1,10 +1,64 @@
 package dev
 
 import (
-	"github.com/gin-gonic/gin"
+	"encoding/json"
+	"net/http"
+
+	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/stldevs/db"
 	"github.com/jakecoffman/stldevs/sessions"
 )
+
+var Routes = []crud.Spec{{
+	Method:      "GET",
+	Path:        "/devs",
+	Handler:     List,
+	Description: "List devs",
+	Tags:        []string{"Devs"},
+	Validate: crud.Validate{
+		Query: crud.Object(map[string]crud.Field{
+			"q":       crud.String().Description("Search query"),
+			"type":    crud.String().Description("Type of dev"),
+			"company": crud.String().Description("Company"),
+		}),
+	},
+}, {
+	Method:      "GET",
+	Path:        "/devs/{login}",
+	Handler:     Get,
+	Description: "Get a dev profile",
+	Tags:        []string{"Devs"},
+	Validate: crud.Validate{
+		Path: crud.Object(map[string]crud.Field{
+			"login": crud.String().Required().Description("GitHub login"),
+		}),
+	},
+}, {
+	Method:      "PATCH",
+	Path:        "/devs/{login}",
+	Handler:     Patch,
+	Description: "Update a dev profile",
+	Tags:        []string{"Devs"},
+	Validate: crud.Validate{
+		Path: crud.Object(map[string]crud.Field{
+			"login": crud.String().Required().Description("GitHub login"),
+		}),
+		Body: crud.Object(map[string]crud.Field{
+			"Hide": crud.Boolean().Required(),
+		}),
+	},
+}, {
+	Method:      "DELETE",
+	Path:        "/devs/{login}",
+	Handler:     Delete,
+	Description: "Delete a dev profile",
+	Tags:        []string{"Devs"},
+	Validate: crud.Validate{
+		Path: crud.Object(map[string]crud.Field{
+			"login": crud.String().Required().Description("GitHub login"),
+		}),
+	},
+}}
 
 type ListQuery struct {
 	Q       string `form:"q"`
@@ -12,36 +66,35 @@ type ListQuery struct {
 	Company string `form:"company"`
 }
 
-func List(c *gin.Context) {
-	var query ListQuery
-	if err := c.BindQuery(&query); err != nil {
+func List(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("q")
+	typ := r.URL.Query().Get("type")
+	company := r.URL.Query().Get("company")
+
+	if (q == "" && typ == "") || (q != "" && typ != "") {
+		http.Error(w, "provide either the type query parameter or the q query parameter", 400)
 		return
 	}
 
-	if (query.Q == "" && query.Type == "") || (query.Q != "" && query.Type != "") {
-		c.AbortWithStatusJSON(400, "provide either the type query parameter or the q query parameter")
+	if q != "" {
+		jsonResponse(w, 200, db.SearchUsers(q))
 		return
 	}
 
-	if query.Q != "" {
-		c.JSON(200, db.SearchUsers(query.Q))
-		return
-	}
-
-	if listing := db.PopularDevs(query.Type, query.Company); listing == nil {
-		c.JSON(500, "Failed to list")
+	if listing := db.PopularDevs(typ, company); listing == nil {
+		http.Error(w, "Failed to list", 500)
 	} else {
-		c.JSON(200, listing)
+		jsonResponse(w, 200, listing)
 	}
 }
 
-func Get(c *gin.Context) {
-	profile, err := db.Profile(c.Params.ByName("login"))
+func Get(w http.ResponseWriter, r *http.Request) {
+	profile, err := db.Profile(r.PathValue("login"))
 	if err != nil {
-		c.JSON(404, "Failed to find user")
+		http.Error(w, "Failed to find user", 404)
 		return
 	}
-	c.JSON(200, profile)
+	jsonResponse(w, 200, profile)
 }
 
 type UpdateUser struct {
@@ -49,49 +102,55 @@ type UpdateUser struct {
 }
 
 // Patch allows users and admins show or hide themselves in the site
-func Patch(c *gin.Context) {
-	login := c.Params.ByName("login")
-	session := sessions.GetEntry(c)
+func Patch(w http.ResponseWriter, r *http.Request) {
+	login := r.PathValue("login")
+	session := sessions.GetEntry(r)
 	if session.User.IsAdmin == false && *session.User.Login != login {
-		c.JSON(403, "Users can only modify themselves")
+		http.Error(w, "Users can only modify themselves", 403)
 		return
 	}
 
 	profile, err := db.Profile(login)
 	if err != nil || profile == nil {
-		c.JSON(404, "Failed to find user")
+		http.Error(w, "Failed to find user", 404)
 		return
 	}
 	var cmd UpdateUser
-	if err = c.BindJSON(&cmd); err != nil {
-		c.JSON(400, "Failed to bind command object. Are you sending JSON? "+err.Error())
+	if err = json.NewDecoder(r.Body).Decode(&cmd); err != nil {
+		http.Error(w, "Failed to bind command object. Are you sending JSON? "+err.Error(), 400)
 		return
 	}
 	err = db.HideUser(cmd.Hide, *profile.User.Login)
 	if err != nil {
-		c.JSON(500, err.Error())
+		http.Error(w, err.Error(), 500)
 		return
 	}
 	profile.User.Hide = cmd.Hide
 	session.User.Hide = cmd.Hide
-	c.JSON(200, profile)
+	jsonResponse(w, 200, profile)
 }
 
 // Delete allows admins to easily expunge old data
-func Delete(c *gin.Context) {
-	session := sessions.GetEntry(c)
+func Delete(w http.ResponseWriter, r *http.Request) {
+	session := sessions.GetEntry(r)
 	if session.User.IsAdmin == false {
-		c.JSON(403, "Only admins can delete users")
+		http.Error(w, "Only admins can delete users", 403)
 		return
 	}
 
-	login := c.Params.ByName("login")
+	login := r.PathValue("login")
 
 	err := db.Delete(login)
 	if err != nil {
-		c.JSON(500, err.Error())
+		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	c.JSON(200, "deleted")
+	jsonResponse(w, 200, "deleted")
+}
+
+func jsonResponse(w http.ResponseWriter, code int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(data)
 }

@@ -1,7 +1,10 @@
 package lang
 
 import (
-	"github.com/gin-gonic/gin"
+	"encoding/json"
+	"net/http"
+	"strconv"
+
 	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/stldevs/db"
 )
@@ -30,39 +33,44 @@ var Routes = []crud.Spec{{
 	},
 }}
 
-func List(c *gin.Context) {
-	c.JSON(200, db.PopularLanguages())
+func List(w http.ResponseWriter, r *http.Request) {
+	jsonResponse(w, 200, db.PopularLanguages())
 }
 
-func Get(c *gin.Context) {
-	var query struct {
-		Limit  int `form:"limit"`
-		Offset int `form:"offset"`
+func Get(w http.ResponseWriter, r *http.Request) {
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+	limit, _ := strconv.Atoi(limitStr)
+	offset, _ := strconv.Atoi(offsetStr)
+
+	if limit <= 0 {
+		limit = 25
 	}
-	if err := c.BindQuery(&query); err != nil {
-		return
-	}
-	if query.Limit <= 0 {
-		query.Limit = 25
-	}
-	if query.Offset < 0 {
-		query.Offset = 0
+	if offset < 0 {
+		offset = 0
 	}
 
-	langs := db.Language(c.Params.ByName("lang"))
+	lang := r.PathValue("lang")
+	langs := db.Language(lang)
 
-	if query.Limit+query.Offset > len(langs) {
-		query.Limit = len(langs)
+	if limit+offset > len(langs) {
+		limit = len(langs)
 	} else {
-		query.Limit += query.Offset
+		limit += offset
 	}
-	if query.Offset > len(langs) {
-		query.Limit = 0
-		query.Offset = 0
+	if offset > len(langs) {
+		limit = 0
+		offset = 0
 	}
-	c.JSON(200, map[string]interface{}{
-		"languages": langs[query.Offset:query.Limit],
+	jsonResponse(w, 200, map[string]interface{}{
+		"languages": langs[offset:limit],
 		"count":     len(langs),
-		"language":  c.Params.ByName("lang"),
+		"language":  lang,
 	})
+}
+
+func jsonResponse(w http.ResponseWriter, code int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(data)
 }

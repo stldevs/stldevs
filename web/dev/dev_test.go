@@ -2,14 +2,15 @@ package dev
 
 import (
 	"bytes"
+	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/go-github/v52/github"
-	"github.com/jakecoffman/stldevs/db"
-	"github.com/jakecoffman/stldevs/sessions"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/google/go-github/v52/github"
+	"github.com/jakecoffman/stldevs/db"
+	"github.com/jakecoffman/stldevs/sessions"
 )
 
 func TestList(t *testing.T) {
@@ -23,9 +24,8 @@ func TestList(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest("GET", "http://example.com?type=User", nil)
-	List(c)
+	r := httptest.NewRequest("GET", "http://example.com?type=User", nil)
+	List(w, r)
 
 	if !called {
 		t.Error()
@@ -43,9 +43,8 @@ func TestListFailure(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest("GET", "http://example.com?type=User", nil)
-	List(c)
+	r := httptest.NewRequest("GET", "http://example.com?type=User", nil)
+	List(w, r)
 
 	if !called {
 		t.Error()
@@ -66,9 +65,8 @@ func TestSearch(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest("GET", "http://example.com?q=term", nil)
-	List(c)
+	r := httptest.NewRequest("GET", "http://example.com?q=term", nil)
+	List(w, r)
 
 	if !called {
 		t.Error()
@@ -89,10 +87,9 @@ func TestGet(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest("GET", "http://example.com", nil)
-	c.Params = gin.Params{{Key: "login", Value: "bob"}}
-	Get(c)
+	r := httptest.NewRequest("GET", "http://example.com", nil)
+	r.SetPathValue("login", "bob")
+	Get(w, r)
 
 	if !called {
 		t.Error()
@@ -110,10 +107,9 @@ func TestGet404(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest("GET", "http://example.com", nil)
-	c.Params = gin.Params{{Key: "login", Value: "bob"}}
-	Get(c)
+	r := httptest.NewRequest("GET", "http://example.com", nil)
+	r.SetPathValue("login", "bob")
+	Get(w, r)
 
 	if !called {
 		t.Error()
@@ -146,15 +142,15 @@ func TestPatchByUser(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
 	buf := bytes.NewBufferString(`{"hide":true}`)
-	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
-	c.Params = gin.Params{{Key: "login", Value: "bob"}}
-	c.Set(sessions.KeySession, sessions.Entry{
+	r := httptest.NewRequest("GET", "http://example.com", buf)
+	r.SetPathValue("login", "bob")
+	ctx := context.WithValue(r.Context(), sessions.KeySession, sessions.Entry{
 		User:    user,
 		Created: time.Now(),
 	})
-	Patch(c)
+	r = r.WithContext(ctx)
+	Patch(w, r)
 
 	if called != 2 {
 		t.Error()
@@ -171,15 +167,15 @@ func TestPatch403(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
 	buf := bytes.NewBufferString(`{"hide":true}`)
-	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
-	c.Params = gin.Params{{Key: "login", Value: "alice"}} // bob != alice
-	c.Set(sessions.KeySession, sessions.Entry{
+	r := httptest.NewRequest("GET", "http://example.com", buf)
+	r.SetPathValue("login", "alice") // bob != alice
+	ctx := context.WithValue(r.Context(), sessions.KeySession, sessions.Entry{
 		User:    user,
 		Created: time.Now(),
 	})
-	Patch(c)
+	r = r.WithContext(ctx)
+	Patch(w, r)
 
 	if w.Result().StatusCode != 403 {
 		t.Error(w.Result().StatusCode)
@@ -201,15 +197,15 @@ func TestPatchAdmin404(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
 	buf := bytes.NewBufferString(`{"hide":true}`)
-	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
-	c.Params = gin.Params{{Key: "login", Value: "alice"}} // bob != alice
-	c.Set(sessions.KeySession, sessions.Entry{
+	r := httptest.NewRequest("GET", "http://example.com", buf)
+	r.SetPathValue("login", "alice") // bob != alice
+	ctx := context.WithValue(r.Context(), sessions.KeySession, sessions.Entry{
 		User:    user,
 		Created: time.Now(),
 	})
-	Patch(c)
+	r = r.WithContext(ctx)
+	Patch(w, r)
 
 	if w.Result().StatusCode != 404 {
 		t.Error(w.Result().StatusCode)
@@ -231,15 +227,15 @@ func TestDelete(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
 	buf := bytes.NewBufferString(`{}`)
-	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
-	c.Params = gin.Params{{Key: "login", Value: "alice"}} // bob != alice
-	c.Set(sessions.KeySession, sessions.Entry{
+	r := httptest.NewRequest("GET", "http://example.com", buf)
+	r.SetPathValue("login", "alice") // bob != alice
+	ctx := context.WithValue(r.Context(), sessions.KeySession, sessions.Entry{
 		User:    user,
 		Created: time.Now(),
 	})
-	Delete(c)
+	r = r.WithContext(ctx)
+	Delete(w, r)
 
 	if w.Result().StatusCode != 200 {
 		t.Error(w.Result().StatusCode)
@@ -261,15 +257,15 @@ func TestDeleteAccessDenied(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
 	buf := bytes.NewBufferString(`{}`)
-	c.Request = httptest.NewRequest("GET", "http://example.com", buf)
-	c.Params = gin.Params{{Key: "login", Value: "alice"}} // bob != alice
-	c.Set(sessions.KeySession, sessions.Entry{
+	r := httptest.NewRequest("GET", "http://example.com", buf)
+	r.SetPathValue("login", "alice") // bob != alice
+	ctx := context.WithValue(r.Context(), sessions.KeySession, sessions.Entry{
 		User:    user,
 		Created: time.Now(),
 	})
-	Delete(c)
+	r = r.WithContext(ctx)
+	Delete(w, r)
 
 	if w.Result().StatusCode != 403 {
 		t.Error(w.Result().StatusCode)

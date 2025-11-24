@@ -1,10 +1,11 @@
 package sessions
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/jakecoffman/stldevs/db"
+	"net/http"
 	"sync"
 	"time"
+
+	"github.com/jakecoffman/stldevs/db"
 )
 
 const (
@@ -17,9 +18,9 @@ var Store = &SessionStore{
 	store: map[string]*Entry{},
 }
 
-func GetEntry(ctx *gin.Context) Entry {
-	sess, ok := ctx.Get(KeySession)
-	if ok {
+func GetEntry(r *http.Request) Entry {
+	sess := r.Context().Value(KeySession)
+	if sess != nil {
 		entry := sess.(Entry)
 		return entry
 	}
