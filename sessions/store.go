@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jakecoffman/stldevs/db"
+	"github.com/jakecoffman/stldevs/db/sqlc"
 )
 
 const (
@@ -33,7 +33,7 @@ type SessionStore struct {
 }
 
 type Entry struct {
-	User    *db.StlDevsUser
+	User    *sqlc.GetUserRow
 	Created time.Time
 }
 
@@ -47,7 +47,7 @@ func (s *SessionStore) Get(cookie string) (Entry, bool) {
 	return *session, ok
 }
 
-func (s *SessionStore) Add(user *db.StlDevsUser) string {
+func (s *SessionStore) Add(user *sqlc.GetUserRow) string {
 	s.Lock()
 	defer s.Unlock()
 	cookie := GenerateSessionCookie()

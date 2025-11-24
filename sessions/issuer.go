@@ -3,11 +3,13 @@ package sessions
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"github.com/dghubble/gologin/v2/github"
-	"github.com/jakecoffman/stldevs/db"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/dghubble/gologin/v2/github"
+	"github.com/jakecoffman/stldevs/db"
+	"github.com/jakecoffman/stldevs/db/sqlc"
 )
 
 type Issuer struct{}
@@ -24,17 +26,26 @@ func (s *Issuer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println("Login success", *githubUser.Login)
 
 	user, err := db.GetUser(*githubUser.Login)
-	if err != nil || user == nil {
+	if err != nil || user.Login == "" {
 		// user not found or something?
-		user = &db.StlDevsUser{
-			User: githubUser,
+		user = sqlc.GetUserRow{
+			Login: *githubUser.Login,
+		}
+		if githubUser.AvatarURL != nil {
+			user.AvatarUrl = *githubUser.AvatarURL
+		}
+		if githubUser.Name != nil {
+			user.Name = *githubUser.Name
+		}
+		if githubUser.Email != nil {
+			user.Email = *githubUser.Email
 		}
 	}
 
 	expire := time.Now().AddDate(0, 0, 1)
 	cookie := http.Cookie{
 		Name:    Cookie,
-		Value:   Store.Add(user),
+		Value:   Store.Add(&user),
 		Expires: expire,
 	}
 	http.SetCookie(w, &cookie)

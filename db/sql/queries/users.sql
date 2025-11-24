@@ -1,14 +1,14 @@
 -- name: PopularDevs :many
 SELECT
         agg_user.login,
-        agg_user.name,
+        COALESCE(agg_user.name, '')::text AS name,
         agg_user.company,
-        agg_user.avatar_url,
-        agg_user.followers,
-        agg_user.public_repos,
-        repo.stars,
-        repo.forks,
-        agg_user.type
+        COALESCE(agg_user.avatar_url, '')::text AS avatar_url,
+        COALESCE(agg_user.followers, 0)::int AS followers,
+        COALESCE(agg_user.public_repos, 0)::int AS public_repos,
+        repo.stars::int AS stars,
+        repo.forks::int AS forks,
+        COALESCE(agg_user.type, '')::text AS type
 FROM agg_user
 JOIN (
         SELECT owner, SUM(stargazers_count) AS stars, SUM(forks_count) AS forks
@@ -24,29 +24,6 @@ WHERE agg_user.type = sqlc.arg(dev_type)
 ORDER BY repo.stars DESC
 LIMIT 100;
 
--- name: GetUser :one
-SELECT
-    login,
-    email,
-    name,
-    location,
-    hireable,
-    blog,
-    bio,
-    followers,
-    following,
-    public_repos,
-    public_gists,
-    avatar_url,
-    type,
-    disk_usage,
-    created_at,
-    updated_at,
-    company,
-    hide,
-    is_admin
-FROM agg_user
-WHERE login = $1;
 
 -- name: UpdateUser :execrows
 UPDATE agg_user
@@ -105,31 +82,56 @@ WHERE login = $2;
 DELETE FROM agg_user
 WHERE login = $1;
 
+-- name: GetUser :one
+SELECT
+    agg_user.login,
+    COALESCE(agg_user.email, '')::text AS email,
+    COALESCE(agg_user.name, '')::text AS name,
+    COALESCE(agg_user.location, '')::text AS location,
+    COALESCE(agg_user.hireable, false)::bool AS hireable,
+    COALESCE(agg_user.blog, '')::text AS blog,
+    COALESCE(agg_user.bio, '')::text AS bio,
+    COALESCE(agg_user.followers, 0)::int AS followers,
+    COALESCE(agg_user.following, 0)::int AS following,
+    COALESCE(agg_user.public_repos, 0)::int AS public_repos,
+    COALESCE(agg_user.public_gists, 0)::int AS public_gists,
+    COALESCE(agg_user.avatar_url, '')::text AS avatar_url,
+    COALESCE(agg_user.type, '')::text AS type,
+    COALESCE(agg_user.disk_usage, 0)::int AS disk_usage,
+    agg_user.created_at,
+    agg_user.updated_at,
+    agg_user.company,
+    agg_user.hide,
+    agg_user.is_admin,
+    COALESCE(repo.stars, 0)::int AS stars,
+    COALESCE(repo.forks, 0)::int AS forks
+FROM agg_user
+LEFT JOIN (
+        SELECT owner, SUM(stargazers_count) AS stars, SUM(forks_count) AS forks
+        FROM agg_repo
+        GROUP BY owner
+) AS repo ON repo.owner = agg_user.login
+WHERE login = $1;
+
 -- name: SearchUsers :many
 SELECT
     agg_user.login,
-    agg_user.name,
-    agg_user.followers,
-    agg_user.public_repos,
-    agg_user.public_gists,
-    agg_user.avatar_url,
-    agg_user.type,
+    COALESCE(agg_user.name, '')::text AS name,
+    COALESCE(agg_user.followers, 0)::int AS followers,
+    COALESCE(agg_user.public_repos, 0)::int AS public_repos,
+    COALESCE(agg_user.public_gists, 0)::int AS public_gists,
+    COALESCE(agg_user.avatar_url, '')::text AS avatar_url,
+    COALESCE(agg_user.type, '')::text AS type,
     agg_user.hide,
     agg_user.is_admin,
-    repo.stars,
-    repo.forks
+    COALESCE(repo.stars, 0)::int AS stars,
+    COALESCE(repo.forks, 0)::int AS forks
 FROM agg_user
-JOIN (
+LEFT JOIN (
     SELECT owner, SUM(stargazers_count) AS stars, SUM(forks_count) AS forks
     FROM agg_repo
     GROUP BY owner
 ) AS repo ON repo.owner = agg_user.login
-WHERE agg_user.hide IS FALSE
-  AND (
-    LOWER(agg_user.login) LIKE LOWER($1) OR
-    LOWER(agg_user.name) LIKE LOWER($1) OR
-    LOWER(agg_user.bio) LIKE LOWER($1) OR
-    LOWER(agg_user.email) LIKE LOWER($1)
-  )
-ORDER BY repo.stars DESC
-LIMIT 100;
+WHERE login LIKE $1
+ORDER BY stars DESC
+LIMIT 50;

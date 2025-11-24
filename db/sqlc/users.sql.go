@@ -22,49 +22,58 @@ func (q *Queries) DeleteUser(ctx context.Context, login string) error {
 
 const getUser = `-- name: GetUser :one
 SELECT
-    login,
-    email,
-    name,
-    location,
-    hireable,
-    blog,
-    bio,
-    followers,
-    following,
-    public_repos,
-    public_gists,
-    avatar_url,
-    type,
-    disk_usage,
-    created_at,
-    updated_at,
-    company,
-    hide,
-    is_admin
+    agg_user.login,
+    COALESCE(agg_user.email, '')::text AS email,
+    COALESCE(agg_user.name, '')::text AS name,
+    COALESCE(agg_user.location, '')::text AS location,
+    COALESCE(agg_user.hireable, false)::bool AS hireable,
+    COALESCE(agg_user.blog, '')::text AS blog,
+    COALESCE(agg_user.bio, '')::text AS bio,
+    COALESCE(agg_user.followers, 0)::int AS followers,
+    COALESCE(agg_user.following, 0)::int AS following,
+    COALESCE(agg_user.public_repos, 0)::int AS public_repos,
+    COALESCE(agg_user.public_gists, 0)::int AS public_gists,
+    COALESCE(agg_user.avatar_url, '')::text AS avatar_url,
+    COALESCE(agg_user.type, '')::text AS type,
+    COALESCE(agg_user.disk_usage, 0)::int AS disk_usage,
+    agg_user.created_at,
+    agg_user.updated_at,
+    agg_user.company,
+    agg_user.hide,
+    agg_user.is_admin,
+    COALESCE(repo.stars, 0)::int AS stars,
+    COALESCE(repo.forks, 0)::int AS forks
 FROM agg_user
+LEFT JOIN (
+        SELECT owner, SUM(stargazers_count) AS stars, SUM(forks_count) AS forks
+        FROM agg_repo
+        GROUP BY owner
+) AS repo ON repo.owner = agg_user.login
 WHERE login = $1
 `
 
 type GetUserRow struct {
-	Login       string
-	Email       sql.NullString
-	Name        sql.NullString
-	Location    sql.NullString
-	Hireable    sql.NullBool
-	Blog        sql.NullString
-	Bio         sql.NullString
-	Followers   sql.NullInt32
-	Following   sql.NullInt32
-	PublicRepos sql.NullInt32
-	PublicGists sql.NullInt32
-	AvatarUrl   sql.NullString
-	Type        sql.NullString
-	DiskUsage   sql.NullInt32
-	CreatedAt   sql.NullTime
-	UpdatedAt   sql.NullTime
-	Company     string
-	Hide        bool
-	IsAdmin     bool
+	Login       string       `json:"login"`
+	Email       string       `json:"email"`
+	Name        string       `json:"name"`
+	Location    string       `json:"location"`
+	Hireable    bool         `json:"hireable"`
+	Blog        string       `json:"blog"`
+	Bio         string       `json:"bio"`
+	Followers   int32        `json:"followers"`
+	Following   int32        `json:"following"`
+	PublicRepos int32        `json:"public_repos"`
+	PublicGists int32        `json:"public_gists"`
+	AvatarUrl   string       `json:"avatar_url"`
+	Type        string       `json:"type"`
+	DiskUsage   int32        `json:"disk_usage"`
+	CreatedAt   sql.NullTime `json:"created_at"`
+	UpdatedAt   sql.NullTime `json:"updated_at"`
+	Company     string       `json:"company"`
+	Hide        bool         `json:"hide"`
+	IsAdmin     bool         `json:"is_admin"`
+	Stars       int32        `json:"stars"`
+	Forks       int32        `json:"forks"`
 }
 
 func (q *Queries) GetUser(ctx context.Context, login string) (GetUserRow, error) {
@@ -90,6 +99,8 @@ func (q *Queries) GetUser(ctx context.Context, login string) (GetUserRow, error)
 		&i.Company,
 		&i.Hide,
 		&i.IsAdmin,
+		&i.Stars,
+		&i.Forks,
 	)
 	return i, err
 }
@@ -101,8 +112,8 @@ WHERE login = $2
 `
 
 type HideUserParams struct {
-	Hide  bool
-	Login string
+	Hide  bool   `json:"hide"`
+	Login string `json:"login"`
 }
 
 func (q *Queries) HideUser(ctx context.Context, arg HideUserParams) (int64, error) {
@@ -140,24 +151,24 @@ INSERT INTO agg_user (
 `
 
 type InsertUserParams struct {
-	Login       string
-	Email       sql.NullString
-	Name        sql.NullString
-	Location    sql.NullString
-	Hireable    sql.NullBool
-	Blog        sql.NullString
-	Bio         sql.NullString
-	Followers   sql.NullInt32
-	Following   sql.NullInt32
-	PublicRepos sql.NullInt32
-	PublicGists sql.NullInt32
-	AvatarUrl   sql.NullString
-	Type        sql.NullString
-	DiskUsage   sql.NullInt32
-	CreatedAt   sql.NullTime
-	UpdatedAt   sql.NullTime
-	RefreshedAt sql.NullTime
-	Company     string
+	Login       string         `json:"login"`
+	Email       sql.NullString `json:"email"`
+	Name        sql.NullString `json:"name"`
+	Location    sql.NullString `json:"location"`
+	Hireable    sql.NullBool   `json:"hireable"`
+	Blog        sql.NullString `json:"blog"`
+	Bio         sql.NullString `json:"bio"`
+	Followers   sql.NullInt32  `json:"followers"`
+	Following   sql.NullInt32  `json:"following"`
+	PublicRepos sql.NullInt32  `json:"public_repos"`
+	PublicGists sql.NullInt32  `json:"public_gists"`
+	AvatarUrl   sql.NullString `json:"avatar_url"`
+	Type        sql.NullString `json:"type"`
+	DiskUsage   sql.NullInt32  `json:"disk_usage"`
+	CreatedAt   sql.NullTime   `json:"created_at"`
+	UpdatedAt   sql.NullTime   `json:"updated_at"`
+	RefreshedAt sql.NullTime   `json:"refreshed_at"`
+	Company     string         `json:"company"`
 }
 
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
@@ -187,14 +198,14 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
 const popularDevs = `-- name: PopularDevs :many
 SELECT
         agg_user.login,
-        agg_user.name,
+        COALESCE(agg_user.name, '')::text AS name,
         agg_user.company,
-        agg_user.avatar_url,
-        agg_user.followers,
-        agg_user.public_repos,
-        repo.stars,
-        repo.forks,
-        agg_user.type
+        COALESCE(agg_user.avatar_url, '')::text AS avatar_url,
+        COALESCE(agg_user.followers, 0)::int AS followers,
+        COALESCE(agg_user.public_repos, 0)::int AS public_repos,
+        repo.stars::int AS stars,
+        repo.forks::int AS forks,
+        COALESCE(agg_user.type, '')::text AS type
 FROM agg_user
 JOIN (
         SELECT owner, SUM(stargazers_count) AS stars, SUM(forks_count) AS forks
@@ -212,20 +223,20 @@ LIMIT 100
 `
 
 type PopularDevsParams struct {
-	DevType        sql.NullString
-	CompanyPattern sql.NullString
+	DevType        sql.NullString `json:"dev_type"`
+	CompanyPattern sql.NullString `json:"company_pattern"`
 }
 
 type PopularDevsRow struct {
-	Login       string
-	Name        sql.NullString
-	Company     string
-	AvatarUrl   sql.NullString
-	Followers   sql.NullInt32
-	PublicRepos sql.NullInt32
-	Stars       int64
-	Forks       int64
-	Type        sql.NullString
+	Login       string `json:"login"`
+	Name        string `json:"name"`
+	Company     string `json:"company"`
+	AvatarUrl   string `json:"avatar_url"`
+	Followers   int32  `json:"followers"`
+	PublicRepos int32  `json:"public_repos"`
+	Stars       int32  `json:"stars"`
+	Forks       int32  `json:"forks"`
+	Type        string `json:"type"`
 }
 
 func (q *Queries) PopularDevs(ctx context.Context, arg PopularDevsParams) ([]PopularDevsRow, error) {
@@ -264,49 +275,43 @@ func (q *Queries) PopularDevs(ctx context.Context, arg PopularDevsParams) ([]Pop
 const searchUsers = `-- name: SearchUsers :many
 SELECT
     agg_user.login,
-    agg_user.name,
-    agg_user.followers,
-    agg_user.public_repos,
-    agg_user.public_gists,
-    agg_user.avatar_url,
-    agg_user.type,
+    COALESCE(agg_user.name, '')::text AS name,
+    COALESCE(agg_user.followers, 0)::int AS followers,
+    COALESCE(agg_user.public_repos, 0)::int AS public_repos,
+    COALESCE(agg_user.public_gists, 0)::int AS public_gists,
+    COALESCE(agg_user.avatar_url, '')::text AS avatar_url,
+    COALESCE(agg_user.type, '')::text AS type,
     agg_user.hide,
     agg_user.is_admin,
-    repo.stars,
-    repo.forks
+    COALESCE(repo.stars, 0)::int AS stars,
+    COALESCE(repo.forks, 0)::int AS forks
 FROM agg_user
-JOIN (
+LEFT JOIN (
     SELECT owner, SUM(stargazers_count) AS stars, SUM(forks_count) AS forks
     FROM agg_repo
     GROUP BY owner
 ) AS repo ON repo.owner = agg_user.login
-WHERE agg_user.hide IS FALSE
-  AND (
-    LOWER(agg_user.login) LIKE LOWER($1) OR
-    LOWER(agg_user.name) LIKE LOWER($1) OR
-    LOWER(agg_user.bio) LIKE LOWER($1) OR
-    LOWER(agg_user.email) LIKE LOWER($1)
-  )
-ORDER BY repo.stars DESC
-LIMIT 100
+WHERE login LIKE $1
+ORDER BY stars DESC
+LIMIT 50
 `
 
 type SearchUsersRow struct {
-	Login       string
-	Name        sql.NullString
-	Followers   sql.NullInt32
-	PublicRepos sql.NullInt32
-	PublicGists sql.NullInt32
-	AvatarUrl   sql.NullString
-	Type        sql.NullString
-	Hide        bool
-	IsAdmin     bool
-	Stars       int64
-	Forks       int64
+	Login       string `json:"login"`
+	Name        string `json:"name"`
+	Followers   int32  `json:"followers"`
+	PublicRepos int32  `json:"public_repos"`
+	PublicGists int32  `json:"public_gists"`
+	AvatarUrl   string `json:"avatar_url"`
+	Type        string `json:"type"`
+	Hide        bool   `json:"hide"`
+	IsAdmin     bool   `json:"is_admin"`
+	Stars       int32  `json:"stars"`
+	Forks       int32  `json:"forks"`
 }
 
-func (q *Queries) SearchUsers(ctx context.Context, lower string) ([]SearchUsersRow, error) {
-	rows, err := q.db.QueryContext(ctx, searchUsers, lower)
+func (q *Queries) SearchUsers(ctx context.Context, login string) ([]SearchUsersRow, error) {
+	rows, err := q.db.QueryContext(ctx, searchUsers, login)
 	if err != nil {
 		return nil, err
 	}
@@ -365,24 +370,24 @@ WHERE login = $1
 `
 
 type UpdateUserParams struct {
-	Login       string
-	Email       sql.NullString
-	Name        sql.NullString
-	Location    sql.NullString
-	Hireable    sql.NullBool
-	Blog        sql.NullString
-	Bio         sql.NullString
-	Followers   sql.NullInt32
-	Following   sql.NullInt32
-	PublicRepos sql.NullInt32
-	PublicGists sql.NullInt32
-	AvatarUrl   sql.NullString
-	Type        sql.NullString
-	DiskUsage   sql.NullInt32
-	CreatedAt   sql.NullTime
-	UpdatedAt   sql.NullTime
-	RefreshedAt sql.NullTime
-	Company     string
+	Login       string         `json:"login"`
+	Email       sql.NullString `json:"email"`
+	Name        sql.NullString `json:"name"`
+	Location    sql.NullString `json:"location"`
+	Hireable    sql.NullBool   `json:"hireable"`
+	Blog        sql.NullString `json:"blog"`
+	Bio         sql.NullString `json:"bio"`
+	Followers   sql.NullInt32  `json:"followers"`
+	Following   sql.NullInt32  `json:"following"`
+	PublicRepos sql.NullInt32  `json:"public_repos"`
+	PublicGists sql.NullInt32  `json:"public_gists"`
+	AvatarUrl   sql.NullString `json:"avatar_url"`
+	Type        sql.NullString `json:"type"`
+	DiskUsage   sql.NullInt32  `json:"disk_usage"`
+	CreatedAt   sql.NullTime   `json:"created_at"`
+	UpdatedAt   sql.NullTime   `json:"updated_at"`
+	RefreshedAt sql.NullTime   `json:"refreshed_at"`
+	Company     string         `json:"company"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int64, error) {

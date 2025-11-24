@@ -105,7 +105,7 @@ type UpdateUser struct {
 func Patch(w http.ResponseWriter, r *http.Request) {
 	login := r.PathValue("login")
 	session := sessions.GetEntry(r)
-	if session.User.IsAdmin == false && *session.User.Login != login {
+	if session.User.IsAdmin == false && session.User.Login != login {
 		http.Error(w, "Users can only modify themselves", 403)
 		return
 	}
@@ -120,7 +120,7 @@ func Patch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to bind command object. Are you sending JSON? "+err.Error(), 400)
 		return
 	}
-	err = db.HideUser(cmd.Hide, *profile.User.Login)
+	err = db.HideUser(cmd.Hide, profile.User.Login)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

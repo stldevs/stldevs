@@ -10,54 +10,54 @@ import (
 )
 
 type AggMetum struct {
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type AggRepo struct {
-	Owner            string
-	Name             string
-	Description      sql.NullString
-	Language         sql.NullString
-	Homepage         sql.NullString
-	ForksCount       sql.NullInt32
-	NetworkCount     sql.NullInt32
-	OpenIssuesCount  sql.NullInt32
-	StargazersCount  sql.NullInt32
-	SubscribersCount sql.NullInt32
-	WatchersCount    sql.NullInt32
-	Size             sql.NullInt32
-	Fork             sql.NullBool
-	DefaultBranch    sql.NullString
-	MasterBranch     sql.NullString
-	CreatedAt        sql.NullTime
-	PushedAt         sql.NullTime
-	UpdatedAt        sql.NullTime
-	RefreshedAt      sql.NullTime
+	Owner            string         `json:"owner"`
+	Name             string         `json:"name"`
+	Description      sql.NullString `json:"description"`
+	Language         sql.NullString `json:"language"`
+	Homepage         sql.NullString `json:"homepage"`
+	ForksCount       sql.NullInt32  `json:"forks_count"`
+	NetworkCount     sql.NullInt32  `json:"network_count"`
+	OpenIssuesCount  sql.NullInt32  `json:"open_issues_count"`
+	StargazersCount  sql.NullInt32  `json:"stargazers_count"`
+	SubscribersCount sql.NullInt32  `json:"subscribers_count"`
+	WatchersCount    sql.NullInt32  `json:"watchers_count"`
+	Size             sql.NullInt32  `json:"size"`
+	Fork             sql.NullBool   `json:"fork"`
+	DefaultBranch    sql.NullString `json:"default_branch"`
+	MasterBranch     sql.NullString `json:"master_branch"`
+	CreatedAt        sql.NullTime   `json:"created_at"`
+	PushedAt         sql.NullTime   `json:"pushed_at"`
+	UpdatedAt        sql.NullTime   `json:"updated_at"`
+	RefreshedAt      sql.NullTime   `json:"refreshed_at"`
 }
 
 type AggUser struct {
-	Login       string
-	Email       sql.NullString
-	Location    sql.NullString
-	Hireable    sql.NullBool
-	Blog        sql.NullString
-	Bio         sql.NullString
-	Followers   sql.NullInt32
-	Following   sql.NullInt32
-	PublicRepos sql.NullInt32
-	PublicGists sql.NullInt32
-	AvatarUrl   sql.NullString
-	DiskUsage   sql.NullInt32
-	CreatedAt   sql.NullTime
-	UpdatedAt   sql.NullTime
-	Type        sql.NullString
-	Name        sql.NullString
-	Hide        bool
-	IsAdmin     bool
-	RefreshedAt sql.NullTime
-	Company     string
+	Login       string         `json:"login"`
+	Email       sql.NullString `json:"email"`
+	Location    sql.NullString `json:"location"`
+	Hireable    sql.NullBool   `json:"hireable"`
+	Blog        sql.NullString `json:"blog"`
+	Bio         sql.NullString `json:"bio"`
+	Followers   sql.NullInt32  `json:"followers"`
+	Following   sql.NullInt32  `json:"following"`
+	PublicRepos sql.NullInt32  `json:"public_repos"`
+	PublicGists sql.NullInt32  `json:"public_gists"`
+	AvatarUrl   sql.NullString `json:"avatar_url"`
+	DiskUsage   sql.NullInt32  `json:"disk_usage"`
+	CreatedAt   sql.NullTime   `json:"created_at"`
+	UpdatedAt   sql.NullTime   `json:"updated_at"`
+	Type        sql.NullString `json:"type"`
+	Name        sql.NullString `json:"name"`
+	Hide        bool           `json:"hide"`
+	IsAdmin     bool           `json:"is_admin"`
+	RefreshedAt sql.NullTime   `json:"refreshed_at"`
+	Company     string         `json:"company"`
 }
 
 type Migration struct {
-	Name string
+	Name string `json:"name"`
 }

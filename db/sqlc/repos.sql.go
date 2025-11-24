@@ -27,8 +27,8 @@ WHERE owner = $1
 `
 
 type DeleteReposByOwnerBeforeParams struct {
-	Owner       string
-	RefreshedAt sql.NullTime
+	Owner       string       `json:"owner"`
+	RefreshedAt sql.NullTime `json:"refreshed_at"`
 }
 
 func (q *Queries) DeleteReposByOwnerBefore(ctx context.Context, arg DeleteReposByOwnerBeforeParams) (int64, error) {
@@ -67,25 +67,25 @@ INSERT INTO agg_repo (
 `
 
 type InsertRepoParams struct {
-	Owner            string
-	Name             string
-	Description      sql.NullString
-	Language         sql.NullString
-	Homepage         sql.NullString
-	ForksCount       sql.NullInt32
-	NetworkCount     sql.NullInt32
-	OpenIssuesCount  sql.NullInt32
-	StargazersCount  sql.NullInt32
-	SubscribersCount sql.NullInt32
-	WatchersCount    sql.NullInt32
-	Size             sql.NullInt32
-	Fork             sql.NullBool
-	DefaultBranch    sql.NullString
-	MasterBranch     sql.NullString
-	CreatedAt        sql.NullTime
-	PushedAt         sql.NullTime
-	UpdatedAt        sql.NullTime
-	RefreshedAt      sql.NullTime
+	Owner            string         `json:"owner"`
+	Name             string         `json:"name"`
+	Description      sql.NullString `json:"description"`
+	Language         sql.NullString `json:"language"`
+	Homepage         sql.NullString `json:"homepage"`
+	ForksCount       sql.NullInt32  `json:"forks_count"`
+	NetworkCount     sql.NullInt32  `json:"network_count"`
+	OpenIssuesCount  sql.NullInt32  `json:"open_issues_count"`
+	StargazersCount  sql.NullInt32  `json:"stargazers_count"`
+	SubscribersCount sql.NullInt32  `json:"subscribers_count"`
+	WatchersCount    sql.NullInt32  `json:"watchers_count"`
+	Size             sql.NullInt32  `json:"size"`
+	Fork             sql.NullBool   `json:"fork"`
+	DefaultBranch    sql.NullString `json:"default_branch"`
+	MasterBranch     sql.NullString `json:"master_branch"`
+	CreatedAt        sql.NullTime   `json:"created_at"`
+	PushedAt         sql.NullTime   `json:"pushed_at"`
+	UpdatedAt        sql.NullTime   `json:"updated_at"`
+	RefreshedAt      sql.NullTime   `json:"refreshed_at"`
 }
 
 func (q *Queries) InsertRepo(ctx context.Context, arg InsertRepoParams) error {
@@ -136,15 +136,15 @@ WITH ranked_repos AS (
 SELECT
     ranked_repos.owner,
     ranked_repos.name,
-    ranked_repos.description,
-    ranked_repos.forks_count,
-    ranked_repos.stargazers_count,
-    ranked_repos.watchers_count,
-    ranked_repos.fork,
+    COALESCE(ranked_repos.description, '')::text AS description,
+    COALESCE(ranked_repos.forks_count, 0)::int AS forks_count,
+    COALESCE(ranked_repos.stargazers_count, 0)::int AS stargazers_count,
+    COALESCE(ranked_repos.watchers_count, 0)::int AS watchers_count,
+    COALESCE(ranked_repos.fork, false)::bool AS fork,
     ranked_repos.total_stars,
     ranked_repos.rownum,
-    agg_user.name AS display_name,
-    agg_user.type
+    COALESCE(agg_user.name, '')::text AS display_name,
+    COALESCE(agg_user.type, '')::text AS type
 FROM ranked_repos
 JOIN agg_user ON agg_user.login = ranked_repos.owner
 WHERE ranked_repos.rownum < 4
@@ -152,17 +152,17 @@ ORDER BY ranked_repos.total_stars DESC, ranked_repos.owner, ranked_repos.stargaz
 `
 
 type LanguageLeadersRow struct {
-	Owner           string
-	Name            string
-	Description     sql.NullString
-	ForksCount      sql.NullInt32
-	StargazersCount sql.NullInt32
-	WatchersCount   sql.NullInt32
-	Fork            sql.NullBool
-	TotalStars      int64
-	Rownum          int64
-	DisplayName     sql.NullString
-	Type            sql.NullString
+	Owner           string `json:"owner"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	ForksCount      int32  `json:"forks_count"`
+	StargazersCount int32  `json:"stargazers_count"`
+	WatchersCount   int32  `json:"watchers_count"`
+	Fork            bool   `json:"fork"`
+	TotalStars      int64  `json:"total_stars"`
+	Rownum          int64  `json:"rownum"`
+	DisplayName     string `json:"display_name"`
+	Type            string `json:"type"`
 }
 
 func (q *Queries) LanguageLeaders(ctx context.Context, lower string) ([]LanguageLeadersRow, error) {
@@ -202,21 +202,21 @@ func (q *Queries) LanguageLeaders(ctx context.Context, lower string) ([]Language
 
 const popularLanguages = `-- name: PopularLanguages :many
 SELECT
-    language,
-    COUNT(*) AS repo_count,
-    COUNT(DISTINCT owner) AS user_count
+    COALESCE(language, '')::text AS language,
+    COUNT(*) AS count,
+    COUNT(DISTINCT owner) AS users
 FROM agg_repo
 WHERE language IS NOT NULL
   AND fork = FALSE
 GROUP BY language
-ORDER BY repo_count DESC
+ORDER BY count DESC
 LIMIT 50
 `
 
 type PopularLanguagesRow struct {
-	Language  sql.NullString
-	RepoCount int64
-	UserCount int64
+	Language string `json:"language"`
+	Count    int64  `json:"count"`
+	Users    int64  `json:"users"`
 }
 
 func (q *Queries) PopularLanguages(ctx context.Context) ([]PopularLanguagesRow, error) {
@@ -228,7 +228,7 @@ func (q *Queries) PopularLanguages(ctx context.Context) ([]PopularLanguagesRow, 
 	var items []PopularLanguagesRow
 	for rows.Next() {
 		var i PopularLanguagesRow
-		if err := rows.Scan(&i.Language, &i.RepoCount, &i.UserCount); err != nil {
+		if err := rows.Scan(&i.Language, &i.Count, &i.Users); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -243,21 +243,62 @@ func (q *Queries) PopularLanguages(ctx context.Context) ([]PopularLanguagesRow, 
 }
 
 const reposForUser = `-- name: ReposForUser :many
-SELECT owner, name, description, language, homepage, forks_count, network_count, open_issues_count, stargazers_count, subscribers_count, watchers_count, size, fork, default_branch, master_branch, created_at, pushed_at, updated_at, refreshed_at
+SELECT
+    owner,
+    name,
+    COALESCE(description, '')::text AS description,
+    COALESCE(language, '')::text AS language,
+    COALESCE(homepage, '')::text AS homepage,
+    COALESCE(forks_count, 0)::int AS forks_count,
+    COALESCE(network_count, 0)::int AS network_count,
+    COALESCE(open_issues_count, 0)::int AS open_issues_count,
+    COALESCE(stargazers_count, 0)::int AS stargazers_count,
+    COALESCE(subscribers_count, 0)::int AS subscribers_count,
+    COALESCE(watchers_count, 0)::int AS watchers_count,
+    COALESCE(size, 0)::int AS size,
+    COALESCE(fork, false)::bool AS fork,
+    COALESCE(default_branch, '')::text AS default_branch,
+    COALESCE(master_branch, '')::text AS master_branch,
+    created_at,
+    pushed_at,
+    updated_at,
+    refreshed_at
 FROM agg_repo
 WHERE LOWER(owner) = LOWER($1)
 ORDER BY language, stargazers_count DESC, name
 `
 
-func (q *Queries) ReposForUser(ctx context.Context, lower string) ([]AggRepo, error) {
+type ReposForUserRow struct {
+	Owner            string       `json:"owner"`
+	Name             string       `json:"name"`
+	Description      string       `json:"description"`
+	Language         string       `json:"language"`
+	Homepage         string       `json:"homepage"`
+	ForksCount       int32        `json:"forks_count"`
+	NetworkCount     int32        `json:"network_count"`
+	OpenIssuesCount  int32        `json:"open_issues_count"`
+	StargazersCount  int32        `json:"stargazers_count"`
+	SubscribersCount int32        `json:"subscribers_count"`
+	WatchersCount    int32        `json:"watchers_count"`
+	Size             int32        `json:"size"`
+	Fork             bool         `json:"fork"`
+	DefaultBranch    string       `json:"default_branch"`
+	MasterBranch     string       `json:"master_branch"`
+	CreatedAt        sql.NullTime `json:"created_at"`
+	PushedAt         sql.NullTime `json:"pushed_at"`
+	UpdatedAt        sql.NullTime `json:"updated_at"`
+	RefreshedAt      sql.NullTime `json:"refreshed_at"`
+}
+
+func (q *Queries) ReposForUser(ctx context.Context, lower string) ([]ReposForUserRow, error) {
 	rows, err := q.db.QueryContext(ctx, reposForUser, lower)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AggRepo
+	var items []ReposForUserRow
 	for rows.Next() {
-		var i AggRepo
+		var i ReposForUserRow
 		if err := rows.Scan(
 			&i.Owner,
 			&i.Name,
@@ -293,23 +334,64 @@ func (q *Queries) ReposForUser(ctx context.Context, lower string) ([]AggRepo, er
 }
 
 const searchRepos = `-- name: SearchRepos :many
-SELECT owner, name, description, language, homepage, forks_count, network_count, open_issues_count, stargazers_count, subscribers_count, watchers_count, size, fork, default_branch, master_branch, created_at, pushed_at, updated_at, refreshed_at
+SELECT
+    owner,
+    name,
+    COALESCE(description, '')::text AS description,
+    COALESCE(language, '')::text AS language,
+    COALESCE(homepage, '')::text AS homepage,
+    COALESCE(forks_count, 0)::int AS forks_count,
+    COALESCE(network_count, 0)::int AS network_count,
+    COALESCE(open_issues_count, 0)::int AS open_issues_count,
+    COALESCE(stargazers_count, 0)::int AS stargazers_count,
+    COALESCE(subscribers_count, 0)::int AS subscribers_count,
+    COALESCE(watchers_count, 0)::int AS watchers_count,
+    COALESCE(size, 0)::int AS size,
+    COALESCE(fork, false)::bool AS fork,
+    COALESCE(default_branch, '')::text AS default_branch,
+    COALESCE(master_branch, '')::text AS master_branch,
+    created_at,
+    pushed_at,
+    updated_at,
+    refreshed_at
 FROM agg_repo
 WHERE LOWER(name) LIKE LOWER($1)
    OR LOWER(description) LIKE LOWER($1)
 ORDER BY stargazers_count DESC
-LIMIT 100
+LIMIT 50
 `
 
-func (q *Queries) SearchRepos(ctx context.Context, lower string) ([]AggRepo, error) {
+type SearchReposRow struct {
+	Owner            string       `json:"owner"`
+	Name             string       `json:"name"`
+	Description      string       `json:"description"`
+	Language         string       `json:"language"`
+	Homepage         string       `json:"homepage"`
+	ForksCount       int32        `json:"forks_count"`
+	NetworkCount     int32        `json:"network_count"`
+	OpenIssuesCount  int32        `json:"open_issues_count"`
+	StargazersCount  int32        `json:"stargazers_count"`
+	SubscribersCount int32        `json:"subscribers_count"`
+	WatchersCount    int32        `json:"watchers_count"`
+	Size             int32        `json:"size"`
+	Fork             bool         `json:"fork"`
+	DefaultBranch    string       `json:"default_branch"`
+	MasterBranch     string       `json:"master_branch"`
+	CreatedAt        sql.NullTime `json:"created_at"`
+	PushedAt         sql.NullTime `json:"pushed_at"`
+	UpdatedAt        sql.NullTime `json:"updated_at"`
+	RefreshedAt      sql.NullTime `json:"refreshed_at"`
+}
+
+func (q *Queries) SearchRepos(ctx context.Context, lower string) ([]SearchReposRow, error) {
 	rows, err := q.db.QueryContext(ctx, searchRepos, lower)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AggRepo
+	var items []SearchReposRow
 	for rows.Next() {
-		var i AggRepo
+		var i SearchReposRow
 		if err := rows.Scan(
 			&i.Owner,
 			&i.Name,
@@ -370,25 +452,25 @@ WHERE owner = $1 AND name = $2
 `
 
 type UpdateRepoParams struct {
-	Owner            string
-	Name             string
-	Description      sql.NullString
-	Language         sql.NullString
-	Homepage         sql.NullString
-	ForksCount       sql.NullInt32
-	NetworkCount     sql.NullInt32
-	OpenIssuesCount  sql.NullInt32
-	StargazersCount  sql.NullInt32
-	SubscribersCount sql.NullInt32
-	WatchersCount    sql.NullInt32
-	Size             sql.NullInt32
-	Fork             sql.NullBool
-	DefaultBranch    sql.NullString
-	MasterBranch     sql.NullString
-	CreatedAt        sql.NullTime
-	PushedAt         sql.NullTime
-	UpdatedAt        sql.NullTime
-	RefreshedAt      sql.NullTime
+	Owner            string         `json:"owner"`
+	Name             string         `json:"name"`
+	Description      sql.NullString `json:"description"`
+	Language         sql.NullString `json:"language"`
+	Homepage         sql.NullString `json:"homepage"`
+	ForksCount       sql.NullInt32  `json:"forks_count"`
+	NetworkCount     sql.NullInt32  `json:"network_count"`
+	OpenIssuesCount  sql.NullInt32  `json:"open_issues_count"`
+	StargazersCount  sql.NullInt32  `json:"stargazers_count"`
+	SubscribersCount sql.NullInt32  `json:"subscribers_count"`
+	WatchersCount    sql.NullInt32  `json:"watchers_count"`
+	Size             sql.NullInt32  `json:"size"`
+	Fork             sql.NullBool   `json:"fork"`
+	DefaultBranch    sql.NullString `json:"default_branch"`
+	MasterBranch     sql.NullString `json:"master_branch"`
+	CreatedAt        sql.NullTime   `json:"created_at"`
+	PushedAt         sql.NullTime   `json:"pushed_at"`
+	UpdatedAt        sql.NullTime   `json:"updated_at"`
+	RefreshedAt      sql.NullTime   `json:"refreshed_at"`
 }
 
 func (q *Queries) UpdateRepo(ctx context.Context, arg UpdateRepoParams) (int64, error) {

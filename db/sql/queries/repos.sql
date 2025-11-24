@@ -1,13 +1,13 @@
 -- name: PopularLanguages :many
 SELECT
-    language,
-    COUNT(*) AS repo_count,
-    COUNT(DISTINCT owner) AS user_count
+    COALESCE(language, '')::text AS language,
+    COUNT(*) AS count,
+    COUNT(DISTINCT owner) AS users
 FROM agg_repo
 WHERE language IS NOT NULL
   AND fork = FALSE
 GROUP BY language
-ORDER BY repo_count DESC
+ORDER BY count DESC
 LIMIT 50;
 
 -- name: LanguageLeaders :many
@@ -33,33 +33,71 @@ WITH ranked_repos AS (
 SELECT
     ranked_repos.owner,
     ranked_repos.name,
-    ranked_repos.description,
-    ranked_repos.forks_count,
-    ranked_repos.stargazers_count,
-    ranked_repos.watchers_count,
-    ranked_repos.fork,
+    COALESCE(ranked_repos.description, '')::text AS description,
+    COALESCE(ranked_repos.forks_count, 0)::int AS forks_count,
+    COALESCE(ranked_repos.stargazers_count, 0)::int AS stargazers_count,
+    COALESCE(ranked_repos.watchers_count, 0)::int AS watchers_count,
+    COALESCE(ranked_repos.fork, false)::bool AS fork,
     ranked_repos.total_stars,
     ranked_repos.rownum,
-    agg_user.name AS display_name,
-    agg_user.type
+    COALESCE(agg_user.name, '')::text AS display_name,
+    COALESCE(agg_user.type, '')::text AS type
 FROM ranked_repos
 JOIN agg_user ON agg_user.login = ranked_repos.owner
 WHERE ranked_repos.rownum < 4
 ORDER BY ranked_repos.total_stars DESC, ranked_repos.owner, ranked_repos.stargazers_count DESC;
 
 -- name: ReposForUser :many
-SELECT *
+SELECT
+    owner,
+    name,
+    COALESCE(description, '')::text AS description,
+    COALESCE(language, '')::text AS language,
+    COALESCE(homepage, '')::text AS homepage,
+    COALESCE(forks_count, 0)::int AS forks_count,
+    COALESCE(network_count, 0)::int AS network_count,
+    COALESCE(open_issues_count, 0)::int AS open_issues_count,
+    COALESCE(stargazers_count, 0)::int AS stargazers_count,
+    COALESCE(subscribers_count, 0)::int AS subscribers_count,
+    COALESCE(watchers_count, 0)::int AS watchers_count,
+    COALESCE(size, 0)::int AS size,
+    COALESCE(fork, false)::bool AS fork,
+    COALESCE(default_branch, '')::text AS default_branch,
+    COALESCE(master_branch, '')::text AS master_branch,
+    created_at,
+    pushed_at,
+    updated_at,
+    refreshed_at
 FROM agg_repo
 WHERE LOWER(owner) = LOWER($1)
 ORDER BY language, stargazers_count DESC, name;
 
 -- name: SearchRepos :many
-SELECT *
+SELECT
+    owner,
+    name,
+    COALESCE(description, '')::text AS description,
+    COALESCE(language, '')::text AS language,
+    COALESCE(homepage, '')::text AS homepage,
+    COALESCE(forks_count, 0)::int AS forks_count,
+    COALESCE(network_count, 0)::int AS network_count,
+    COALESCE(open_issues_count, 0)::int AS open_issues_count,
+    COALESCE(stargazers_count, 0)::int AS stargazers_count,
+    COALESCE(subscribers_count, 0)::int AS subscribers_count,
+    COALESCE(watchers_count, 0)::int AS watchers_count,
+    COALESCE(size, 0)::int AS size,
+    COALESCE(fork, false)::bool AS fork,
+    COALESCE(default_branch, '')::text AS default_branch,
+    COALESCE(master_branch, '')::text AS master_branch,
+    created_at,
+    pushed_at,
+    updated_at,
+    refreshed_at
 FROM agg_repo
 WHERE LOWER(name) LIKE LOWER($1)
    OR LOWER(description) LIKE LOWER($1)
 ORDER BY stargazers_count DESC
-LIMIT 100;
+LIMIT 50;
 
 -- name: DeleteReposByOwner :exec
 DELETE FROM agg_repo

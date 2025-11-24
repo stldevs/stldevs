@@ -115,7 +115,7 @@ func updateMe(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to bind command object. Are you sending JSON? "+err.Error(), 400)
 		return
 	}
-	err := db.HideUser(cmd.Hide, *session.User.Login)
+	err := db.HideUser(cmd.Hide, session.User.Login)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

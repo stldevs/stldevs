@@ -5,12 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"strconv"
 	"sync"
 	"time"
 
-	"github.com/google/go-github/v52/github"
-	"github.com/jakecoffman/stldevs"
 	"github.com/jakecoffman/stldevs/db/sqlc"
 )
 
@@ -30,13 +27,7 @@ var LastRun = func() time.Time {
 	return lastRun
 }
 
-type LanguageCount struct {
-	Language string
-	Count    int
-	Users    int
-}
-
-var PopularLanguages = func() []LanguageCount {
+var PopularLanguages = func() []sqlc.PopularLanguagesRow {
 	if queries == nil {
 		return nil
 	}
@@ -45,33 +36,10 @@ var PopularLanguages = func() []LanguageCount {
 		log.Println("PopularLanguages query failed:", err)
 		return nil
 	}
-	counts := make([]LanguageCount, 0, len(rows))
-	for _, row := range rows {
-		if !row.Language.Valid {
-			continue
-		}
-		counts = append(counts, LanguageCount{
-			Language: row.Language.String,
-			Count:    int(row.RepoCount),
-			Users:    int(row.UserCount),
-		})
-	}
-	return counts
+	return rows
 }
 
-type DevCount struct {
-	Login       string  `json:"login"`
-	Company     string  `json:"company"`
-	AvatarUrl   string  `json:"avatar_url"`
-	Followers   string  `json:"followers"`
-	PublicRepos string  `json:"public_repos"`
-	Name        *string `json:"name"`
-	Stars       int     `json:"stars"`
-	Forks       int     `json:"forks"`
-	Type        string  `json:"type"`
-}
-
-var PopularDevs = func(devType, company string) []DevCount {
+var PopularDevs = func(devType, company string) []sqlc.PopularDevsRow {
 	if queries == nil {
 		return nil
 	}
@@ -88,29 +56,15 @@ var PopularDevs = func(devType, company string) []DevCount {
 		log.Println("PopularDevs query failed:", err)
 		return nil
 	}
-	devs := make([]DevCount, 0, len(rows))
-	for _, row := range rows {
-		devs = append(devs, DevCount{
-			Login:       row.Login,
-			Company:     row.Company,
-			AvatarUrl:   nullStringValue(row.AvatarUrl),
-			Followers:   formatInt(row.Followers),
-			PublicRepos: formatInt(row.PublicRepos),
-			Name:        nullStringPtr(row.Name),
-			Stars:       int(row.Stars),
-			Forks:       int(row.Forks),
-			Type:        row.Type.String,
-		})
-	}
-	return devs
+	return rows
 }
 
 type LanguageResult struct {
 	Owner string
-	Repos []stldevs.Repository
+	Repos []sqlc.LanguageLeadersRow
 	Count int
-	Name  *string `json:"name"`
-	Type  string  `json:"type"`
+	Name  string `json:"name"`
+	Type  string `json:"type"`
 }
 
 var languageCache = struct {
@@ -144,63 +98,54 @@ var Language = func(name string) []*LanguageResult {
 	var cursor *LanguageResult
 	results := make([]*LanguageResult, 0, len(rows))
 	for _, row := range rows {
-		repo := repoFromLanguageRow(row)
 		if cursor == nil || cursor.Owner != row.Owner {
 			cursor = &LanguageResult{
 				Owner: row.Owner,
-				Repos: []stldevs.Repository{repo},
+				Repos: []sqlc.LanguageLeadersRow{row},
 				Count: int(row.TotalStars),
-				Name:  nullStringPtr(row.DisplayName),
-				Type:  row.Type.String,
+				Name:  row.DisplayName,
+				Type:  row.Type,
 			}
 			results = append(results, cursor)
 			continue
 		}
-		cursor.Repos = append(cursor.Repos, repo)
+		cursor.Repos = append(cursor.Repos, row)
 	}
 	languageCache.result[name] = results
 	languageCache.lastRun = run
 	return results
 }
 
-type StlDevsUser struct {
-	*github.User
-	Stars   int  `json:"stars"`
-	Forks   int  `json:"forks"`
-	Hide    bool `json:"hide,omitempty"`
-	IsAdmin bool `json:"is_admin,omitempty"`
-}
-
-func GetUser(login string) (*StlDevsUser, error) {
+func GetUser(login string) (sqlc.GetUserRow, error) {
 	if queries == nil {
-		return nil, fmt.Errorf("database not initialized")
+		return sqlc.GetUserRow{}, fmt.Errorf("database not initialized")
 	}
 	row, err := queries.GetUser(context.Background(), login)
 	if err != nil {
 		log.Println("Error querying user", login, err)
-		return nil, err
+		return sqlc.GetUserRow{}, err
 	}
-	return userFromRow(row), nil
+	return row, nil
 }
 
 type ProfileData struct {
-	User  *StlDevsUser
-	Repos map[string][]stldevs.Repository
+	User  sqlc.GetUserRow                   `json:"user"`
+	Repos map[string][]sqlc.ReposForUserRow `json:"repos"`
 }
 
 var Profile = func(name string) (*ProfileData, error) {
 	if queries == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
-	userCh := make(chan *StlDevsUser)
-	reposCh := make(chan map[string][]stldevs.Repository)
+	userCh := make(chan sqlc.GetUserRow)
+	reposCh := make(chan map[string][]sqlc.ReposForUserRow)
 	defer close(userCh)
 	defer close(reposCh)
 
 	go func() {
 		user, err := GetUser(name)
 		if err != nil {
-			userCh <- nil
+			userCh <- sqlc.GetUserRow{}
 			return
 		}
 		userCh <- user
@@ -213,12 +158,9 @@ var Profile = func(name string) (*ProfileData, error) {
 			reposCh <- nil
 			return
 		}
-		repos := map[string][]stldevs.Repository{}
-		for _, repo := range convertAggRepos(rows) {
-			lang := ""
-			if repo.Language != nil {
-				lang = *repo.Language
-			}
+		repos := map[string][]sqlc.ReposForUserRow{}
+		for _, repo := range rows {
+			lang := repo.Language
 			repos[lang] = append(repos[lang], repo)
 		}
 		reposCh <- repos
@@ -226,25 +168,14 @@ var Profile = func(name string) (*ProfileData, error) {
 
 	user := <-userCh
 	repoMap := <-reposCh
-	if user == nil || repoMap == nil {
+	if user.Login == "" || repoMap == nil {
 		return nil, fmt.Errorf("not found")
-	}
-
-	for _, repos := range repoMap {
-		for _, repo := range repos {
-			if repo.StargazersCount != nil {
-				user.Stars += *repo.StargazersCount
-			}
-			if repo.ForksCount != nil {
-				user.Forks += *repo.ForksCount
-			}
-		}
 	}
 
 	return &ProfileData{User: user, Repos: repoMap}, nil
 }
 
-var SearchUsers = func(term string) []StlDevsUser {
+var SearchUsers = func(term string) []sqlc.SearchUsersRow {
 	if queries == nil {
 		return nil
 	}
@@ -254,29 +185,10 @@ var SearchUsers = func(term string) []StlDevsUser {
 		log.Println("SearchUsers query failed:", err)
 		return nil
 	}
-	users := make([]StlDevsUser, 0, len(rows))
-	for _, row := range rows {
-		user := &StlDevsUser{
-			User: &github.User{
-				Login:       stringPtr(row.Login),
-				Name:        nullStringPtr(row.Name),
-				Followers:   nullIntPtr(row.Followers),
-				PublicRepos: nullIntPtr(row.PublicRepos),
-				PublicGists: nullIntPtr(row.PublicGists),
-				AvatarURL:   nullStringPtr(row.AvatarUrl),
-				Type:        nullStringPtr(row.Type),
-			},
-			Hide:    row.Hide,
-			IsAdmin: row.IsAdmin,
-			Stars:   int(row.Stars),
-			Forks:   int(row.Forks),
-		}
-		users = append(users, *user)
-	}
-	return users
+	return rows
 }
 
-var SearchRepos = func(term string) []stldevs.Repository {
+var SearchRepos = func(term string) []sqlc.SearchReposRow {
 	if queries == nil {
 		return nil
 	}
@@ -286,7 +198,7 @@ var SearchRepos = func(term string) []stldevs.Repository {
 		log.Println("SearchRepos query failed:", err)
 		return nil
 	}
-	return convertAggRepos(rows)
+	return rows
 }
 
 var HideUser = func(hide bool, login string) error {
@@ -317,135 +229,4 @@ var Delete = func(login string) error {
 		return err
 	}
 	return nil
-}
-
-func userFromRow(row sqlc.GetUserRow) *StlDevsUser {
-	company := row.Company
-	ghUser := &github.User{
-		Login:       stringPtr(row.Login),
-		Email:       nullStringPtr(row.Email),
-		Name:        nullStringPtr(row.Name),
-		Location:    nullStringPtr(row.Location),
-		Hireable:    nullBoolPtr(row.Hireable),
-		Blog:        nullStringPtr(row.Blog),
-		Bio:         nullStringPtr(row.Bio),
-		Followers:   nullIntPtr(row.Followers),
-		Following:   nullIntPtr(row.Following),
-		PublicRepos: nullIntPtr(row.PublicRepos),
-		PublicGists: nullIntPtr(row.PublicGists),
-		AvatarURL:   nullStringPtr(row.AvatarUrl),
-		Type:        nullStringPtr(row.Type),
-		DiskUsage:   nullIntPtr(row.DiskUsage),
-		CreatedAt:   githubTimestampPtr(row.CreatedAt),
-		UpdatedAt:   githubTimestampPtr(row.UpdatedAt),
-		Company:     &company,
-	}
-	return &StlDevsUser{
-		User:    ghUser,
-		Hide:    row.Hide,
-		IsAdmin: row.IsAdmin,
-	}
-}
-
-func convertAggRepos(rows []sqlc.AggRepo) []stldevs.Repository {
-	repos := make([]stldevs.Repository, 0, len(rows))
-	for _, row := range rows {
-		repos = append(repos, repoFromAggRow(row))
-	}
-	return repos
-}
-
-func repoFromAggRow(row sqlc.AggRepo) stldevs.Repository {
-	return stldevs.Repository{
-		Owner:            stringPtr(row.Owner),
-		Name:             stringPtr(row.Name),
-		Description:      nullStringPtr(row.Description),
-		Language:         nullStringPtr(row.Language),
-		Homepage:         nullStringPtr(row.Homepage),
-		ForksCount:       nullIntPtr(row.ForksCount),
-		NetworkCount:     nullIntPtr(row.NetworkCount),
-		OpenIssuesCount:  nullIntPtr(row.OpenIssuesCount),
-		StargazersCount:  nullIntPtr(row.StargazersCount),
-		SubscribersCount: nullIntPtr(row.SubscribersCount),
-		WatchersCount:    nullIntPtr(row.WatchersCount),
-		Size:             nullIntPtr(row.Size),
-		Fork:             nullBoolPtr(row.Fork),
-		DefaultBranch:    nullStringPtr(row.DefaultBranch),
-		MasterBranch:     nullStringPtr(row.MasterBranch),
-		CreatedAt:        nullTimePtr(row.CreatedAt),
-		PushedAt:         nullTimePtr(row.PushedAt),
-		UpdatedAt:        nullTimePtr(row.UpdatedAt),
-		RefreshedAt:      nullTimePtr(row.RefreshedAt),
-	}
-}
-
-func repoFromLanguageRow(row sqlc.LanguageLeadersRow) stldevs.Repository {
-	return stldevs.Repository{
-		Owner:           stringPtr(row.Owner),
-		Name:            stringPtr(row.Name),
-		Description:     nullStringPtr(row.Description),
-		ForksCount:      nullIntPtr(row.ForksCount),
-		StargazersCount: nullIntPtr(row.StargazersCount),
-		WatchersCount:   nullIntPtr(row.WatchersCount),
-		Fork:            nullBoolPtr(row.Fork),
-	}
-}
-
-func nullStringPtr(ns sql.NullString) *string {
-	if !ns.Valid {
-		return nil
-	}
-	value := ns.String
-	return &value
-}
-
-func nullStringValue(ns sql.NullString) string {
-	if !ns.Valid {
-		return ""
-	}
-	return ns.String
-}
-
-func nullBoolPtr(nb sql.NullBool) *bool {
-	if !nb.Valid {
-		return nil
-	}
-	value := nb.Bool
-	return &value
-}
-
-func nullIntPtr(ni sql.NullInt32) *int {
-	if !ni.Valid {
-		return nil
-	}
-	value := int(ni.Int32)
-	return &value
-}
-
-func nullTimePtr(nt sql.NullTime) *time.Time {
-	if !nt.Valid {
-		return nil
-	}
-	return &nt.Time
-}
-
-func githubTimestampPtr(nt sql.NullTime) *github.Timestamp {
-	if !nt.Valid {
-		return nil
-	}
-	return &github.Timestamp{Time: nt.Time}
-}
-
-func stringPtr(value string) *string {
-	if value == "" {
-		return nil
-	}
-	return &value
-}
-
-func formatInt(ni sql.NullInt32) string {
-	if !ni.Valid {
-		return ""
-	}
-	return strconv.FormatInt(int64(ni.Int32), 10)
 }

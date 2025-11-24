@@ -8,19 +8,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v52/github"
 	"github.com/jakecoffman/stldevs/db"
+	"github.com/jakecoffman/stldevs/db/sqlc"
 	"github.com/jakecoffman/stldevs/sessions"
 )
 
 func TestList(t *testing.T) {
 	var called bool
-	db.PopularDevs = func(devType, company string) []db.DevCount {
+	db.PopularDevs = func(devType, company string) []sqlc.PopularDevsRow {
 		called = true
 		if devType != "User" {
 			t.Error()
 		}
-		return []db.DevCount{}
+		return []sqlc.PopularDevsRow{}
 	}
 
 	w := httptest.NewRecorder()
@@ -37,7 +37,7 @@ func TestList(t *testing.T) {
 
 func TestListFailure(t *testing.T) {
 	var called bool
-	db.PopularDevs = func(devType, company string) []db.DevCount {
+	db.PopularDevs = func(devType, company string) []sqlc.PopularDevsRow {
 		called = true
 		return nil
 	}
@@ -56,12 +56,12 @@ func TestListFailure(t *testing.T) {
 
 func TestSearch(t *testing.T) {
 	var called bool
-	db.SearchUsers = func(term string) []db.StlDevsUser {
+	db.SearchUsers = func(term string) []sqlc.SearchUsersRow {
 		called = true
 		if term != "term" {
 			t.Error(term)
 		}
-		return []db.StlDevsUser{}
+		return []sqlc.SearchUsersRow{}
 	}
 
 	w := httptest.NewRecorder()
@@ -120,9 +120,8 @@ func TestGet404(t *testing.T) {
 }
 
 func TestPatchByUser(t *testing.T) {
-	login := "bob"
-	user := &db.StlDevsUser{
-		User: &github.User{Login: &login},
+	user := &sqlc.GetUserRow{
+		Login: "bob",
 	}
 
 	var called int
@@ -131,7 +130,7 @@ func TestPatchByUser(t *testing.T) {
 		if name != "bob" {
 			t.Error()
 		}
-		return &db.ProfileData{User: user}, nil
+		return &db.ProfileData{User: *user}, nil
 	}
 	db.HideUser = func(hide bool, login string) error {
 		called++
@@ -161,9 +160,8 @@ func TestPatchByUser(t *testing.T) {
 }
 
 func TestPatch403(t *testing.T) {
-	login := "bob"
-	user := &db.StlDevsUser{
-		User: &github.User{Login: &login},
+	user := &sqlc.GetUserRow{
+		Login: "bob",
 	}
 
 	w := httptest.NewRecorder()
@@ -190,9 +188,8 @@ func TestPatchAdmin404(t *testing.T) {
 		return nil, fmt.Errorf("")
 	}
 
-	login := "bob"
-	user := &db.StlDevsUser{
-		User:    &github.User{Login: &login},
+	user := &sqlc.GetUserRow{
+		Login:   "bob",
 		IsAdmin: true,
 	}
 
@@ -213,9 +210,8 @@ func TestPatchAdmin404(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	login := "bob"
-	user := &db.StlDevsUser{
-		User:    &github.User{Login: &login},
+	user := &sqlc.GetUserRow{
+		Login:   "bob",
 		IsAdmin: true,
 	}
 
@@ -243,9 +239,8 @@ func TestDelete(t *testing.T) {
 }
 
 func TestDeleteAccessDenied(t *testing.T) {
-	login := "bob"
-	user := &db.StlDevsUser{
-		User:    &github.User{Login: &login},
+	user := &sqlc.GetUserRow{
+		Login:   "bob",
 		IsAdmin: false,
 	}
 
