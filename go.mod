@@ -4,7 +4,6 @@ go 1.25.4
 
 require (
 	github.com/dghubble/gologin/v2 v2.5.0
-	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v52 v52.0.0
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/jakecoffman/crud v1.6.0
