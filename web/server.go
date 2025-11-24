@@ -1,19 +1,19 @@
 package web
 
 import (
+	"log"
+
 	"github.com/jakecoffman/crud"
-	adapter "github.com/jakecoffman/crud/adapters/gin-adapter"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/web/auth"
 	"github.com/jakecoffman/stldevs/web/dev"
 	"github.com/jakecoffman/stldevs/web/lang"
 	"github.com/jakecoffman/stldevs/web/repo"
 	"github.com/jakecoffman/stldevs/web/run"
-	"log"
 )
 
 func Run(cfg *config.Config) {
-	r := crud.NewRouter("stldevs api", "1.0.0", adapter.New())
+	r := crud.NewRouter("stldevs api", "1.0.0", crud.NewServeMuxAdapter())
 	if cfg.Environment == "prod" {
 		r.Swagger.BasePath = "/stldevs-api/"
 	}

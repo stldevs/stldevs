@@ -1,7 +1,9 @@
 package repo
 
 import (
-	"github.com/gin-gonic/gin"
+	"encoding/json"
+	"net/http"
+
 	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/stldevs/db"
 )
@@ -19,11 +21,17 @@ var Routes = []crud.Spec{{
 	},
 }}
 
-func List(c *gin.Context) {
-	q := c.Query("q")
+func List(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("q")
 	if q == "" {
-		c.JSON(400, "q is a required query parameter")
+		http.Error(w, "q is a required query parameter", 400)
 		return
 	}
-	c.JSON(200, db.SearchRepos(q))
+	jsonResponse(w, 200, db.SearchRepos(q))
+}
+
+func jsonResponse(w http.ResponseWriter, code int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(data)
 }

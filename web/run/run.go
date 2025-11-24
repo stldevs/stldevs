@@ -1,10 +1,12 @@
 package run
 
 import (
-	"github.com/gin-gonic/gin"
+	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/stldevs/db"
-	"time"
 )
 
 var Routes = []crud.Spec{{
@@ -18,11 +20,17 @@ var Routes = []crud.Spec{{
 
 var epoch time.Time
 
-func List(c *gin.Context) {
+func List(w http.ResponseWriter, r *http.Request) {
 	if lastRun := db.LastRun(); lastRun.Year() == epoch.Year() {
-		c.JSON(500, "Failed to list")
+		http.Error(w, "Failed to list", 500)
 		return
 	} else {
-		c.JSON(200, lastRun)
+		jsonResponse(w, 200, lastRun)
 	}
+}
+
+func jsonResponse(w http.ResponseWriter, code int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(data)
 }
