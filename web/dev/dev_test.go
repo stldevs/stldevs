@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -278,7 +279,7 @@ func TestRoutes_NoSession(t *testing.T) {
 
 	// Test PATCH
 	w := httptest.NewRecorder()
-	body := bytes.NewBufferString(`{"Hide": true}`)
+	body := bytes.NewBufferString(`{"hide": true}`)
 	req := httptest.NewRequest("PATCH", "/devs/bob", body)
 	adapter.Engine.ServeHTTP(w, req)
 
@@ -293,5 +294,46 @@ func TestRoutes_NoSession(t *testing.T) {
 
 	if w.Code != 401 {
 		t.Errorf("Expected 401, got %d", w.Code)
+	}
+}
+
+func TestRoutes_Validation(t *testing.T) {
+	adapter := crud.NewServeMuxAdapter()
+	r := crud.NewRouter("test", "1.0.0", adapter)
+	if err := r.Add(Routes...); err != nil {
+		t.Fatal(err)
+	}
+
+	// Mock session
+	cookie := sessions.Store.Add(&sqlc.GetUserRow{Login: "bob"})
+
+	// Mock DB
+	db.Profile = func(login string) (*db.ProfileData, error) {
+		return &db.ProfileData{User: sqlc.GetUserRow{Login: "bob"}}, nil
+	}
+	db.HideUser = func(hide bool, login string) error {
+		return nil
+	}
+
+	// Test PATCH with lowercase hide (should pass validation)
+	w := httptest.NewRecorder()
+	body := bytes.NewBufferString(`{"hide": true}`)
+	req := httptest.NewRequest("PATCH", "/devs/bob", body)
+	req.AddCookie(&http.Cookie{Name: sessions.Cookie, Value: cookie})
+	adapter.Engine.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("Expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Test PATCH with uppercase Hide (should fail validation)
+	w = httptest.NewRecorder()
+	body = bytes.NewBufferString(`{"Hide": true}`)
+	req = httptest.NewRequest("PATCH", "/devs/bob", body)
+	req.AddCookie(&http.Cookie{Name: sessions.Cookie, Value: cookie})
+	adapter.Engine.ServeHTTP(w, req)
+
+	if w.Code != 400 {
+		t.Errorf("Expected 400, got %d", w.Code)
 	}
 }

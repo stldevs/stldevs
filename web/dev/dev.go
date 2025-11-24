@@ -46,7 +46,7 @@ var Routes = []crud.Spec{{
 			"login": crud.String().Required().Description("GitHub login"),
 		}),
 		Body: crud.Object(map[string]crud.Field{
-			"Hide": crud.Boolean().Required(),
+			"hide": crud.Boolean().Required(),
 		}),
 	},
 }, {
@@ -101,7 +101,7 @@ func Get(w http.ResponseWriter, r *http.Request) {
 }
 
 type UpdateUser struct {
-	Hide bool
+	Hide bool `json:"hide"`
 }
 
 // Patch allows users and admins show or hide themselves in the site
