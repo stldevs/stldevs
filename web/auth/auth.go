@@ -74,7 +74,7 @@ func New(cfg *config.Config) []crud.Spec {
 		Tags:        loginTags,
 		Validate: crud.Validate{
 			Body: crud.Object(map[string]crud.Field{
-				"Hide": crud.Boolean().Required(),
+				"hide": crud.Boolean().Required(),
 			}),
 		},
 	}}
