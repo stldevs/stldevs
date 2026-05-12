@@ -45,6 +45,7 @@ SELECT
 FROM ranked_repos
 JOIN agg_user ON agg_user.login = ranked_repos.owner
 WHERE ranked_repos.rownum < 4
+  AND agg_user.hide IS FALSE
 ORDER BY ranked_repos.total_stars DESC, ranked_repos.owner, ranked_repos.stargazers_count DESC;
 
 -- name: ReposForUser :many
@@ -74,29 +75,31 @@ ORDER BY language, stargazers_count DESC, name;
 
 -- name: SearchRepos :many
 SELECT
-    owner,
-    name,
-    COALESCE(description, '')::text AS description,
-    COALESCE(language, '')::text AS language,
-    COALESCE(homepage, '')::text AS homepage,
-    COALESCE(forks_count, 0)::int AS forks_count,
-    COALESCE(network_count, 0)::int AS network_count,
-    COALESCE(open_issues_count, 0)::int AS open_issues_count,
-    COALESCE(stargazers_count, 0)::int AS stargazers_count,
-    COALESCE(subscribers_count, 0)::int AS subscribers_count,
-    COALESCE(watchers_count, 0)::int AS watchers_count,
-    COALESCE(size, 0)::int AS size,
-    COALESCE(fork, false)::bool AS fork,
-    COALESCE(default_branch, '')::text AS default_branch,
-    COALESCE(master_branch, '')::text AS master_branch,
-    created_at,
-    pushed_at,
-    updated_at,
-    refreshed_at
+    agg_repo.owner,
+    agg_repo.name,
+    COALESCE(agg_repo.description, '')::text AS description,
+    COALESCE(agg_repo.language, '')::text AS language,
+    COALESCE(agg_repo.homepage, '')::text AS homepage,
+    COALESCE(agg_repo.forks_count, 0)::int AS forks_count,
+    COALESCE(agg_repo.network_count, 0)::int AS network_count,
+    COALESCE(agg_repo.open_issues_count, 0)::int AS open_issues_count,
+    COALESCE(agg_repo.stargazers_count, 0)::int AS stargazers_count,
+    COALESCE(agg_repo.subscribers_count, 0)::int AS subscribers_count,
+    COALESCE(agg_repo.watchers_count, 0)::int AS watchers_count,
+    COALESCE(agg_repo.size, 0)::int AS size,
+    COALESCE(agg_repo.fork, false)::bool AS fork,
+    COALESCE(agg_repo.default_branch, '')::text AS default_branch,
+    COALESCE(agg_repo.master_branch, '')::text AS master_branch,
+    agg_repo.created_at,
+    agg_repo.pushed_at,
+    agg_repo.updated_at,
+    agg_repo.refreshed_at
 FROM agg_repo
-WHERE LOWER(name) LIKE LOWER($1)
-   OR LOWER(description) LIKE LOWER($1)
-ORDER BY stargazers_count DESC
+JOIN agg_user ON agg_user.login = agg_repo.owner
+WHERE (LOWER(agg_repo.name) LIKE LOWER($1)
+   OR LOWER(agg_repo.description) LIKE LOWER($1))
+  AND agg_user.hide IS FALSE
+ORDER BY agg_repo.stargazers_count DESC
 LIMIT 50;
 
 -- name: DeleteReposByOwner :exec
