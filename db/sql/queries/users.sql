@@ -138,5 +138,6 @@ LEFT JOIN (
     GROUP BY owner
 ) AS repo ON repo.owner = agg_user.login
 WHERE login LIKE $1
+    AND agg_user.hide IS FALSE
 ORDER BY stars DESC
 LIMIT 50;

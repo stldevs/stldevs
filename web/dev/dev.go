@@ -3,6 +3,7 @@ package dev
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/jakecoffman/crud"
 	"github.com/jakecoffman/stldevs/db"
@@ -95,12 +96,33 @@ func List(w http.ResponseWriter, r *http.Request) {
 }
 
 func Get(w http.ResponseWriter, r *http.Request) {
-	profile, err := db.Profile(r.PathValue("login"))
+	login := r.PathValue("login")
+	profile, err := db.Profile(login)
 	if err != nil {
 		http.Error(w, "Failed to find user", 404)
 		return
 	}
+	// If the user has chosen to be hidden, only admins or the user themselves
+	// can view the profile. Everyone else gets a 404.
+	if profile.User.Hide && !viewerCanSeeHidden(r, login) {
+		http.Error(w, "Failed to find user", 404)
+		return
+	}
 	jsonResponse(w, 200, profile)
+}
+
+// viewerCanSeeHidden returns true if the request is being made by an admin or
+// by the user matching login.
+func viewerCanSeeHidden(r *http.Request, login string) bool {
+	cookie, err := r.Cookie(sessions.Cookie)
+	if err != nil || cookie.Value == "" {
+		return false
+	}
+	entry, ok := sessions.Store.Get(cookie.Value)
+	if !ok || entry.User == nil {
+		return false
+	}
+	return entry.User.IsAdmin || strings.EqualFold(entry.User.Login, login)
 }
 
 type UpdateUser struct {
