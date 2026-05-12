@@ -102,7 +102,7 @@ func me(w http.ResponseWriter, r *http.Request) {
 }
 
 type UpdateUser struct {
-	Hide bool
+	Hide bool `json:"hide"`
 }
 
 // Patch allows users to show or hide themselves in the site.
