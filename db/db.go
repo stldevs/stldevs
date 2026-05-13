@@ -46,3 +46,8 @@ func Migrate() {
 		log.Fatal("Could not migrate schema")
 	}
 }
+
+// DB returns the underlying *sql.DB. It must be called after Connect.
+func DB() *sql.DB {
+	return db
+}

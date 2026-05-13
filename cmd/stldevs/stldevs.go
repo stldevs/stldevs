@@ -1,11 +1,13 @@
 package main
 
 import (
+	"log"
+	"os"
+
+	"github.com/jakecoffman/stldevs/aggregator"
 	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/db"
 	"github.com/jakecoffman/stldevs/web"
-	"log"
-	"os"
 )
 
 func main() {
@@ -22,5 +24,13 @@ func main() {
 
 	db.Connect(cfg)
 	db.Migrate()
+
+	if cfg.GithubKey != "" {
+		agg := aggregator.New(db.DB(), cfg.GithubKey)
+		agg.Schedule(db.LastRun)
+	} else {
+		log.Println("aggregator: GithubKey not set, skipping scheduled runs")
+	}
+
 	web.Run(cfg)
 }
