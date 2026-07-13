@@ -5,9 +5,9 @@ go 1.25.4
 require (
 	github.com/dghubble/gologin/v2 v2.5.0
 	github.com/google/go-github/v52 v52.0.0
-	github.com/jackc/pgx/v5 v5.9.2
+	github.com/jackc/pgx/v5 v5.10.0
 	github.com/jakecoffman/crud v1.6.0
-	golang.org/x/oauth2 v0.27.0
+	golang.org/x/oauth2 v0.36.0
 )
 
 require (
