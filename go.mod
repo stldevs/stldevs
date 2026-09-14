@@ -1,13 +1,13 @@
 module github.com/jakecoffman/stldevs
 
-go 1.25.4
+go 1.26.0
 
 require (
 	github.com/dghubble/gologin/v2 v2.5.0
 	github.com/google/go-github/v52 v52.0.0
-	github.com/jackc/pgx/v5 v5.10.0
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/jakecoffman/crud v1.6.0
-	golang.org/x/oauth2 v0.36.0
+	golang.org/x/oauth2 v0.37.0
 )
 
 require (
