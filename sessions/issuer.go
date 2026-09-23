@@ -48,6 +48,7 @@ func (s *Issuer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Value:    Store.Add(&user),
 		Expires:  expire,
 		HttpOnly: true,
+		Secure:   true,
 	}
 	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/you", http.StatusFound)
