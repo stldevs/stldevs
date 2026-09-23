@@ -44,9 +44,10 @@ func (s *Issuer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	expire := time.Now().AddDate(0, 0, 1)
 	cookie := http.Cookie{
-		Name:    Cookie,
-		Value:   Store.Add(&user),
-		Expires: expire,
+		Name:     Cookie,
+		Value:    Store.Add(&user),
+		Expires:  expire,
+		HttpOnly: true,
 	}
 	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/you", http.StatusFound)
