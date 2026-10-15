@@ -57,7 +57,7 @@ var PopularDevs = func(devType, company, sortBy string) []sqlc.PopularDevsRow {
 	if !validSorts[sortBy] {
 		sortBy = "stars"
 	}
-	
+
 	params := sqlc.PopularDevsParams{
 		DevType: sql.NullString{String: devType, Valid: devType != ""},
 		SortBy:  sortBy,
@@ -221,6 +221,11 @@ var HideUser = func(hide bool, login string) error {
 	if queries == nil {
 		return fmt.Errorf("database not initialized")
 	}
+	// Serialize privacy changes with cache fills so an in-flight query cannot
+	// put the user's old visibility back into the cache after invalidation.
+	languageCache.Lock()
+	defer languageCache.Unlock()
+
 	affected, err := queries.HideUser(context.Background(), sqlc.HideUserParams{Hide: hide, Login: login})
 	if err != nil {
 		log.Println("HideUser update failed:", err)
@@ -229,6 +234,7 @@ var HideUser = func(hide bool, login string) error {
 	if affected != 1 {
 		return fmt.Errorf("affected no users")
 	}
+	clear(languageCache.result)
 	return nil
 }
 
@@ -236,6 +242,9 @@ var Delete = func(login string) error {
 	if queries == nil {
 		return fmt.Errorf("database not initialized")
 	}
+	languageCache.Lock()
+	defer languageCache.Unlock()
+
 	if err := queries.DeleteReposByOwner(context.Background(), login); err != nil {
 		log.Println("Failed deleting repos for", login, err)
 		return err
@@ -244,5 +253,6 @@ var Delete = func(login string) error {
 		log.Println("Failed deleting user", login, err)
 		return err
 	}
+	clear(languageCache.result)
 	return nil
 }

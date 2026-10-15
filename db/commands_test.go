@@ -70,6 +70,66 @@ func TestPopularDevs(t *testing.T) {
 	}
 }
 
+func TestLanguageCacheHideAndUnhide(t *testing.T) {
+	seedLanguageCacheProfiles(t)
+	assertLanguageOwners(t, "Go", "cache-user", "visible-user")
+	assertLanguageOwners(t, "JavaScript", "cache-user", "visible-user")
+
+	if err := HideUser(true, "cache-user"); err != nil {
+		t.Fatal(err)
+	}
+	assertLanguageOwners(t, "Go", "visible-user")
+	assertLanguageOwners(t, "JavaScript", "visible-user")
+
+	if err := HideUser(false, "cache-user"); err != nil {
+		t.Fatal(err)
+	}
+	assertLanguageOwners(t, "Go", "cache-user", "visible-user")
+	assertLanguageOwners(t, "JavaScript", "cache-user", "visible-user")
+}
+
+func TestLanguageCacheDelete(t *testing.T) {
+	seedLanguageCacheProfiles(t)
+	assertLanguageOwners(t, "Go", "cache-user", "visible-user")
+	assertLanguageOwners(t, "JavaScript", "cache-user", "visible-user")
+
+	if err := Delete("cache-user"); err != nil {
+		t.Fatal(err)
+	}
+	assertLanguageOwners(t, "Go", "visible-user")
+	assertLanguageOwners(t, "JavaScript", "visible-user")
+}
+
+func seedLanguageCacheProfiles(t *testing.T) {
+	t.Helper()
+	resetTables(t)
+	for _, login := range []string{"cache-user", "visible-user"} {
+		mustExec(`INSERT INTO agg_user (login, company, hide, type)
+			VALUES ($1, '', false, 'User')`, login)
+		for _, language := range []string{"Go", "JavaScript"} {
+			mustExec(`INSERT INTO agg_repo (owner, name, language, fork, stargazers_count)
+				VALUES ($1, $2, $2, false, 1)`, login, language)
+		}
+	}
+}
+
+func assertLanguageOwners(t *testing.T, language string, want ...string) {
+	t.Helper()
+	results := Language(language)
+	owners := make(map[string]bool, len(results))
+	for _, result := range results {
+		owners[result.Owner] = true
+	}
+	if len(results) != len(want) {
+		t.Fatalf("%s: got owners %v, want %v", language, owners, want)
+	}
+	for _, owner := range want {
+		if !owners[owner] {
+			t.Fatalf("%s: missing %s in owners %v", language, owner, owners)
+		}
+	}
+}
+
 func TestPopularDevsCompanyFilter(t *testing.T) {
 	resetTables(t)
 	const (
@@ -237,6 +297,9 @@ func resetTables(t *testing.T) {
 	if _, err := db.Exec("DELETE FROM agg_user"); err != nil {
 		t.Fatalf("failed to reset agg_user: %v", err)
 	}
+	languageCache.Lock()
+	clear(languageCache.result)
+	languageCache.Unlock()
 }
 
 func mustExec(query string, args ...any) {
