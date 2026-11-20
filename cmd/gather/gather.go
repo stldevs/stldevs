@@ -24,6 +24,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	client, err := aggregator.NewScraperClient(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 	db, err := sql.Open("pgx", cfg.Postgres)
 	if err != nil {
 		log.Fatal(err)
@@ -38,6 +42,6 @@ func main() {
 		log.Fatal("Could not migrate schema")
 	}
 
-	agg := aggregator.New(db, cfg.GithubKey)
+	agg := aggregator.New(db, client)
 	agg.Run()
 }

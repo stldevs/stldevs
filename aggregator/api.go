@@ -1,15 +1,16 @@
 package aggregator
 
 import (
-	"context"
 	"database/sql"
 	_ "embed"
+	"errors"
 	"log"
+	"net/http"
 	"strings"
 
 	"github.com/google/go-github/v52/github"
+	"github.com/jakecoffman/stldevs/config"
 	"github.com/jakecoffman/stldevs/db/sqlc"
-	"golang.org/x/oauth2"
 )
 
 //go:embed orgs.txt
@@ -21,10 +22,26 @@ type Aggregator struct {
 	running bool
 }
 
-func New(db *sql.DB, githubKey string) *Aggregator {
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: githubKey})
-	client := oauth2.NewClient(context.Background(), ts)
-	return &Aggregator{client: github.NewClient(client), queries: sqlc.New(db)}
+func NewScraperClient(cfg *config.Config) (*github.Client, error) {
+	if cfg.ScraperClientID == "" || cfg.ScraperClientSecret == "" {
+		return nil, errors.New("both ScraperClientID and ScraperClientSecret are required")
+	}
+	transport := &github.UnauthenticatedRateLimitedTransport{
+		ClientID: cfg.ScraperClientID, ClientSecret: cfg.ScraperClientSecret,
+	}
+	client := transport.Client()
+	// The transport reapplies the app secret on each hop.
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if req.URL.Scheme != "https" || req.URL.Host != "api.github.com" || len(via) >= 10 {
+			return http.ErrUseLastResponse
+		}
+		return nil
+	}
+	return github.NewClient(client), nil
+}
+
+func New(db *sql.DB, client *github.Client) *Aggregator {
+	return &Aggregator{client: client, queries: sqlc.New(db)}
 }
 
 func (a *Aggregator) Run() {

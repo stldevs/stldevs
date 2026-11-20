@@ -25,11 +25,11 @@ func main() {
 	db.Connect(cfg)
 	db.Migrate()
 
-	if cfg.GithubKey != "" {
-		agg := aggregator.New(db.DB(), cfg.GithubKey)
+	if client, err := aggregator.NewScraperClient(cfg); err == nil {
+		agg := aggregator.New(db.DB(), client)
 		agg.Schedule(db.LastRun)
 	} else {
-		log.Println("aggregator: GithubKey not set, skipping scheduled runs")
+		log.Printf("aggregator: skipping scheduled runs: %v", err)
 	}
 
 	web.Run(cfg)

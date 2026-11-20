@@ -6,7 +6,8 @@ import (
 )
 
 type Config struct {
-	GithubKey,
+	ScraperClientID,
+	ScraperClientSecret,
 	Postgres,
 	GithubClientID,
 	GithubClientSecret,

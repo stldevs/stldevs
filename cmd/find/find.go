@@ -1,10 +1,7 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"github.com/google/go-github/v52/github"
-	"golang.org/x/oauth2"
 	"log"
 	"os"
 
@@ -23,11 +20,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cfg.GithubKey})
-	httpClient := oauth2.NewClient(context.Background(), ts)
-	client := github.NewClient(httpClient)
+	client, err := aggregator.NewScraperClient(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	u, _ := aggregator.FindInStl(client, "user")
+	u, err := aggregator.FindInStl(client, "user")
+	if err != nil {
+		log.Fatal(err)
+	}
 	for k := range u {
 		fmt.Println(k)
 	}
